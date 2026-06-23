@@ -1,0 +1,24 @@
+{
+  "name": "pqweave",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Post-quantum migration layer for EVM wallets",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/*\" build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r typecheck && pnpm format:check",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "dev": "pnpm --filter @pqweave/web dev",
+    "contracts:test": "pnpm --filter @pqweave/contracts test"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
+  }
+}

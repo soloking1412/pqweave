@@ -1,0 +1,11 @@
+node_modules
+dist
+out
+cache
+coverage
+.next
+pnpm-lock.yaml
+packages/contracts/lib
+packages/contracts/out
+next-env.d.ts
+packages/contracts/broadcast

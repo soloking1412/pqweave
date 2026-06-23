@@ -1,0 +1,96 @@
+{
+  "name": "@pqweave/sdk",
+  "version": "0.1.0",
+  "description": "Post-quantum migration SDK for EVM wallets: exposure scanner, PQC keys, account abstraction, asset sweep",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./scanner": {
+      "types": "./dist/scanner/index.d.ts",
+      "import": "./dist/scanner/index.js"
+    },
+    "./pqc": {
+      "types": "./dist/pqc/index.d.ts",
+      "import": "./dist/pqc/index.js"
+    },
+    "./account": {
+      "types": "./dist/account/index.d.ts",
+      "import": "./dist/account/index.js"
+    },
+    "./migration": {
+      "types": "./dist/migration/index.d.ts",
+      "import": "./dist/migration/index.js"
+    },
+    "./bitcoin": {
+      "types": "./dist/bitcoin/index.d.ts",
+      "import": "./dist/bitcoin/index.js"
+    },
+    "./solana": {
+      "types": "./dist/solana/index.d.ts",
+      "import": "./dist/solana/index.js"
+    },
+    "./cosmos": {
+      "types": "./dist/cosmos/index.d.ts",
+      "import": "./dist/cosmos/index.js"
+    },
+    "./xrp": {
+      "types": "./dist/xrp/index.d.ts",
+      "import": "./dist/xrp/index.js"
+    },
+    "./cardano": {
+      "types": "./dist/cardano/index.d.ts",
+      "import": "./dist/cardano/index.js"
+    },
+    "./algorand": {
+      "types": "./dist/algorand/index.d.ts",
+      "import": "./dist/algorand/index.js"
+    },
+    "./stellar": {
+      "types": "./dist/stellar/index.d.ts",
+      "import": "./dist/stellar/index.js"
+    },
+    "./near": {
+      "types": "./dist/near/index.d.ts",
+      "import": "./dist/near/index.js"
+    },
+    "./aptos": {
+      "types": "./dist/aptos/index.d.ts",
+      "import": "./dist/aptos/index.js"
+    },
+    "./chains": {
+      "types": "./dist/chains/index.d.ts",
+      "import": "./dist/chains/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "gen:vector": "node scripts/gen-hashsig-vector.mjs"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.8.1",
+    "@noble/hashes": "^1.7.1",
+    "@noble/post-quantum": "^0.4.1",
+    "viem": "^2.37.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

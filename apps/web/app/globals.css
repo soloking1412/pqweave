@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #7c6cff;
+  --color-brand-bright: #9a8cff;
+  --color-accent: #34e2e4;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1100px 620px at 82% -12%, rgba(124, 108, 255, 0.2), transparent),
+    radial-gradient(900px 520px at -12% 6%, rgba(52, 226, 228, 0.1), transparent), #06060a;
+  color: #e7e7ee;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(124, 108, 255, 0.35);
+}
