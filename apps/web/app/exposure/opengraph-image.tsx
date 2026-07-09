@@ -122,7 +122,7 @@ export default function Image() {
         <div style={{ display: 'flex', gap: '14px' }}>
           <Chip>Every active EOA</Chip>
           <Chip>~25% of BTC</Chip>
-          <Chip>11 chains live</Chip>
+          <Chip>16 chains live</Chip>
         </div>
         <div style={{ display: 'flex', color: '#71717a', fontSize: '26px' }}>pqweave.com</div>
       </div>

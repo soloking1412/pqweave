@@ -1,10 +1,11 @@
-import { type Address, encodeFunctionData, type Hex, type PublicClient } from 'viem';
+import { type Address, encodeFunctionData, getAddress, type Hex, type PublicClient } from 'viem';
 import {
   type AccountCall,
   batchExecutorAbi,
   erc20Abi,
   erc721Abi,
   migrationSweeperAbi,
+  pqWeaveAccountAbi,
 } from '../account/index.js';
 
 export interface Erc20Holding {
@@ -188,6 +189,53 @@ export async function discoverErc20Balances(
     }
   });
   return holdings;
+}
+
+/**
+ * Merge candidate ERC-20 lists (scan results, the known-token registry, manual
+ * entries) into one deduplicated, checksummed list, preserving order of first
+ * appearance.
+ */
+export function mergeTokenCandidates(...lists: (Address | string)[][]): Address[] {
+  const seen = new Set<string>();
+  const merged: Address[] = [];
+  for (const list of lists) {
+    for (const raw of list) {
+      const address = getAddress(raw.trim());
+      const key = address.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(address);
+    }
+  }
+  return merged;
+}
+
+/**
+ * Recover the next safe one-time-leaf index from on-chain state: reads the
+ * account's consumed-leaf bitmap and returns one past the highest used leaf.
+ * Used to reconcile a restored keystore whose local counter may be stale —
+ * signing below this index would reuse a one-time key.
+ */
+export async function recoverLeafIndex(
+  client: PublicClient,
+  account: Address,
+  treeSize: number,
+): Promise<number> {
+  const results = await client.multicall({
+    allowFailure: false,
+    contracts: Array.from({ length: treeSize }, (_, leafIndex) => ({
+      address: account,
+      abi: pqWeaveAccountAbi,
+      functionName: 'pqcLeafUsed' as const,
+      args: [BigInt(leafIndex)] as const,
+    })),
+  });
+  let next = 0;
+  results.forEach((used, leafIndex) => {
+    if (used) next = leafIndex + 1;
+  });
+  return next;
 }
 
 /** What kind of migration a chain's exposure model permits. */

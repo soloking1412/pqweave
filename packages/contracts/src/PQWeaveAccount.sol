@@ -30,6 +30,14 @@ contract PQWeaveAccount is IAccount {
 
     address public immutable entryPoint;
 
+    /// @notice Who may call `initialize` besides the account itself. For a
+    ///         factory-created account this is the factory (which initializes
+    ///         atomically at creation). For the canonical EIP-7702 delegate
+    ///         instance this is the CREATE2 deployer proxy, which never makes
+    ///         calls — so a delegated EOA can only be initialized by its own
+    ///         self-call, closing the delegated-but-uninitialized front-run.
+    address public immutable deployer;
+
     /// @notice ECDSA authority. Set to address(0) to remove the ECDSA key from
     ///         the trust model entirely, making the post-quantum key the account's
     ///         sole authority (the maximum-security configuration).
@@ -67,19 +75,24 @@ contract PQWeaveAccount is IAccount {
 
     constructor(address entryPoint_) {
         entryPoint = entryPoint_;
+        deployer = msg.sender;
     }
 
     receive() external payable {}
 
     /// @notice One-time configuration. For a factory-deployed account this is
     ///         called atomically at creation; for an EIP-7702 EOA the holder
-    ///         calls it once after delegating.
+    ///         calls it once, as a self-call, in the same transaction that
+    ///         delegates. Guarded because a 7702 authorization persists even if
+    ///         the transaction's call reverts — an unguarded initialize would
+    ///         let anyone claim a delegated-but-uninitialized account.
     function initialize(
         address owner_,
         bytes calldata pqcPublicKey_,
         IPQCVerifier verifier_,
         uint256 valueThreshold_
     ) external {
+        if (msg.sender != deployer && msg.sender != address(this)) revert NotAuthorized();
         if (_initialized) revert AlreadyInitialized();
         if (pqcPublicKey_.length != 32) revert InvalidPqcKey();
         if (address(verifier_) == address(0)) revert InvalidVerifier();
@@ -185,6 +198,7 @@ contract PQWeaveAccount is IAccount {
 
     function rotatePqcKey(bytes calldata newPublicKey) external {
         _requireSelf();
+        if (newPublicKey.length != 32) revert InvalidPqcKey();
         pqcPublicKey = newPublicKey;
         emit PqcKeyRotated(newPublicKey);
     }

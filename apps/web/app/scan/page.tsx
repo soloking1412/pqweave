@@ -4,7 +4,7 @@ import { ScanForm } from './scan-form';
 export const metadata: Metadata = {
   title: 'Wallet exposure scanner — PQWeave',
   description:
-    'Check whether an EVM, Bitcoin, Litecoin, or Solana address has revealed its public key and score its quantum risk.',
+    'Check whether an address on EVM, Bitcoin, Solana, and 13 more chains has revealed its public key, what value it guards, and score its quantum risk — across every EVM chain at once.',
 };
 
 export default async function ScanPage({
@@ -20,15 +20,17 @@ export default async function ScanPage({
       <p className="mt-3 text-zinc-400">
         Pick a chain and enter an address to see whether its public key is already exposed to a
         future quantum attacker, how much is at risk, and what migration is actually possible.
-        Supports EVM, Bitcoin, Litecoin, Solana, Cardano, Cosmos, XRP, Algorand, Stellar, NEAR, and
-        Aptos. Nothing is stored, and no wallet connection is needed.
+        Supports EVM, Bitcoin, Litecoin, Dogecoin, Solana, Cardano, Cosmos, XRP, Algorand, Stellar,
+        NEAR, Aptos, Tron, Sui, TON, and Polkadot. Nothing is stored, and no wallet connection is
+        needed.
       </p>
       <div className="mt-8">
         <ScanForm initialAddress={address ?? ''} />
       </div>
       <p className="mt-8 text-xs leading-relaxed text-zinc-600">
         Risk reflects whether the address has broadcast a transaction (revealing its public key) and
-        the native balance it guards. Token balances and off-chain risk are not included. This is an
+        the value it guards — native balance plus, on EVM mainnets, balances in major tokens (USDC,
+        USDT, DAI, WETH, WBTC). Other tokens, NFTs, and off-chain risk are not included. This is an
         informational tool, not financial or security advice.
       </p>
     </div>

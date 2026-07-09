@@ -1,16 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import {
-  type Address,
-  formatEther,
-  type Hex,
-  isAddress,
-  keccak256,
-  parseEther,
-  toHex,
-  zeroAddress,
-} from 'viem';
+import { useEffect, useMemo, useState } from 'react';
+import { type Address, type Hex, isAddress, keccak256, parseEther, zeroAddress } from 'viem';
 import {
   useAccount,
   useChainId,
@@ -20,15 +11,20 @@ import {
   useWalletClient,
 } from 'wagmi';
 import type { ChainKey } from '@pqweave/sdk/chains';
-import { predictAccountAddress } from '@pqweave/sdk/account';
-import { buildOneClickMigration, discoverErc20Balances } from '@pqweave/sdk/migration';
-import { createHashSigKey } from '@pqweave/sdk/pqc';
+import { knownTokens } from '@pqweave/sdk/chains';
+import { buildHardenInPlace, predictAccountAddress } from '@pqweave/sdk/account';
+import {
+  buildOneClickMigration,
+  discoverErc20Balances,
+  mergeTokenCandidates,
+} from '@pqweave/sdk/migration';
+import { buildForwarderInstall } from '@pqweave/sdk/forwarder';
 import Link from 'next/link';
 import { ScanReportCard } from '@/components/scan-report-card';
 import { MigrateStatusBanner } from '@/components/migrate-status-banner';
+import { PqcKeygen, type PqcKeyState } from '@/components/pqc-keygen';
 import { explorerTxUrl } from '@/lib/contracts';
 import { chainName, getDeploymentStatus } from '@/lib/deployment';
-import { type EncryptedKeystore, encryptSeed } from '@/lib/keystore';
 import { shortenAddress } from '@/lib/risk';
 import type { ScanReport } from '@/lib/types';
 
@@ -43,8 +39,36 @@ const CHAIN_KEY_BY_ID: Record<number, ChainKey> = {
 };
 
 const DEFAULT_THRESHOLD = parseEther('0.05');
-const GAS_BUFFER = parseEther('0.002');
-const KEY_TREE_SIZE = 64; // one-time post-quantum keys before a rotation is needed
+
+/** The three real outcomes a wallet holder can choose. */
+type Outcome = 'full' | 'harden' | 'emergency';
+
+interface OutcomeMeta {
+  key: Outcome;
+  title: string;
+  blurb: string;
+}
+
+const OUTCOMES: OutcomeMeta[] = [
+  {
+    key: 'full',
+    title: 'Move to a fresh quantum-safe account',
+    blurb:
+      'Sweep everything into a new post-quantum account. The safest end state. Optionally keep your old address working as a mailbox that auto-forwards future deposits.',
+  },
+  {
+    key: 'harden',
+    title: 'Harden my current address in place',
+    blurb:
+      'Keep your exact address and add a post-quantum gate on sensitive operations. Transitional only — the underlying key can still re-delegate.',
+  },
+  {
+    key: 'emergency',
+    title: 'My key may be exposed — get me out now',
+    blurb:
+      'Same as the full migration, framed for urgency: sweep to a fresh account and leave a mailbox so nothing new lands on the exposed key.',
+  },
+];
 
 function Step({
   index,
@@ -53,7 +77,7 @@ function Step({
   done,
   children,
 }: {
-  index: number;
+  index: number | string;
   title: string;
   active: boolean;
   done: boolean;
@@ -84,13 +108,6 @@ function Step({
   );
 }
 
-function parseTokenAddresses(input: string): Address[] {
-  return input
-    .split(/[\s,]+/)
-    .map((value) => value.trim())
-    .filter((value): value is Address => isAddress(value));
-}
-
 export function MigrateClient() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -101,25 +118,23 @@ export function MigrateClient() {
 
   const [report, setReport] = useState<ScanReport | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [pqcRoot, setPqcRoot] = useState<Hex | null>(null);
-  const [keystore, setKeystore] = useState<EncryptedKeystore | null>(null);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [keyError, setKeyError] = useState<string | null>(null);
-  const [seedSaved, setSeedSaved] = useState(false);
-
+  const [key, setKey] = useState<PqcKeyState | null>(null);
+  const [outcome, setOutcome] = useState<Outcome>('full');
+  const [outcomeTouched, setOutcomeTouched] = useState(false);
+  const [installMailbox, setInstallMailbox] = useState(true);
+  const [pqcOnly, setPqcOnly] = useState(false);
   const [tokensInput, setTokensInput] = useState('');
   const [migrating, setMigrating] = useState(false);
   const [migrateError, setMigrateError] = useState<string | null>(null);
   const [safeAddress, setSafeAddress] = useState<Address | null>(null);
   const [txHash, setTxHash] = useState<Hex | null>(null);
-  const [maxSecurity, setMaxSecurity] = useState(true);
 
   const chainKey = CHAIN_KEY_BY_ID[chainId] ?? 'ethereum';
   const network = chainName(chainId);
   const status = getDeploymentStatus();
   const contracts = status.contracts;
+  const seedSaved = Boolean(key?.seedSaved);
+  const pqcRoot = key?.root ?? null;
 
   useEffect(() => {
     if (!address) {
@@ -131,7 +146,17 @@ export function MigrateClient() {
     fetch(`/api/scan?address=${address}&chain=${chainKey}`)
       .then((res) => res.json())
       .then((data) => {
-        if (!cancelled && !data.error) setReport(data as ScanReport);
+        if (cancelled || data.error) return;
+        const scan = data as ScanReport;
+        setReport(scan);
+        // Preselect the emergency path for an already-exposed, at-risk wallet.
+        if (
+          !outcomeTouched &&
+          scan.exposed &&
+          (scan.level === 'high' || scan.level === 'critical')
+        ) {
+          setOutcome('emergency');
+        }
       })
       .catch(() => undefined)
       .finally(() => {
@@ -140,49 +165,30 @@ export function MigrateClient() {
     return () => {
       cancelled = true;
     };
-  }, [address, chainKey]);
+  }, [address, chainKey, outcomeTouched]);
 
-  function downloadKeystore(file: EncryptedKeystore) {
-    const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'pqweave-keystore.json';
-    link.click();
-    URL.revokeObjectURL(url);
+  // Pre-fill the sweep list from the scan's detected tokens plus the chain's
+  // known-token registry, so a user rarely has to paste addresses by hand.
+  const suggestedTokens = useMemo(() => {
+    const fromScan = (report?.tokenHoldings ?? []).map((holding) => holding.token);
+    const registry = knownTokens(chainKey).map((token) => token.address);
+    return mergeTokenCandidates(fromScan, registry);
+  }, [report, chainKey]);
+
+  useEffect(() => {
+    if (suggestedTokens.length > 0 && tokensInput === '') {
+      setTokensInput(suggestedTokens.join('\n'));
+    }
+    // Only seed once, when suggestions first arrive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestedTokens.length]);
+
+  function chooseOutcome(next: Outcome) {
+    setOutcome(next);
+    setOutcomeTouched(true);
   }
 
-  async function generateAndEncrypt() {
-    setKeyError(null);
-    if (password.length < 8) {
-      setKeyError('Use a password of at least 8 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setKeyError('Passwords do not match.');
-      return;
-    }
-    setGenerating(true);
-    try {
-      // Fresh, independent entropy — NOT derived from the wallet's ECDSA key, so a
-      // future quantum break of that key cannot reproduce the post-quantum key.
-      // The seed stays in this local scope and is never shown or stored in state.
-      const seed = toHex(crypto.getRandomValues(new Uint8Array(32)));
-      const root = createHashSigKey(seed, KEY_TREE_SIZE).root;
-      const file = await encryptSeed(seed, password, root);
-      setPqcRoot(root);
-      setKeystore(file);
-      downloadKeystore(file);
-      setPassword('');
-      setConfirmPassword('');
-    } catch {
-      setKeyError('Could not generate the key. Please try again.');
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  async function migrate() {
+  async function run() {
     setMigrateError(null);
     setTxHash(null);
     setMigrating(true);
@@ -191,12 +197,34 @@ export function MigrateClient() {
         throw new Error('Not ready to migrate.');
       }
 
-      // Maximum security: owner = address(0) removes the ECDSA key from the trust
-      // model so the post-quantum key is the new account's sole authority.
-      const owner = maxSecurity ? zeroAddress : address;
+      if (outcome === 'harden') {
+        if (!contracts.accountImpl) throw new Error('Harden-in-place is not available yet.');
+        const { delegate, data } = buildHardenInPlace({
+          accountImpl: contracts.accountImpl,
+          owner: address,
+          pqcRoot,
+          verifier: contracts.verifier,
+          valueThreshold: DEFAULT_THRESHOLD,
+          pqcOnly,
+        });
+        const authorization = await walletClient.signAuthorization({
+          contractAddress: delegate,
+          executor: 'self',
+        });
+        const hash = await walletClient.sendTransaction({
+          to: address,
+          data,
+          authorizationList: [authorization],
+        });
+        setSafeAddress(address);
+        setTxHash(hash);
+        return;
+      }
+
+      // full / emergency: sweep into a fresh sole-authority account.
       const salt = keccak256(pqcRoot);
       const safe = await predictAccountAddress(publicClient, contracts.factory, {
-        owner,
+        owner: zeroAddress,
         pqcPublicKey: pqcRoot,
         verifier: contracts.verifier,
         valueThreshold: DEFAULT_THRESHOLD,
@@ -204,20 +232,39 @@ export function MigrateClient() {
       });
       setSafeAddress(safe);
 
-      const tokens = parseTokenAddresses(tokensInput);
-      const erc20s = tokens.length
-        ? await discoverErc20Balances(publicClient, address, tokens)
+      const tokenList = tokensInput
+        .split(/[\s,]+/)
+        .map((value) => value.trim())
+        .filter((value): value is Address => isAddress(value));
+      const erc20s = tokenList.length
+        ? await discoverErc20Balances(publicClient, address, tokenList)
         : [];
-
       const balance = await publicClient.getBalance({ address });
-      const native = balance > GAS_BUFFER ? balance - GAS_BUFFER : 0n;
 
-      const { delegate, data } = buildOneClickMigration(contracts.batchExecutor, {
-        to: safe,
-        from: address,
-        native,
-        erc20s,
-      });
+      const useMailbox = installMailbox && Boolean(contracts.forwarder);
+      let delegate: Address;
+      let data: Hex;
+      if (useMailbox) {
+        // One tx: delegate to the forwarder and initializeAndFlush. The forwarder
+        // pushes the FULL native balance (inside the tx, balance is already net
+        // of gas), so no gas-buffer arithmetic here.
+        ({ delegate, data } = buildForwarderInstall({
+          forwarder: contracts.forwarder!,
+          destination: safe,
+          pqcRoot,
+          verifier: contracts.verifier,
+          erc20s: erc20s.map((holding) => holding.token),
+        }));
+      } else {
+        const gasBuffer = parseEther('0.002');
+        const native = balance > gasBuffer ? balance - gasBuffer : 0n;
+        ({ delegate, data } = buildOneClickMigration(contracts.batchExecutor, {
+          to: safe,
+          from: address,
+          native,
+          erc20s,
+        }));
+      }
 
       const authorization = await walletClient.signAuthorization({
         contractAddress: delegate,
@@ -242,10 +289,12 @@ export function MigrateClient() {
   }
 
   const explorer = txHash ? explorerTxUrl(chainId, txHash) : null;
+  const isSweep = outcome === 'full' || outcome === 'emergency';
 
   return (
     <div className="space-y-4">
       <MigrateStatusBanner stage={status.stage} />
+
       <Step index={1} title="Connect your wallet" active={!isConnected} done={isConnected}>
         {isConnected && address ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -293,7 +342,7 @@ export function MigrateClient() {
       <Step
         index={2}
         title="Review your exposure"
-        active={isConnected && !pqcRoot}
+        active={isConnected && !report}
         done={Boolean(report)}
       >
         {!isConnected ? (
@@ -307,94 +356,55 @@ export function MigrateClient() {
         )}
       </Step>
 
-      <Step
-        index={3}
-        title="Generate your post-quantum key"
-        active={isConnected && !seedSaved}
-        done={seedSaved}
-      >
-        {keystore && pqcRoot ? (
-          <div className="space-y-3">
-            <p className="text-sm text-emerald-300">
-              Encrypted recovery file downloaded (pqweave-keystore.json). Your secret key was
-              encrypted with your password and never shown on screen.
-            </p>
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
-              Keep both the file <span className="font-medium">and</span> your password safe. The
-              file is useless without the password, and together they are the only way to control
-              your account. We cannot recover either.
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => downloadKeystore(keystore)}
-                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
-              >
-                Download again
-              </button>
-              <label className="flex items-center gap-2 text-sm text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={seedSaved}
-                  onChange={(event) => setSeedSaved(event.target.checked)}
-                  className="h-4 w-4 accent-[#7c6cff]"
-                />
-                I have saved the file and will remember my password
-              </label>
-            </div>
-            <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-              <div className="text-xs uppercase tracking-wide text-zinc-500">
-                Post-quantum public key (root)
-              </div>
-              <div className="mt-1 break-all font-mono text-xs text-accent">{pqcRoot}</div>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <p className="text-sm text-zinc-400">
-              Choose a password, then generate a hash-based (Lamport + Merkle) post-quantum key in
-              your browser. The key is created from fresh randomness, encrypted with your password
-              (AES-256-GCM), and downloaded as a file. The raw secret is never displayed.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Encryption password"
-                className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
-              />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Confirm password"
-                className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
-              />
-            </div>
+      <Step index={3} title="Choose your path" active={isConnected && Boolean(report)} done={false}>
+        <div className="grid gap-3">
+          {OUTCOMES.map((meta) => (
             <button
-              onClick={generateAndEncrypt}
-              disabled={!isConnected || generating}
-              className="mt-4 rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              key={meta.key}
+              onClick={() => chooseOutcome(meta.key)}
+              className={`rounded-xl border p-4 text-left transition ${
+                outcome === meta.key
+                  ? 'border-brand/50 bg-brand/5'
+                  : 'border-white/10 bg-black/20 hover:bg-white/5'
+              }`}
             >
-              {generating ? 'Generating…' : 'Generate & download encrypted key'}
+              <div className="flex items-center gap-2">
+                <span
+                  className={`h-3.5 w-3.5 rounded-full border ${
+                    outcome === meta.key ? 'border-brand bg-brand' : 'border-white/30'
+                  }`}
+                />
+                <span className="text-sm font-semibold text-white">{meta.title}</span>
+              </div>
+              <p className="mt-1.5 pl-5 text-xs leading-relaxed text-zinc-400">{meta.blurb}</p>
             </button>
-            {keyError && <p className="mt-3 text-sm text-rose-300">{keyError}</p>}
+          ))}
+        </div>
+        {outcome === 'harden' && (
+          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+            Transitional, not quantum-safe. Delegating keeps your original ECDSA key&apos;s
+            protocol-level authority — a quantum attacker who recovers it could sign a new
+            authorization and remove this guard. For full safety, move funds to a fresh account.
           </div>
         )}
       </Step>
 
       <Step
         index={4}
-        title="Migrate in one click"
-        active={seedSaved && !txHash}
-        done={Boolean(txHash)}
+        title="Generate your post-quantum key"
+        active={isConnected && !seedSaved}
+        done={seedSaved}
       >
+        <PqcKeygen disabled={!isConnected} onChange={setKey} />
+      </Step>
+
+      <Step index={5} title="Execute" active={seedSaved && !txHash} done={Boolean(txHash)}>
         {!status.live ? (
           <div className="space-y-3 rounded-lg border border-white/5 bg-black/20 p-4">
             <p className="text-sm leading-relaxed text-zinc-300">
               Everything above is real and yours — the post-quantum key you generated is valid and
-              independent of your wallet. The one-click on-chain sweep goes live on a public testnet
-              next, then mainnet once the contracts pass their independent audit.
+              independent of your wallet. The on-chain step goes live on a public testnet next, then
+              mainnet once the contracts pass their independent audit.
             </p>
             <Link
               href="/security"
@@ -406,16 +416,26 @@ export function MigrateClient() {
         ) : txHash ? (
           <div className="space-y-3">
             <p className="text-sm text-emerald-300">
-              Migration submitted. Your wallet was swept into your quantum-safe account in a single
-              EIP-7702 transaction.
+              {outcome === 'harden'
+                ? 'Your address is hardened. Sensitive operations now require your post-quantum key.'
+                : 'Migration submitted. Your wallet was swept into a fresh quantum-safe account in a single transaction.'}
             </p>
             {safeAddress && (
               <div className="rounded-lg border border-white/5 bg-black/20 p-3">
                 <div className="text-xs uppercase tracking-wide text-zinc-500">
-                  Quantum-safe account · {maxSecurity ? 'post-quantum only' : 'hybrid'}
+                  {outcome === 'harden'
+                    ? `Hardened address · ${pqcOnly ? 'post-quantum on every op' : 'hybrid'}`
+                    : 'Quantum-safe account · post-quantum only'}
                 </div>
                 <div className="mt-1 break-all font-mono text-xs text-accent">{safeAddress}</div>
               </div>
+            )}
+            {isSweep && installMailbox && contracts?.forwarder && (
+              <p className="text-xs leading-relaxed text-zinc-400">
+                Your old address now forwards to the new account. Future deposits (exchange
+                withdrawals, refunds) land there and anyone can push them on with a flush. This is
+                transitional — see the security model for the re-delegation caveat.
+              </p>
             )}
             {explorer && (
               <a
@@ -430,46 +450,80 @@ export function MigrateClient() {
           </div>
         ) : (
           <div>
-            <p className="text-sm text-zinc-400">
-              Sweep your native balance — and any ERC-20s you list — into a fresh post-quantum
-              account in a single transaction. A small amount of gas is left behind.
-            </p>
-            <label className="mt-4 block text-xs uppercase tracking-wide text-zinc-500">
-              ERC-20 token addresses (optional, comma or newline separated)
-            </label>
-            <textarea
-              value={tokensInput}
-              onChange={(event) => setTokensInput(event.target.value)}
-              placeholder="0x… token addresses to include"
-              spellCheck={false}
-              rows={2}
-              className="mt-2 w-full rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
-            />
-            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
-              <input
-                type="checkbox"
-                checked={maxSecurity}
-                onChange={(event) => setMaxSecurity(event.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-[#7c6cff]"
-              />
-              <span className="text-sm text-zinc-300">
-                <span className="font-medium text-white">Maximum security (post-quantum only)</span>
-                <span className="mt-0.5 block text-xs text-zinc-400">
-                  The new account has no ECDSA key at all — only your post-quantum key can move
-                  funds. Uncheck for a hybrid account that also accepts your wallet&apos;s ECDSA
-                  signature for routine actions.
-                </span>
-              </span>
-            </label>
+            {isSweep ? (
+              <>
+                <p className="text-sm text-zinc-400">
+                  Sweep your native balance — and the tokens listed below — into a fresh
+                  post-quantum account in a single transaction.
+                </p>
+                <label className="mt-4 block text-xs uppercase tracking-wide text-zinc-500">
+                  ERC-20 token addresses (pre-filled from your scan; edit freely)
+                </label>
+                <textarea
+                  value={tokensInput}
+                  onChange={(event) => setTokensInput(event.target.value)}
+                  placeholder="0x… token addresses to include"
+                  spellCheck={false}
+                  rows={3}
+                  className="mt-2 w-full rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                />
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                  <input
+                    type="checkbox"
+                    checked={installMailbox}
+                    disabled={!contracts?.forwarder}
+                    onChange={(event) => setInstallMailbox(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[#7c6cff]"
+                  />
+                  <span className="text-sm text-zinc-300">
+                    <span className="font-medium text-white">Keep my old address as a mailbox</span>
+                    <span className="mt-0.5 block text-xs text-zinc-400">
+                      Exchange whitelists and anyone paying your old address keep working. Incoming
+                      funds auto-forward to your new account instead of resting on the exposed key.
+                      {!contracts?.forwarder && ' (Unavailable until the forwarder is deployed.)'}
+                    </span>
+                  </span>
+                </label>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-zinc-400">
+                  Delegate your address to the PQWeave account implementation in a single
+                  transaction. Your ECDSA key still authorizes routine actions; sensitive ones need
+                  your post-quantum key.
+                </p>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                  <input
+                    type="checkbox"
+                    checked={pqcOnly}
+                    onChange={(event) => setPqcOnly(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[#7c6cff]"
+                  />
+                  <span className="text-sm text-zinc-300">
+                    <span className="font-medium text-white">
+                      Require post-quantum for every operation
+                    </span>
+                    <span className="mt-0.5 block text-xs text-zinc-400">
+                      Stronger, but every transaction then needs your post-quantum key, and each one
+                      consumes a one-time key from your tree.
+                    </span>
+                  </span>
+                </label>
+              </>
+            )}
             <button
-              onClick={migrate}
-              disabled={!pqcRoot || !seedSaved || migrating}
+              onClick={run}
+              disabled={!seedSaved || migrating}
               className="mt-4 rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
             >
-              {migrating ? 'Migrating…' : 'Migrate my wallet (one transaction)'}
+              {migrating
+                ? 'Working…'
+                : outcome === 'harden'
+                  ? 'Harden my address (one transaction)'
+                  : 'Migrate my wallet (one transaction)'}
             </button>
             {!seedSaved && (
-              <p className="mt-3 text-xs text-zinc-500">Save your recovery key in step 3 first.</p>
+              <p className="mt-3 text-xs text-zinc-500">Save your recovery key in step 4 first.</p>
             )}
             {migrateError && <p className="mt-3 text-sm text-rose-300">{migrateError}</p>}
           </div>

@@ -23,7 +23,7 @@ const STATS = [
   {
     value: `${LIVE_CHAIN_COUNT} chains`,
     label:
-      'PQWeave scores quantum exposure live today across EVM, Bitcoin, Litecoin, Solana, Cardano, Cosmos, XRP, Algorand, Stellar, NEAR, and Aptos.',
+      'PQWeave scores quantum exposure live across EVM, Bitcoin, Litecoin, Dogecoin, Solana, Cardano, Cosmos, XRP, Algorand, Stellar, NEAR, Aptos, Tron, Sui, TON, and Polkadot.',
   },
 ];
 
@@ -40,7 +40,7 @@ const FAMILIES = [
     tag: 'Revealed on first spend',
     tone: 'border-amber-500/30 bg-amber-500/5',
     dot: 'bg-amber-400',
-    chains: 'Bitcoin, Litecoin, Cosmos, XRP, Cardano, Aptos',
+    chains: 'Bitcoin, Litecoin, Dogecoin, Cosmos, XRP, Cardano, Aptos, Tron, Sui, TON',
     body: 'The address is a hash of the public key, so the key stays hidden until the first spend reveals it. Unspent, never-reused addresses are still safe.',
     fix: 'Transitional only — move funds to a fresh address; a permanent fix needs a protocol upgrade.',
   },
@@ -48,7 +48,7 @@ const FAMILIES = [
     tag: 'Address is the key',
     tone: 'border-zinc-500/30 bg-white/5',
     dot: 'bg-zinc-400',
-    chains: 'Solana, Algorand, Stellar, NEAR',
+    chains: 'Solana, Algorand, Stellar, NEAR, Polkadot',
     body: 'The public key is the address, so it is exposed the moment the account exists — before any transaction.',
     fix: 'No application-layer fix — protection requires a protocol-level post-quantum upgrade.',
   },

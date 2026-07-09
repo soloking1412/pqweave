@@ -23,6 +23,12 @@ export function SiteHeader() {
             Migrate
           </Link>
           <Link
+            href="/start"
+            className="hidden rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white md:block"
+          >
+            Start safe
+          </Link>
+          <Link
             href="/exposure"
             className="hidden rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white md:block"
           >

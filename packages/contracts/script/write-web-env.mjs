@@ -40,11 +40,15 @@ const find = (re) => deploys.find((t) => re.test(t.contractName ?? ''))?.contrac
 const verifier = find(/Verifier$/);
 const factory = find(/Factory$/);
 const batchExecutor = find(/BatchExecutor$/);
+const forwarder = find(/Forwarder$/);
+const accountImpl = find(/Account$/);
 
 const missing = [
   ['verifier', verifier],
   ['factory', factory],
   ['batchExecutor', batchExecutor],
+  ['forwarder', forwarder],
+  ['accountImpl', accountImpl],
 ].filter(([, v]) => !v);
 if (missing.length) {
   console.error(`Could not find addresses for: ${missing.map(([k]) => k).join(', ')}`);
@@ -56,6 +60,8 @@ const updates = {
   NEXT_PUBLIC_VERIFIER_ADDRESS: verifier,
   NEXT_PUBLIC_FACTORY_ADDRESS: factory,
   NEXT_PUBLIC_BATCH_EXECUTOR_ADDRESS: batchExecutor,
+  NEXT_PUBLIC_FORWARDER_ADDRESS: forwarder,
+  NEXT_PUBLIC_ACCOUNT_IMPL_ADDRESS: accountImpl,
   NEXT_PUBLIC_DEPLOYMENT_STAGE: stage,
 };
 

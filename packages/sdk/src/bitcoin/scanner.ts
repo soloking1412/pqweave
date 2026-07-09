@@ -73,6 +73,16 @@ export function assessUtxoRisk(exposure: UtxoExposureResult, symbol: string): Ut
       score = 35;
       reasons.push('No balance at risk now, but the key stays exposed for any future deposit.');
     }
+    if (exposure.type === 'p2tr' && exposure.balanceSats > 0n) {
+      reasons.push(
+        'Move to a hash-based address type (native SegWit, bc1q…) — a fresh Taproot address would re-expose the key immediately.',
+      );
+    }
+    if (exposure.balanceSats > 0n) {
+      reasons.push(
+        'Moving funds is transitional, not quantum-safe: the spend itself reveals the key in the mempool, and every later spend re-exposes it.',
+      );
+    }
   }
 
   return {

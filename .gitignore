@@ -20,3 +20,6 @@ pnpm-debug.log*
 
 broadcast/**/dryRun/
 broadcast/**/*-latest.json
+
+# Rust / Solana build artifacts
+target/

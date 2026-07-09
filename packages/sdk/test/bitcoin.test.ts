@@ -98,6 +98,23 @@ describe('assessUtxoRisk', () => {
     expect(result.level).toBe('critical');
     expect(result.balance).toBe('5');
     expect(result.symbol).toBe('BTC');
+    expect(result.reasons.join(' ')).toContain('transitional, not quantum-safe');
+  });
+
+  it('warns a funded Taproot address away from fresh Taproot addresses', () => {
+    const result = assessUtxoRisk(
+      assessUtxoExposure(
+        'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5ck7d3k',
+        BITCOIN,
+        stats({ funded_txo_sum: 200_000_000 }),
+      ),
+      'BTC',
+    );
+    expect(result.type).toBe('p2tr');
+    expect(result.exposed).toBe(true);
+    const text = result.reasons.join(' ');
+    expect(text).toContain('hash-based address type');
+    expect(text).toContain('re-expose');
   });
 
   it('rates an unspent funded address as safe', () => {

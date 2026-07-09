@@ -15,8 +15,9 @@ export default function MigratePage() {
         Migrate to post-quantum security
       </h1>
       <p className="mt-3 text-zinc-400">
-        Four steps to a quantum-safe wallet. Your keys stay in your wallet; PQWeave adds the
-        post-quantum account logic around them.
+        Pick the path that fits your wallet: move to a fresh quantum-safe account, keep your address
+        as a forwarding mailbox, or harden it in place. Your keys stay in your wallet; PQWeave adds
+        the post-quantum account logic around them.
       </p>
       <div className="mt-8">
         <Providers>

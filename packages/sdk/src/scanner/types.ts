@@ -46,9 +46,21 @@ export interface ExposureResult {
 
 export type RiskLevel = 'safe' | 'low' | 'medium' | 'high' | 'critical';
 
+/** A non-zero balance in a known ERC-20, read during the scan. */
+export interface TokenHolding {
+  token: Address;
+  symbol: string;
+  decimals: number;
+  amount: bigint;
+  /** USD-pegged stablecoin — unit count approximates dollar value at risk. */
+  stable: boolean;
+}
+
 export interface RiskAssessment extends ExposureResult {
   chain: ChainKey;
   nativeBalanceWei: bigint;
+  /** Non-zero balances in well-known ERC-20s (USDC, USDT, DAI, WETH, WBTC…). */
+  tokenHoldings: TokenHolding[];
   /** 0–100, higher means more exposed to a quantum key-recovery attack. */
   score: number;
   level: RiskLevel;

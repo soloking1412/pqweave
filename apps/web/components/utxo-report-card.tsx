@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { MigrationNote } from '@/components/migration-note';
 import { RISK_STYLES, shortenAddress } from '@/lib/risk';
 import type { UtxoScanReport } from '@/lib/types';
@@ -63,6 +64,15 @@ export function UtxoReportCard({ report }: { report: UtxoScanReport }) {
       </ul>
 
       <MigrationNote report={report} />
+
+      {report.exposed && Number(report.balance) > 0 && (
+        <Link
+          href="/protect/bitcoin"
+          className="mt-4 inline-flex rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+        >
+          Reduce exposure (transitional) →
+        </Link>
+      )}
     </div>
   );
 }

@@ -161,6 +161,37 @@ export function verifyHashSig(root: Hex, message: Hex, signature: Hex): boolean 
   return node === root;
 }
 
+/** The components of a hash signature. */
+export interface HashSigParts {
+  leafIndex: number;
+  /** 512 one-time public-key elements. */
+  publicKey: Hex[];
+  /** 256 revealed secrets (one per message bit). */
+  signature: Hex[];
+  /** Merkle authentication path. */
+  proof: Hex[];
+}
+
+/**
+ * Decode an ABI-encoded hash signature into its raw components — used to
+ * re-serialize it for a non-EVM verifier (e.g. the Solana vault) that expects a
+ * flat `publicKey || signature || proof` layout rather than ABI encoding.
+ */
+export function decodeHashSig(signature: Hex): HashSigParts {
+  const [leafIndex, publicKey, sig, proof] = decodeAbiParameters(SIGNATURE_ABI, signature) as [
+    bigint,
+    readonly Hex[],
+    readonly Hex[],
+    readonly Hex[],
+  ];
+  return {
+    leafIndex: Number(leafIndex),
+    publicKey: [...publicKey],
+    signature: [...sig],
+    proof: [...proof],
+  };
+}
+
 /** Serializable state of a {@link HashSigSigner}. Contains the secret seed. */
 export interface HashSigSignerState {
   masterSeed: Hex;

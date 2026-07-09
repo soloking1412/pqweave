@@ -65,16 +65,48 @@
       "types": "./dist/aptos/index.d.ts",
       "import": "./dist/aptos/index.js"
     },
+    "./tron": {
+      "types": "./dist/tron/index.d.ts",
+      "import": "./dist/tron/index.js"
+    },
+    "./sui": {
+      "types": "./dist/sui/index.d.ts",
+      "import": "./dist/sui/index.js"
+    },
+    "./ton": {
+      "types": "./dist/ton/index.d.ts",
+      "import": "./dist/ton/index.js"
+    },
+    "./polkadot": {
+      "types": "./dist/polkadot/index.d.ts",
+      "import": "./dist/polkadot/index.js"
+    },
+    "./dogecoin": {
+      "types": "./dist/dogecoin/index.d.ts",
+      "import": "./dist/dogecoin/index.js"
+    },
+    "./solana-vault": {
+      "types": "./dist/solana-vault/index.d.ts",
+      "import": "./dist/solana-vault/index.js"
+    },
     "./chains": {
       "types": "./dist/chains/index.d.ts",
       "import": "./dist/chains/index.js"
+    },
+    "./forwarder": {
+      "types": "./dist/forwarder/index.d.ts",
+      "import": "./dist/forwarder/index.js"
+    },
+    "./userop": {
+      "types": "./dist/userop/index.d.ts",
+      "import": "./dist/userop/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "NODE_OPTIONS=--max-old-space-size=6144 tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",

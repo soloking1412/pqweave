@@ -2,6 +2,16 @@ import type { UtxoAddressType, UtxoNetworkId } from '@pqweave/sdk/bitcoin';
 import type { ChainKey } from '@pqweave/sdk/chains';
 import type { RiskLevel } from '@pqweave/sdk/scanner';
 
+/** A non-zero known-token balance included in an EVM scan. */
+export interface TokenHoldingReport {
+  /** ERC-20 contract address — lets the migrate flow pre-fill its sweep list. */
+  token: string;
+  symbol: string;
+  decimals: number;
+  amountWei: string;
+  amountFormatted: string;
+}
+
 /** JSON-serializable EVM scan result returned by /api/scan. */
 export interface ScanReport {
   kind: 'evm';
@@ -16,9 +26,27 @@ export interface ScanReport {
   publicKey: string | null;
   nativeBalanceWei: string;
   nativeBalanceFormatted: string;
+  tokenHoldings: TokenHoldingReport[];
   score: number;
   level: RiskLevel;
   reasons: string[];
+}
+
+/** One chain's outcome within a multi-chain EVM scan. */
+export type MultiChainScanEntry =
+  | { chain: ChainKey; ok: true; report: ScanReport }
+  | { chain: ChainKey; ok: false; error: string };
+
+/** JSON-serializable multi-chain EVM scan (`chain=evm-all`) returned by /api/scan. */
+export interface MultiChainScanReport {
+  kind: 'evm-multi';
+  address: string;
+  results: MultiChainScanEntry[];
+  /** Worst score/level across the chains that scanned successfully. */
+  score: number;
+  level: RiskLevel;
+  /** Chains where the public key is exposed. */
+  exposedChains: ChainKey[];
 }
 
 /** JSON-serializable UTXO (Bitcoin, Litecoin, …) scan result returned by /api/scan. */
@@ -55,4 +83,4 @@ export interface AccountScanReport {
   reasons: string[];
 }
 
-export type AnyScanReport = ScanReport | UtxoScanReport | AccountScanReport;
+export type AnyScanReport = ScanReport | UtxoScanReport | AccountScanReport | MultiChainScanReport;

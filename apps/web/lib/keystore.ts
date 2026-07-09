@@ -7,7 +7,7 @@ import { bytesToHex, type Hex, hexToBytes } from 'viem';
  * stored alongside (it is not secret) for convenient re-import.
  */
 export interface EncryptedKeystore {
-  version: 1;
+  version: 1 | 2;
   kdf: 'PBKDF2';
   hash: 'SHA-256';
   iterations: number;
@@ -16,6 +16,8 @@ export interface EncryptedKeystore {
   iv: Hex;
   ciphertext: Hex;
   publicKeyRoot: Hex;
+  /** One-time-key tree size (v2+). Needed to restore a signer from the seed. */
+  treeSize?: number;
   createdAt: string;
 }
 
@@ -54,6 +56,7 @@ export async function encryptSeed(
   seed: Hex,
   password: string,
   publicKeyRoot: Hex,
+  treeSize?: number,
 ): Promise<EncryptedKeystore> {
   const salt = toBuffer(crypto.getRandomValues(new Uint8Array(16)));
   const iv = toBuffer(crypto.getRandomValues(new Uint8Array(12)));
@@ -63,7 +66,7 @@ export async function encryptSeed(
   );
 
   return {
-    version: 1,
+    version: 2,
     kdf: 'PBKDF2',
     hash: 'SHA-256',
     iterations: PBKDF2_ITERATIONS,
@@ -72,6 +75,7 @@ export async function encryptSeed(
     iv: bytesToHex(iv),
     ciphertext: bytesToHex(ciphertext),
     publicKeyRoot,
+    ...(treeSize !== undefined ? { treeSize } : {}),
     createdAt: new Date().toISOString(),
   };
 }

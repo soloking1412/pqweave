@@ -124,6 +124,63 @@ export function predictAccountAddress(
   });
 }
 
+export interface HardenInPlaceParams {
+  /** Canonical PQWeaveAccount implementation (EIP-7702 authorization target). */
+  accountImpl: Address;
+  /** The EOA being hardened — keeps its ECDSA key as the routine authority. */
+  owner: Address;
+  /** 32-byte Merkle root of the post-quantum key. */
+  pqcRoot: Hex;
+  verifier: Address;
+  valueThreshold: bigint;
+  /** Require a post-quantum signature for every operation, not just sensitive ones. */
+  pqcOnly?: boolean;
+}
+
+export interface HardenInPlace {
+  /** EIP-7702 authorization target. */
+  delegate: Address;
+  /** Calldata the EOA sends to itself in the same type-4 transaction. */
+  data: Hex;
+}
+
+/**
+ * Assemble the one-transaction harden-in-place: the EOA delegates to the
+ * canonical PQWeaveAccount and initializes itself (optionally flipping pqcOnly)
+ * via a self-called executeBatch. The address keeps working as before, with a
+ * post-quantum gate on sensitive operations.
+ *
+ * Honesty note: this is transitional, not quantum-safe — the underlying ECDSA
+ * key can always sign a new 7702 authorization and remove the delegated code.
+ * Full safety requires sweeping value to a PQC-sole account.
+ */
+export function buildHardenInPlace(params: HardenInPlaceParams): HardenInPlace {
+  const self = params.owner;
+  const calls: AccountCall[] = [
+    {
+      dest: self,
+      value: 0n,
+      data: encodeFunctionData({
+        abi: pqWeaveAccountAbi,
+        functionName: 'initialize',
+        args: [params.owner, params.pqcRoot, params.verifier, params.valueThreshold],
+      }),
+    },
+  ];
+  if (params.pqcOnly) {
+    calls.push({
+      dest: self,
+      value: 0n,
+      data: encodeFunctionData({
+        abi: pqWeaveAccountAbi,
+        functionName: 'setPqcOnly',
+        args: [true],
+      }),
+    });
+  }
+  return { delegate: params.accountImpl, data: encodeExecuteBatch(calls) };
+}
+
 export interface DelegationAuthorization {
   contractAddress: Address;
   chainId: number;

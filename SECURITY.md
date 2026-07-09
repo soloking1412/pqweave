@@ -64,9 +64,28 @@ The web migration flow defaults to this mode.
 
 - **No audit / no battle-testing.** Custom account + custom verifier is exactly
   where implementation bugs live. This cannot be fixed by writing more code.
-- **EIP-7702 "harden in place" is transitional.** Delegating an existing EOA keeps
-  the original ECDSA key's protocol-level authority. Real safety requires
-  _migrating_ funds to a sole-authority account, not hardening the old address.
+- **EIP-7702 "harden in place" is transitional — the re-delegation attack.**
+  A 7702 delegation is always revocable by the underlying ECDSA key: a new
+  type-4 authorization signed by that key replaces the delegated code, no
+  matter what the delegated contract says. So a quantum attacker who recovers
+  the ECDSA key can strip the post-quantum guard from a hardened address and
+  drain it. No application code can close this; it is protocol-level. Real
+  safety requires _migrating_ funds to a sole-authority account, not hardening
+  the old address.
+- **The Forwarder ("mailbox") shrinks the exposure window; it does not close
+  it.** Keeping an old address as a receiving point means incoming funds sit on
+  a quantum-exposed key until the next `flush()` — minutes instead of forever,
+  but not zero. The same re-delegation caveat applies to the mailbox itself.
+  Its one PQC-gated control (`setDestination`) means the ECDSA key cannot
+  quietly retarget forwarding, but a re-delegation can remove the mailbox
+  entirely. The mailbox deliberately has no PQC root rotation in v1: the
+  destination change is rare (64 one-time leaves are ample), and the ECDSA
+  re-install path remains as the fallback — consistent with the mailbox's
+  transitional trust model.
+- **Exchanges and contract addresses.** Some exchanges refuse withdrawals to
+  smart-contract addresses, or send them with a fixed gas stipend. The
+  Forwarder's `receive()` is deliberately empty so stipend-limited transfers
+  succeed, but users should always test with a small withdrawal first.
 - **Hybrid mode is defense-in-depth, not absolute.** Sub-threshold operations are
   still ECDSA-authorized. Use `pqcOnly` or sole authority for full coverage.
 - **Timeline is a projection.** "Q-Day" estimates (2029–2030) are forecasts, not

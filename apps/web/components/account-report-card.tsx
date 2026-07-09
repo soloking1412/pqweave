@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { MigrationNote } from '@/components/migration-note';
 import { RISK_STYLES, shortenAddress } from '@/lib/risk';
 import type { AccountScanReport } from '@/lib/types';
@@ -52,6 +53,15 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
       </ul>
 
       <MigrationNote report={report} />
+
+      {report.chain === 'Solana' && (
+        <Link
+          href="/protect/solana"
+          className="mt-4 inline-flex rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
+        >
+          What can actually be done on Solana →
+        </Link>
+      )}
     </div>
   );
 }

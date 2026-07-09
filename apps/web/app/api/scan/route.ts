@@ -1,19 +1,38 @@
-import { formatEther, getAddress, isAddress } from 'viem';
+import { formatEther, formatUnits, getAddress, isAddress } from 'viem';
 import { isAlgorandAddress, scanAlgorandAddress } from '@pqweave/sdk/algorand';
 import { isAptosAddress, scanAptosAddress } from '@pqweave/sdk/aptos';
 import { BITCOIN, isUtxoAddress, LITECOIN, scanUtxoAddress } from '@pqweave/sdk/bitcoin';
 import { isCardanoAddress, scanCardanoAddress } from '@pqweave/sdk/cardano';
-import { isChainKey } from '@pqweave/sdk/chains';
+import { isChainKey, MAINNET_CHAIN_KEYS } from '@pqweave/sdk/chains';
 import { isCosmosAddress, scanCosmosAddress } from '@pqweave/sdk/cosmos';
+import { isDogecoinAddress, scanDogecoinAddress } from '@pqweave/sdk/dogecoin';
 import { isNearAddress, scanNearAddress } from '@pqweave/sdk/near';
-import { scanAddress } from '@pqweave/sdk/scanner';
+import { isPolkadotAddress, scanPolkadotAddress } from '@pqweave/sdk/polkadot';
+import { scanAddress, scanAddressAcrossChains, type RiskAssessment } from '@pqweave/sdk/scanner';
 import { isSolanaAddress, scanSolanaAddress } from '@pqweave/sdk/solana';
 import { isStellarAddress, scanStellarAddress } from '@pqweave/sdk/stellar';
+import { isSuiAddress, scanSuiAddress } from '@pqweave/sdk/sui';
+import { isTonAddress, scanTonAddress } from '@pqweave/sdk/ton';
+import { isTronAddress, scanTronAddress } from '@pqweave/sdk/tron';
 import { isXrpAddress, scanXrpAddress } from '@pqweave/sdk/xrp';
 import { getKnownPQWeave } from '@/lib/contracts';
-import type { AccountScanReport, ScanReport, UtxoScanReport } from '@/lib/types';
+import type {
+  AccountScanReport,
+  MultiChainScanEntry,
+  MultiChainScanReport,
+  ScanReport,
+  UtxoScanReport,
+} from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+
+/** Reject if a scan takes too long, so a slow RPC/indexer can't hang the request. */
+function withTimeout<T>(promise: Promise<T>, ms = 15_000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('scan timed out')), ms)),
+  ]);
+}
 
 type AccountFields = Omit<AccountScanReport, 'kind' | 'addressIsKey'>;
 
@@ -161,12 +180,177 @@ const accountScanners: Record<string, AccountScanner> = {
       };
     },
   },
+  tron: {
+    valid: isTronAddress,
+    addressIsKey: false,
+    scan: async (a) => {
+      const r = await scanTronAddress(a);
+      return {
+        chain: r.chain,
+        symbol: r.symbol,
+        address: r.address,
+        exposed: r.exposed,
+        balance: r.balance,
+        score: r.score,
+        level: r.level,
+        reasons: r.reasons,
+      };
+    },
+  },
+  sui: {
+    valid: isSuiAddress,
+    addressIsKey: false,
+    scan: async (a) => {
+      const r = await scanSuiAddress(a);
+      return {
+        chain: r.chain,
+        symbol: r.symbol,
+        address: r.address,
+        exposed: r.exposed,
+        balance: r.balance,
+        score: r.score,
+        level: r.level,
+        reasons: r.reasons,
+      };
+    },
+  },
+  ton: {
+    valid: isTonAddress,
+    addressIsKey: false,
+    scan: async (a) => {
+      const r = await scanTonAddress(a);
+      return {
+        chain: r.chain,
+        symbol: r.symbol,
+        address: r.address,
+        exposed: r.exposed,
+        balance: r.balance,
+        score: r.score,
+        level: r.level,
+        reasons: r.reasons,
+      };
+    },
+  },
+  polkadot: {
+    valid: isPolkadotAddress,
+    addressIsKey: true,
+    scan: async (a) => {
+      const r = await scanPolkadotAddress(a);
+      return {
+        chain: r.chain,
+        symbol: r.symbol,
+        address: r.address,
+        exposed: r.exposed,
+        balance: r.balance,
+        score: r.score,
+        level: r.level,
+        reasons: r.reasons,
+      };
+    },
+  },
+  dogecoin: {
+    valid: isDogecoinAddress,
+    addressIsKey: false,
+    scan: async (a) => {
+      const r = await scanDogecoinAddress(a);
+      return {
+        chain: r.chain,
+        symbol: r.symbol,
+        address: r.address,
+        exposed: r.exposed,
+        balance: r.balance,
+        score: r.score,
+        level: r.level,
+        reasons: r.reasons,
+      };
+    },
+  },
 };
+
+function toEvmReport(assessment: RiskAssessment): ScanReport {
+  return {
+    kind: 'evm',
+    address: assessment.address,
+    chain: assessment.chain,
+    exposed: assessment.exposed,
+    nonce: assessment.nonce,
+    isContract: assessment.isContract,
+    delegatedTo: assessment.delegatedTo,
+    hardened: assessment.hardened,
+    pqweaveProtected: assessment.pqweaveProtected,
+    publicKey: assessment.publicKey,
+    nativeBalanceWei: assessment.nativeBalanceWei.toString(),
+    nativeBalanceFormatted: formatEther(assessment.nativeBalanceWei),
+    tokenHoldings: assessment.tokenHoldings.map((holding) => ({
+      token: holding.token,
+      symbol: holding.symbol,
+      decimals: holding.decimals,
+      amountWei: holding.amount.toString(),
+      amountFormatted: formatUnits(holding.amount, holding.decimals),
+    })),
+    score: assessment.score,
+    level: assessment.level,
+    reasons: assessment.reasons,
+  };
+}
 
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
   const address = (searchParams.get('address') ?? '').trim();
   const chain = searchParams.get('chain') ?? 'ethereum';
+
+  if (chain === 'evm-all') {
+    if (!isAddress(address)) {
+      return Response.json({ error: 'Enter a valid EVM address.' }, { status: 400 });
+    }
+    try {
+      const known = getKnownPQWeave();
+      // Per-chain 12s deadlines bound the aggregate; 18s outer cap is a safety
+      // net that still beats the client's 20s abort.
+      const outcomes = await withTimeout(
+        scanAddressAcrossChains(getAddress(address), MAINNET_CHAIN_KEYS, {
+          knownImplementations: known.implementations,
+          knownVerifiers: known.verifiers,
+        }),
+        18_000,
+      );
+      const results: MultiChainScanEntry[] = outcomes.map((outcome) =>
+        outcome.ok
+          ? { chain: outcome.chain, ok: true, report: toEvmReport(outcome.assessment!) }
+          : {
+              chain: outcome.chain,
+              ok: false,
+              error: 'Scan failed — the RPC endpoint may be unavailable.',
+            },
+      );
+      const succeeded = results.filter(
+        (entry): entry is Extract<MultiChainScanEntry, { ok: true }> => entry.ok,
+      );
+      if (succeeded.length === 0) {
+        return Response.json(
+          { error: 'Every chain scan failed — RPC endpoints may be unavailable. Try again.' },
+          { status: 502 },
+        );
+      }
+      const worst = succeeded.reduce((max, entry) =>
+        entry.report.score > max.report.score ? entry : max,
+      );
+      const report: MultiChainScanReport = {
+        kind: 'evm-multi',
+        address: getAddress(address),
+        results,
+        score: worst.report.score,
+        level: worst.report.level,
+        exposedChains: succeeded.filter((entry) => entry.report.exposed).map((e) => e.chain),
+      };
+      return Response.json(report);
+    } catch {
+      return Response.json(
+        { error: 'Multi-chain scan failed or timed out. Try again.' },
+        { status: 502 },
+      );
+    }
+  }
 
   if (chain === 'bitcoin' || chain === 'litecoin') {
     const network = chain === 'litecoin' ? LITECOIN : BITCOIN;
@@ -174,7 +358,7 @@ export async function GET(request: Request): Promise<Response> {
       return Response.json({ error: `Enter a valid ${network.name} address.` }, { status: 400 });
     }
     try {
-      const a = await scanUtxoAddress(address, network);
+      const a = await withTimeout(scanUtxoAddress(address, network));
       const report: UtxoScanReport = {
         kind: 'utxo',
         network: a.network,
@@ -207,7 +391,7 @@ export async function GET(request: Request): Promise<Response> {
       );
     }
     try {
-      const fields = await accountScanner.scan(address);
+      const fields = await withTimeout(accountScanner.scan(address));
       const report: AccountScanReport = {
         kind: 'account',
         addressIsKey: accountScanner.addressIsKey,
@@ -231,28 +415,13 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const known = getKnownPQWeave();
-    const assessment = await scanAddress(chain, getAddress(address), {
-      knownImplementations: known.implementations,
-      knownVerifiers: known.verifiers,
-    });
-    const report: ScanReport = {
-      kind: 'evm',
-      address: assessment.address,
-      chain: assessment.chain,
-      exposed: assessment.exposed,
-      nonce: assessment.nonce,
-      isContract: assessment.isContract,
-      delegatedTo: assessment.delegatedTo,
-      hardened: assessment.hardened,
-      pqweaveProtected: assessment.pqweaveProtected,
-      publicKey: assessment.publicKey,
-      nativeBalanceWei: assessment.nativeBalanceWei.toString(),
-      nativeBalanceFormatted: formatEther(assessment.nativeBalanceWei),
-      score: assessment.score,
-      level: assessment.level,
-      reasons: assessment.reasons,
-    };
-    return Response.json(report);
+    const assessment = await withTimeout(
+      scanAddress(chain, getAddress(address), {
+        knownImplementations: known.implementations,
+        knownVerifiers: known.verifiers,
+      }),
+    );
+    return Response.json(toEvmReport(assessment));
   } catch {
     return Response.json(
       {

@@ -46,6 +46,18 @@ export function ScanReportCard({ report }: { report: ScanReport }) {
           })}{' '}
           {nativeSymbol(report.chain)}
         </Field>
+        {report.tokenHoldings.length > 0 && (
+          <Field label="Tokens">
+            {report.tokenHoldings
+              .map(
+                (holding) =>
+                  `${Number(holding.amountFormatted).toLocaleString(undefined, {
+                    maximumFractionDigits: 4,
+                  })} ${holding.symbol}`,
+              )
+              .join(', ')}
+          </Field>
+        )}
         <Field label="Account type">{report.isContract ? 'Contract' : 'EOA'}</Field>
         <Field label="EIP-7702 delegation">
           {report.delegatedTo ? shortenAddress(report.delegatedTo) : 'None'}

@@ -202,4 +202,40 @@ contract PQWeaveAccountTest is Test {
         vm.expectRevert(PQWeaveAccount.InvalidVerifier.selector);
         a.initialize(owner, abi.encodePacked(_pqcRoot()), IPQCVerifier(address(0)), THRESHOLD);
     }
+
+    function test_initializeRejectsThirdParties() public {
+        // A delegated-but-uninitialized account must not be claimable by anyone
+        // other than its deployer or itself (7702 self-call).
+        PQWeaveAccount a = new PQWeaveAccount(address(this));
+        address attacker = makeAddr("attacker");
+        vm.prank(attacker);
+        vm.expectRevert(PQWeaveAccount.NotAuthorized.selector);
+        a.initialize(attacker, abi.encodePacked(_pqcRoot()), verifier, THRESHOLD);
+    }
+
+    function test_initializeAllowsSelfCallUnderDelegation() public {
+        uint256 eoaPk = 0xD00D;
+        address eoa = vm.addr(eoaPk);
+        PQWeaveAccount impl = new PQWeaveAccount(address(this));
+
+        vm.signAndAttachDelegation(address(impl), eoaPk);
+        vm.prank(eoa); // the EOA calling itself: msg.sender == address(this)
+        PQWeaveAccount(payable(eoa)).initialize(
+            eoa, abi.encodePacked(_pqcRoot()), verifier, THRESHOLD
+        );
+        assertEq(PQWeaveAccount(payable(eoa)).owner(), eoa);
+    }
+
+    function test_rotatePqcKeyRejectsBadLength() public {
+        vm.prank(address(account));
+        vm.expectRevert(PQWeaveAccount.InvalidPqcKey.selector);
+        account.rotatePqcKey(hex"1234");
+    }
+
+    function test_rotatePqcKeyAcceptsNewRoot() public {
+        bytes32 newRoot = keccak256("rotated-root");
+        vm.prank(address(account));
+        account.rotatePqcKey(abi.encodePacked(newRoot));
+        assertEq(account.pqcPublicKey(), abi.encodePacked(newRoot));
+    }
 }

@@ -4,6 +4,10 @@ export interface PQWeaveContracts {
   verifier: Address;
   factory: Address;
   batchExecutor: Address;
+  /** Canonical mailbox forwarder (EIP-7702 target); null until deployed. */
+  forwarder: Address | null;
+  /** Canonical account implementation for harden-in-place; null until deployed. */
+  accountImpl: Address | null;
 }
 
 function readAddress(value: string | undefined): Address | null {
@@ -20,7 +24,13 @@ export function getContracts(): PQWeaveContracts | null {
   const factory = readAddress(process.env.NEXT_PUBLIC_FACTORY_ADDRESS);
   const batchExecutor = readAddress(process.env.NEXT_PUBLIC_BATCH_EXECUTOR_ADDRESS);
   if (!verifier || !factory || !batchExecutor) return null;
-  return { verifier, factory, batchExecutor };
+  return {
+    verifier,
+    factory,
+    batchExecutor,
+    forwarder: readAddress(process.env.NEXT_PUBLIC_FORWARDER_ADDRESS),
+    accountImpl: readAddress(process.env.NEXT_PUBLIC_ACCOUNT_IMPL_ADDRESS),
+  };
 }
 
 export interface KnownPQWeave {
@@ -38,7 +48,10 @@ export interface KnownPQWeave {
 export function getKnownPQWeave(): KnownPQWeave {
   const contracts = getContracts();
   if (!contracts) return { implementations: [], verifiers: [] };
-  return { implementations: [contracts.batchExecutor], verifiers: [contracts.verifier] };
+  const implementations = [contracts.batchExecutor];
+  if (contracts.forwarder) implementations.push(contracts.forwarder);
+  if (contracts.accountImpl) implementations.push(contracts.accountImpl);
+  return { implementations, verifiers: [contracts.verifier] };
 }
 
 const EXPLORERS: Record<number, string> = {

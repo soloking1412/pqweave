@@ -25,12 +25,12 @@ export const DIRECTORY_CHAINS: DirectoryChain[] = [
   { name: 'Stellar', ticker: 'XLM', status: 'live', family: 'Ed25519', accent: '#dce2ea' },
   { name: 'NEAR', ticker: 'NEAR', status: 'live', family: 'Ed25519', accent: '#36f097' },
   { name: 'Aptos', ticker: 'APT', status: 'live', family: 'Move', accent: '#3ad6b0' },
-  { name: 'Sui', ticker: 'SUI', status: 'soon', family: 'Move', accent: '#4da2ff' },
-  { name: 'Tron', ticker: 'TRX', status: 'soon', family: 'Account', accent: '#ff5b5b' },
-  { name: 'Polkadot', ticker: 'DOT', status: 'soon', family: 'sr25519', accent: '#e6007a' },
-  { name: 'Dogecoin', ticker: 'DOGE', status: 'soon', family: 'UTXO', accent: '#c2a633' },
+  { name: 'Tron', ticker: 'TRX', status: 'live', family: 'Account', accent: '#ff5b5b' },
+  { name: 'Sui', ticker: 'SUI', status: 'live', family: 'Move', accent: '#4da2ff' },
+  { name: 'TON', ticker: 'TON', status: 'live', family: 'Account', accent: '#4aa8ef' },
+  { name: 'Dogecoin', ticker: 'DOGE', status: 'live', family: 'UTXO', accent: '#c2a633' },
+  { name: 'Polkadot', ticker: 'DOT', status: 'live', family: 'sr25519', accent: '#e6007a' },
   { name: 'Bitcoin Cash', ticker: 'BCH', status: 'soon', family: 'UTXO', accent: '#0ac18e' },
-  { name: 'TON', ticker: 'TON', status: 'soon', family: 'Account', accent: '#4aa8ef' },
 ];
 
 export const LIVE_CHAIN_COUNT = DIRECTORY_CHAINS.filter((c) => c.status === 'live').length;

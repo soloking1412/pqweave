@@ -22,6 +22,7 @@ export function nativeSymbol(chain: ChainKey): string {
 
 export type ScanChain =
   | ChainKey
+  | 'evm-all'
   | 'bitcoin'
   | 'litecoin'
   | 'solana'
@@ -31,7 +32,12 @@ export type ScanChain =
   | 'algorand'
   | 'stellar'
   | 'near'
-  | 'aptos';
+  | 'aptos'
+  | 'tron'
+  | 'sui'
+  | 'ton'
+  | 'polkadot'
+  | 'dogecoin';
 
 export interface ScanOption {
   key: ScanChain;
@@ -39,6 +45,7 @@ export interface ScanOption {
 }
 
 export const SCAN_OPTIONS: ScanOption[] = [
+  { key: 'evm-all', label: 'All EVM chains' },
   ...CHAIN_OPTIONS.map((option) => ({ key: option.key, label: option.label })),
   { key: 'bitcoin', label: 'Bitcoin' },
   { key: 'litecoin', label: 'Litecoin' },
@@ -50,4 +57,9 @@ export const SCAN_OPTIONS: ScanOption[] = [
   { key: 'stellar', label: 'Stellar' },
   { key: 'near', label: 'NEAR' },
   { key: 'aptos', label: 'Aptos' },
+  { key: 'tron', label: 'Tron' },
+  { key: 'sui', label: 'Sui' },
+  { key: 'ton', label: 'TON' },
+  { key: 'polkadot', label: 'Polkadot' },
+  { key: 'dogecoin', label: 'Dogecoin' },
 ];

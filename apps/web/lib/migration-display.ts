@@ -7,7 +7,7 @@ import type { AnyScanReport } from './types';
 
 export function migrationFor(report: AnyScanReport): MigrationCapability {
   let model: ExposureModel;
-  if (report.kind === 'evm') model = 'evm';
+  if (report.kind === 'evm' || report.kind === 'evm-multi') model = 'evm';
   else if (report.kind === 'utxo') model = 'utxo';
   else model = report.addressIsKey ? 'address-is-key' : 'account-first-spend';
   return migrationCapability(model);

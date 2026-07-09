@@ -9,6 +9,7 @@ export const pqWeaveAccountAbi = parseAbi([
   'function rotatePqcKey(bytes newPublicKey)',
   'function setVerifier(address newVerifier)',
   'function setValueThreshold(uint256 newThreshold)',
+  'function setPqcOnly(bool enabled)',
   'function owner() view returns (address)',
   'function valueThreshold() view returns (uint256)',
   'function pqcPublicKey() view returns (bytes)',

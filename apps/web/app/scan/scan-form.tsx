@@ -7,11 +7,17 @@ import { isAptosAddress } from '@pqweave/sdk/aptos';
 import { BITCOIN, isUtxoAddress, LITECOIN } from '@pqweave/sdk/bitcoin';
 import { isCardanoAddress } from '@pqweave/sdk/cardano';
 import { isCosmosAddress } from '@pqweave/sdk/cosmos';
+import { isDogecoinAddress } from '@pqweave/sdk/dogecoin';
 import { isNearAddress } from '@pqweave/sdk/near';
+import { isPolkadotAddress } from '@pqweave/sdk/polkadot';
 import { isSolanaAddress } from '@pqweave/sdk/solana';
 import { isStellarAddress } from '@pqweave/sdk/stellar';
+import { isSuiAddress } from '@pqweave/sdk/sui';
+import { isTonAddress } from '@pqweave/sdk/ton';
+import { isTronAddress } from '@pqweave/sdk/tron';
 import { isXrpAddress } from '@pqweave/sdk/xrp';
 import { AccountReportCard } from '@/components/account-report-card';
+import { MultiChainReportCard } from '@/components/multi-chain-report-card';
 import { ScanReportCard } from '@/components/scan-report-card';
 import { UtxoReportCard } from '@/components/utxo-report-card';
 import { type ScanChain, SCAN_OPTIONS } from '@/lib/chains';
@@ -28,10 +34,16 @@ function isValidAddress(chain: ScanChain, address: string): boolean {
   if (chain === 'stellar') return isStellarAddress(address);
   if (chain === 'near') return isNearAddress(address);
   if (chain === 'aptos') return isAptosAddress(address);
+  if (chain === 'tron') return isTronAddress(address);
+  if (chain === 'sui') return isSuiAddress(address);
+  if (chain === 'ton') return isTonAddress(address);
+  if (chain === 'polkadot') return isPolkadotAddress(address);
+  if (chain === 'dogecoin') return isDogecoinAddress(address);
   return isAddress(address);
 }
 
 function placeholderFor(chain: ScanChain): string {
+  if (chain === 'evm-all') return '0x… address, scanned on every EVM chain';
   if (chain === 'bitcoin') return 'bc1… or 1… Bitcoin address';
   if (chain === 'litecoin') return 'ltc1… or L… Litecoin address';
   if (chain === 'solana') return 'Solana address (base58)';
@@ -42,12 +54,17 @@ function placeholderFor(chain: ScanChain): string {
   if (chain === 'stellar') return 'G… Stellar address';
   if (chain === 'near') return 'NEAR account (e.g. name.near)';
   if (chain === 'aptos') return '0x… Aptos address';
+  if (chain === 'tron') return 'T… Tron address';
+  if (chain === 'sui') return '0x… (64 hex) Sui address';
+  if (chain === 'ton') return 'EQ… / UQ… TON address';
+  if (chain === 'polkadot') return '1… Polkadot address';
+  if (chain === 'dogecoin') return 'D… Dogecoin address';
   return '0x… wallet address';
 }
 
 export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
   const [address, setAddress] = useState(initialAddress);
-  const [chain, setChain] = useState<ScanChain>('ethereum');
+  const [chain, setChain] = useState<ScanChain>('evm-all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AnyScanReport | null>(null);
@@ -63,9 +80,12 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
     }
 
     setLoading(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20_000);
     try {
       const response = await fetch(
         `/api/scan?address=${encodeURIComponent(address)}&chain=${encodeURIComponent(chain)}`,
+        { signal: controller.signal },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -73,9 +93,14 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
       } else {
         setReport(data as AnyScanReport);
       }
-    } catch {
-      setError('Network error — please try again.');
+    } catch (caught) {
+      setError(
+        caught instanceof DOMException && caught.name === 'AbortError'
+          ? 'Scan timed out — the network or RPC is slow. Try again, or pick a different chain.'
+          : 'Network error — please try again.',
+      );
     } finally {
+      clearTimeout(timer);
       setLoading(false);
     }
   }
@@ -120,6 +145,7 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
       )}
 
       {report?.kind === 'evm' && <ScanReportCard report={report} />}
+      {report?.kind === 'evm-multi' && <MultiChainReportCard report={report} />}
       {report?.kind === 'utxo' && <UtxoReportCard report={report} />}
       {report?.kind === 'account' && <AccountReportCard report={report} />}
     </div>

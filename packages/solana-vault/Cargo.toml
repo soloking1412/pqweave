@@ -1,0 +1,20 @@
+[package]
+name = "pqweave-vault"
+version = "0.1.0"
+edition = "2021"
+description = "PQWeave Solana post-quantum vault: hash-based one-time-signature gated custody"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+solana-program = "2.2"
+
+[dev-dependencies]
+solana-program-test = "2.2"
+solana-sdk = "2.2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+hex = "0.4"
+
+[profile.release]
+overflow-checks = true
