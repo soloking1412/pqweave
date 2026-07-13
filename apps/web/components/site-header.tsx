@@ -35,6 +35,12 @@ export function SiteHeader() {
             Index
           </Link>
           <Link
+            href="/attest"
+            className="hidden rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white lg:block"
+          >
+            Attest
+          </Link>
+          <Link
             href="/#chains"
             className="hidden rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white lg:block"
           >

@@ -16,9 +16,9 @@ const STATS = [
       'On EVM chains, the public key is recoverable from any transaction the account has ever signed — so every account that has moved funds is already exposed.',
   },
   {
-    value: '~25% of BTC',
+    value: '~30% of BTC',
     label:
-      'Independent analyses estimate roughly a quarter of all bitcoin sits in addresses that have already revealed their public key (early P2PK coins plus reused addresses). Estimate, not a live figure.',
+      'Independent analyses estimate roughly a third of all bitcoin sits in addresses that have already revealed their public key (early P2PK coins plus reused addresses). Estimate, not a live figure — see the Bitcoin breakdown.',
   },
   {
     value: `${LIVE_CHAIN_COUNT} chains`,
@@ -130,6 +130,12 @@ export default function ExposurePage() {
               className="rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
             >
               Scan a wallet
+            </Link>
+            <Link
+              href="/exposure/bitcoin"
+              className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+            >
+              Bitcoin breakdown
             </Link>
             <Link
               href="/partners"

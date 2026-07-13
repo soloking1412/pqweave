@@ -7,6 +7,7 @@ import {LamportMerkleVerifier} from "../src/verifiers/LamportMerkleVerifier.sol"
 import {PQWeaveAccount} from "../src/PQWeaveAccount.sol";
 import {PQWeaveFactory} from "../src/PQWeaveFactory.sol";
 import {PQWeaveForwarder} from "../src/PQWeaveForwarder.sol";
+import {PQWeaveAttestation} from "../src/PQWeaveAttestation.sol";
 import {MigrationSweeper} from "../src/MigrationSweeper.sol";
 import {BatchExecutor} from "../src/BatchExecutor.sol";
 
@@ -35,6 +36,8 @@ contract Deploy is Script {
         // account implementation used for harden-in-place.
         PQWeaveForwarder forwarder = new PQWeaveForwarder{salt: SALT}();
         PQWeaveAccount accountImpl = new PQWeaveAccount{salt: SALT}(entryPoint);
+        // Open cross-chain registry: binds a Bitcoin address to a PQC key.
+        PQWeaveAttestation attestation = new PQWeaveAttestation{salt: SALT}();
         vm.stopBroadcast();
 
         console2.log("Chain id:           ", block.chainid);
@@ -45,5 +48,6 @@ contract Deploy is Script {
         console2.log("BatchExecutor:      ", address(executor));
         console2.log("PQWeaveForwarder:   ", address(forwarder));
         console2.log("PQWeaveAccountImpl: ", address(accountImpl));
+        console2.log("PQWeaveAttestation: ", address(attestation));
     }
 }

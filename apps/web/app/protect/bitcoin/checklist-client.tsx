@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { deriveAddresses, isExtendedKey, parseExtendedKey } from '@pqweave/sdk/bitcoin';
 
 interface BitcoinScanRow {
   address: string;
@@ -8,9 +9,13 @@ interface BitcoinScanRow {
   detail: string;
   balance?: string;
   type?: string;
+  /** Derivation path (e.g. "0/3"), present only for xpub-derived addresses. */
+  path?: string;
 }
 
 const STORAGE_KEY = 'pqweave-btc-checklist';
+const MAX_PER_CHAIN = 15;
+const SCAN_CONCURRENCY = 5;
 
 const CHECKLIST = [
   'Create a brand-new native SegWit address (bc1q…) in your own wallet. Do not reuse an old one, and avoid Taproot (bc1p) — a key-path spend reveals the public key.',
@@ -30,10 +35,66 @@ function parseAddresses(input: string): string[] {
   ).slice(0, 20);
 }
 
+async function scanOne(address: string, path?: string): Promise<BitcoinScanRow> {
+  try {
+    const res = await fetch(`/api/scan?address=${encodeURIComponent(address)}&chain=bitcoin`);
+    const data = await res.json();
+    if (!res.ok) return { address, path, status: 'error', detail: data.error ?? 'Scan failed.' };
+    return {
+      address,
+      path,
+      status: data.exposed ? 'exposed' : 'safe',
+      detail: data.reasons?.[0] ?? '',
+      balance: data.balance,
+      type: data.type,
+    };
+  } catch {
+    return { address, path, status: 'error', detail: 'Network error.' };
+  }
+}
+
+/** Scan many addresses with bounded concurrency so we do not hammer the indexer. */
+async function scanMany(
+  entries: { address: string; path?: string }[],
+  concurrency = SCAN_CONCURRENCY,
+): Promise<BitcoinScanRow[]> {
+  const out: BitcoinScanRow[] = new Array(entries.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < entries.length) {
+      const i = cursor++;
+      out[i] = await scanOne(entries[i]!.address, entries[i]!.path);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, entries.length) }, worker));
+  return out;
+}
+
+/** Keep the wallet's used extent per chain: drop the long tail of unused addresses. */
+function trimToWalletExtent(rows: BitcoinScanRow[]): BitcoinScanRow[] {
+  if (!rows.some((r) => r.path)) return rows;
+  const used = (r: BitcoinScanRow) =>
+    r.status === 'exposed' || (r.balance ? Number(r.balance) > 0 : false);
+  const byChain = (prefix: string) => rows.filter((r) => r.path?.startsWith(prefix));
+  const keep: BitcoinScanRow[] = [];
+  for (const prefix of ['0/', '1/']) {
+    const chain = byChain(prefix);
+    let lastUsed = -1;
+    chain.forEach((r, i) => {
+      if (used(r)) lastUsed = i;
+    });
+    // Keep through the last used address (+ a couple lookahead), else just the first.
+    keep.push(...chain.slice(0, Math.max(lastUsed + 3, 1)));
+  }
+  return keep;
+}
+
 export function BitcoinChecklistClient() {
   const [input, setInput] = useState('');
   const [rows, setRows] = useState<BitcoinScanRow[] | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [mode, setMode] = useState<'addresses' | 'wallet' | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState<boolean[]>(() => CHECKLIST.map(() => false));
 
   useEffect(() => {
@@ -58,32 +119,33 @@ export function BitcoinChecklistClient() {
   }
 
   async function scan() {
-    const addresses = parseAddresses(input);
-    if (addresses.length === 0) return;
-    setScanning(true);
+    setError(null);
     setRows(null);
+    const trimmedInput = input.trim();
+    if (trimmedInput === '') return;
+    setScanning(true);
     try {
-      const results = await Promise.all(
-        addresses.map(async (address): Promise<BitcoinScanRow> => {
-          try {
-            const res = await fetch(
-              `/api/scan?address=${encodeURIComponent(address)}&chain=bitcoin`,
-            );
-            const data = await res.json();
-            if (!res.ok) return { address, status: 'error', detail: data.error ?? 'Scan failed.' };
-            return {
-              address,
-              status: data.exposed ? 'exposed' : 'safe',
-              detail: data.reasons?.[0] ?? '',
-              balance: data.balance,
-              type: data.type,
-            };
-          } catch {
-            return { address, status: 'error', detail: 'Network error.' };
-          }
-        }),
-      );
-      setRows(results);
+      if (isExtendedKey(trimmedInput)) {
+        setMode('wallet');
+        let derived;
+        try {
+          const parsed = parseExtendedKey(trimmedInput);
+          derived = deriveAddresses(parsed, { maxPerChain: MAX_PER_CHAIN });
+        } catch {
+          setError('That extended public key could not be parsed. Check it and try again.');
+          return;
+        }
+        const results = await scanMany(derived.map((d) => ({ address: d.address, path: d.path })));
+        setRows(trimToWalletExtent(results));
+      } else {
+        setMode('addresses');
+        const addresses = parseAddresses(trimmedInput);
+        if (addresses.length === 0) {
+          setError('Enter one or more Bitcoin addresses, or an xpub/zpub.');
+          return;
+        }
+        setRows(await scanMany(addresses.map((address) => ({ address }))));
+      }
     } finally {
       setScanning(false);
     }
@@ -95,10 +157,14 @@ export function BitcoinChecklistClient() {
     const lines = [
       'PQWeave — Bitcoin quantum-exposure migration plan',
       `Generated ${new Date().toISOString()}`,
+      mode === 'wallet' ? 'Source: extended public key (watch-only wallet scan)' : '',
       '',
       'Addresses scanned:',
       ...rows.map(
-        (row) => `  ${row.address} — ${row.status}${row.balance ? ` (${row.balance} BTC)` : ''}`,
+        (row) =>
+          `  ${row.path ? `[${row.path}] ` : ''}${row.address} — ${row.status}${
+            row.balance ? ` (${row.balance} BTC)` : ''
+          }`,
       ),
       '',
       exposed.length > 0
@@ -110,7 +176,7 @@ export function BitcoinChecklistClient() {
       '',
       'Note: this is transitional risk reduction, not quantum safety. Bitcoin has no',
       'post-quantum signatures at the protocol level today.',
-    ];
+    ].filter((line) => line !== '');
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -126,15 +192,16 @@ export function BitcoinChecklistClient() {
     <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6">
       <h2 className="text-xl font-semibold tracking-tight">Build your migration plan</h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-        Paste your Bitcoin addresses (up to 20). We check which ones have already revealed their
-        public key, then give you a personalized checklist. Nothing is stored on our side and no
-        keys are ever requested.
+        Paste your Bitcoin addresses (up to 20), or one extended public key (xpub / ypub / zpub) to
+        scan a whole watch-only wallet. We check which addresses have already revealed their public
+        key, then give you a personalized checklist. Nothing is stored on our side and no keys — not
+        even the extended public key — are ever kept.
       </p>
 
       <textarea
         value={input}
         onChange={(event) => setInput(event.target.value)}
-        placeholder="bc1q… , 1… , 3…  (one per line or comma-separated)"
+        placeholder="bc1q… addresses (comma/newline separated), or an xpub/zpub…"
         spellCheck={false}
         rows={3}
         className="mt-4 w-full rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
@@ -147,15 +214,32 @@ export function BitcoinChecklistClient() {
         {scanning ? 'Checking…' : 'Check my addresses'}
       </button>
 
+      {error && (
+        <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+          {error}
+        </div>
+      )}
+
       {rows && (
         <div className="mt-6 space-y-4">
+          {mode === 'wallet' && (
+            <div className="text-xs text-zinc-500">
+              Derived {rows.length} addresses from your extended key (receive + change, trimmed to
+              the used range).
+            </div>
+          )}
           <div className="space-y-2">
             {rows.map((row) => (
               <div
-                key={row.address}
+                key={`${row.path ?? ''}${row.address}`}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/5 bg-black/20 px-3 py-2"
               >
-                <span className="font-mono text-xs text-zinc-300">
+                <span className="flex items-center gap-2 font-mono text-xs text-zinc-300">
+                  {row.path && (
+                    <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      {row.path}
+                    </span>
+                  )}
                   {row.address.length > 24
                     ? `${row.address.slice(0, 12)}…${row.address.slice(-8)}`
                     : row.address}

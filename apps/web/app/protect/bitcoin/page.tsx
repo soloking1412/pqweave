@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Reveal } from '@/components/motion';
 import { BitcoinChecklistClient } from './checklist-client';
+import { EvacuationClient } from './evacuation-client';
 
 export const metadata: Metadata = {
   title: 'Reduce Bitcoin quantum exposure (transitional) — PQWeave',
@@ -59,6 +60,10 @@ export default function BitcoinProtectPage() {
           harvestable. So funds sitting in a fresh, never-spent address are not yet exposed. Moving
           there buys time; it does not make the coins quantum-proof.
         </p>
+      </Reveal>
+
+      <Reveal className="mt-10">
+        <EvacuationClient />
       </Reveal>
 
       <Reveal className="mt-10">

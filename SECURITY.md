@@ -86,6 +86,24 @@ The web migration flow defaults to this mode.
   smart-contract addresses, or send them with a fixed gas stipend. The
   Forwarder's `receive()` is deliberately empty so stipend-limited transfers
   succeed, but users should always test with a small withdrawal first.
+- **Bitcoin is not, and cannot be, quantum-safe at the app layer.** Bitcoin
+  Script cannot verify a post-quantum signature, so nothing PQWeave ships makes
+  bitcoin quantum-safe. The real fix is consensus-level (BIP-360 P2MR / BIP-361
+  legacy-signature sunset), which no application can deliver. The Bitcoin tools
+  here are explicitly transitional / preparatory:
+  - **Evacuation kit** — pre-signs sweep transactions (watch-only; the user
+    signs in their own wallet, keys never touch us) so funds can move within
+    minutes of a threat. Pre-signing exposes nothing, but broadcasting still
+    reveals the key and races the mempool. It only covers the UTXOs that existed
+    when it was built; already-exposed addresses gain little. Reaction-time
+    reduction, not a cure.
+  - **PQ attestation** — anchors a Bitcoin-address ↔ post-quantum-key binding as
+    an immutable on-chain event. The Bitcoin signature is verified off-chain
+    (BIP-322 on-chain is infeasible); the contract only timestamps. It records
+    intent and ownership and prepares for a future migration path — it does not
+    protect the coins.
+  - **xpub cockpit / scanner** — watch-only; an extended _public_ key only. It
+    can read a wallet's exposure, never spend.
 - **Hybrid mode is defense-in-depth, not absolute.** Sub-threshold operations are
   still ECDSA-authorized. Use `pqcOnly` or sole authority for full coverage.
 - **Timeline is a projection.** "Q-Day" estimates (2029–2030) are forecasts, not

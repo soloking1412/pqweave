@@ -42,6 +42,7 @@ const factory = find(/Factory$/);
 const batchExecutor = find(/BatchExecutor$/);
 const forwarder = find(/Forwarder$/);
 const accountImpl = find(/Account$/);
+const attestation = find(/Attestation$/);
 
 const missing = [
   ['verifier', verifier],
@@ -49,6 +50,7 @@ const missing = [
   ['batchExecutor', batchExecutor],
   ['forwarder', forwarder],
   ['accountImpl', accountImpl],
+  ['attestation', attestation],
 ].filter(([, v]) => !v);
 if (missing.length) {
   console.error(`Could not find addresses for: ${missing.map(([k]) => k).join(', ')}`);
@@ -62,6 +64,7 @@ const updates = {
   NEXT_PUBLIC_BATCH_EXECUTOR_ADDRESS: batchExecutor,
   NEXT_PUBLIC_FORWARDER_ADDRESS: forwarder,
   NEXT_PUBLIC_ACCOUNT_IMPL_ADDRESS: accountImpl,
+  NEXT_PUBLIC_ATTESTATION_ADDRESS: attestation,
   NEXT_PUBLIC_DEPLOYMENT_STAGE: stage,
 };
 

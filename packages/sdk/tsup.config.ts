@@ -25,6 +25,7 @@ export default defineConfig({
     'src/chains/index.ts',
     'src/forwarder/index.ts',
     'src/userop/index.ts',
+    'src/attestation/index.ts',
   ],
   format: ['esm'],
   dts: true,

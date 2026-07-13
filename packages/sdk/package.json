@@ -100,6 +100,10 @@
     "./userop": {
       "types": "./dist/userop/index.d.ts",
       "import": "./dist/userop/index.js"
+    },
+    "./attestation": {
+      "types": "./dist/attestation/index.d.ts",
+      "import": "./dist/attestation/index.js"
     }
   },
   "files": [
@@ -117,6 +121,9 @@
     "@noble/curves": "^1.8.1",
     "@noble/hashes": "^1.7.1",
     "@noble/post-quantum": "^0.4.1",
+    "@scure/base": "^2.2.0",
+    "@scure/bip32": "^2.2.0",
+    "@scure/btc-signer": "^2.2.0",
     "viem": "^2.37.0"
   },
   "devDependencies": {

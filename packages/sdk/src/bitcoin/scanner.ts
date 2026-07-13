@@ -1,4 +1,5 @@
 import { classifyUtxoAddress } from './address.js';
+import { getAddressStats } from './esplora.js';
 import { BITCOIN, type UtxoNetwork } from './networks.js';
 import type {
   EsploraAddressStats,
@@ -111,11 +112,7 @@ export async function scanUtxoAddress(
   if (classifyUtxoAddress(address, network) === 'unknown') {
     throw new Error(`unrecognized ${network.name} address`);
   }
-  const apiUrl = options.apiUrl ?? network.apiUrl;
-  const doFetch = options.fetchImpl ?? fetch;
-  const response = await doFetch(`${apiUrl}/address/${address}`);
-  if (!response.ok) throw new Error(`failed to fetch ${network.name} address stats`);
-  const stats = (await response.json()) as EsploraAddressStats;
+  const stats = await getAddressStats(address, network, options);
   return assessUtxoRisk(assessUtxoExposure(address, network, stats), network.symbol);
 }
 

@@ -8,6 +8,8 @@ export interface PQWeaveContracts {
   forwarder: Address | null;
   /** Canonical account implementation for harden-in-place; null until deployed. */
   accountImpl: Address | null;
+  /** Cross-chain BTC↔PQC attestation registry; null until deployed. */
+  attestation: Address | null;
 }
 
 function readAddress(value: string | undefined): Address | null {
@@ -30,6 +32,7 @@ export function getContracts(): PQWeaveContracts | null {
     batchExecutor,
     forwarder: readAddress(process.env.NEXT_PUBLIC_FORWARDER_ADDRESS),
     accountImpl: readAddress(process.env.NEXT_PUBLIC_ACCOUNT_IMPL_ADDRESS),
+    attestation: readAddress(process.env.NEXT_PUBLIC_ATTESTATION_ADDRESS),
   };
 }
 
