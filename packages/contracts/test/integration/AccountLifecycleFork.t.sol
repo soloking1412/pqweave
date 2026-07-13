@@ -52,8 +52,7 @@ contract AccountLifecycleForkTest is Test {
 
     function test_routineTransferValidatesWithEcdsaOnly() public {
         if (!active) return vm.skip(true);
-        bytes memory callData =
-            abi.encodeCall(PQWeaveAccount.execute, (recipient, 0.1 ether, ""));
+        bytes memory callData = abi.encodeCall(PQWeaveAccount.execute, (recipient, 0.1 ether, ""));
         uint256 before = recipient.balance;
         _submit(_sign(_buildOp(callData), false, 0));
         assertEq(recipient.balance, before + 0.1 ether);
@@ -61,8 +60,7 @@ contract AccountLifecycleForkTest is Test {
 
     function test_gatedTransferRevertsWithoutPqc() public {
         if (!active) return vm.skip(true);
-        bytes memory callData =
-            abi.encodeCall(PQWeaveAccount.execute, (recipient, 2 ether, ""));
+        bytes memory callData = abi.encodeCall(PQWeaveAccount.execute, (recipient, 2 ether, ""));
         PackedUserOperation[] memory ops = new PackedUserOperation[](1);
         ops[0] = _sign(_buildOp(callData), false, 0);
         vm.expectRevert();
@@ -71,8 +69,7 @@ contract AccountLifecycleForkTest is Test {
 
     function test_gatedTransferSucceedsWithPqc() public {
         if (!active) return vm.skip(true);
-        bytes memory callData =
-            abi.encodeCall(PQWeaveAccount.execute, (recipient, 2 ether, ""));
+        bytes memory callData = abi.encodeCall(PQWeaveAccount.execute, (recipient, 2 ether, ""));
         uint256 before = recipient.balance;
         _submit(_sign(_buildOp(callData), true, 0));
         assertEq(recipient.balance, before + 2 ether);

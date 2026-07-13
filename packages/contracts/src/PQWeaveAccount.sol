@@ -92,7 +92,9 @@ contract PQWeaveAccount is IAccount {
         IPQCVerifier verifier_,
         uint256 valueThreshold_
     ) external {
-        if (msg.sender != deployer && msg.sender != address(this)) revert NotAuthorized();
+        if (msg.sender != deployer && msg.sender != address(this)) {
+            revert NotAuthorized();
+        }
         if (_initialized) revert AlreadyInitialized();
         if (pqcPublicKey_.length != 32) revert InvalidPqcKey();
         if (address(verifier_) == address(0)) revert InvalidVerifier();

@@ -55,9 +55,8 @@ contract PQWeaveFactory {
     }
 
     function _addressOf(bytes32 deploySalt) internal view returns (address) {
-        bytes32 initCodeHash = keccak256(
-            abi.encodePacked(type(PQWeaveAccount).creationCode, abi.encode(entryPoint))
-        );
+        bytes32 initCodeHash =
+            keccak256(abi.encodePacked(type(PQWeaveAccount).creationCode, abi.encode(entryPoint)));
         bytes32 hash =
             keccak256(abi.encodePacked(bytes1(0xff), address(this), deploySalt, initCodeHash));
         return address(uint160(uint256(hash)));

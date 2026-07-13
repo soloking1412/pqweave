@@ -220,9 +220,8 @@ contract PQWeaveAccountTest is Test {
 
         vm.signAndAttachDelegation(address(impl), eoaPk);
         vm.prank(eoa); // the EOA calling itself: msg.sender == address(this)
-        PQWeaveAccount(payable(eoa)).initialize(
-            eoa, abi.encodePacked(_pqcRoot()), verifier, THRESHOLD
-        );
+        PQWeaveAccount(payable(eoa))
+            .initialize(eoa, abi.encodePacked(_pqcRoot()), verifier, THRESHOLD);
         assertEq(PQWeaveAccount(payable(eoa)).owner(), eoa);
     }
 

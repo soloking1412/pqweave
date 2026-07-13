@@ -44,14 +44,19 @@ contract MockERC1155 {
         balanceOf[to][id] += amount;
     }
 
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data)
-        external
-    {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes calldata data
+    ) external {
         require(from == msg.sender, "not owner");
         balanceOf[from][id] -= amount;
         balanceOf[to][id] += amount;
         if (to.code.length > 0) {
-            bytes4 ack = MockERC1155Receiver(to).onERC1155Received(msg.sender, from, id, amount, data);
+            bytes4 ack =
+                MockERC1155Receiver(to).onERC1155Received(msg.sender, from, id, amount, data);
             require(ack == MockERC1155Receiver.onERC1155Received.selector, "receiver rejected");
         }
     }
@@ -321,8 +326,7 @@ contract PQWeaveForwarderTest is Test {
         // drifts, cross-runtime signatures stop verifying.
         vm.chainId(84532);
         PQWeaveForwarder mailbox = _install();
-        bytes32 digest =
-            mailbox.setDestinationDigest(0x2222222222222222222222222222222222222222);
+        bytes32 digest = mailbox.setDestinationDigest(0x2222222222222222222222222222222222222222);
         assertEq(
             digest, bytes32(0xfd2874aae6828d66391db7698ed33782592b8b860a7ffa30a0799b07e63d3fee)
         );

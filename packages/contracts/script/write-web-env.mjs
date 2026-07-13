@@ -1,9 +1,12 @@
 #!/usr/bin/env node
-// Reads the latest Foundry broadcast for a Deploy run and writes the deployed
-// contract addresses into apps/web/.env.local, so the web app flips from
-// "preview" to live without any hand-copying. Usage:
+// Writes the deployed contract addresses into apps/web/.env.local, so the web
+// app flips from "preview" to live without any hand-copying. Usage:
 //   node script/write-web-env.mjs [chainId] [--dry]
 // chainId defaults to 84532 (Base Sepolia).
+//
+// Prefers the canonical deployments/<chainId>.json the Deploy script writes
+// (it always contains every address, even ones skipped as already-deployed).
+// Falls back to parsing the latest broadcast for older deploys.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -20,51 +23,68 @@ const chainId = args.find((a) => /^\d+$/.test(a)) ?? '84532';
 const MAINNET_IDS = new Set(['1', '8453', '42161', '10', '137']);
 const stage = MAINNET_IDS.has(chainId) ? 'mainnet' : 'testnet';
 
-const broadcastPath = resolve(
-  contractsRoot,
-  `broadcast/Deploy.s.sol/${chainId}/run-latest.json`,
-);
-if (!existsSync(broadcastPath)) {
-  console.error(`No broadcast found at ${broadcastPath}`);
-  console.error('Run the deploy first (with --broadcast) for this chain id.');
-  process.exit(1);
+/** Resolve the six addresses the web app needs, preferring the deployments JSON. */
+function resolveAddresses() {
+  const deploymentPath = resolve(contractsRoot, `deployments/${chainId}.json`);
+  if (existsSync(deploymentPath)) {
+    const d = JSON.parse(readFileSync(deploymentPath, 'utf8'));
+    return {
+      verifier: d.verifier,
+      factory: d.factory,
+      batchExecutor: d.batchExecutor,
+      forwarder: d.forwarder,
+      accountImpl: d.accountImpl,
+      attestation: d.attestation,
+      source: `deployments/${chainId}.json`,
+    };
+  }
+
+  // Fallback: parse the latest broadcast (only contains newly-deployed contracts).
+  const broadcastPath = resolve(contractsRoot, `broadcast/Deploy.s.sol/${chainId}/run-latest.json`);
+  if (!existsSync(broadcastPath)) {
+    console.error(`No deployments/${chainId}.json and no broadcast at ${broadcastPath}`);
+    console.error('Run the deploy first (with --broadcast) for this chain id.');
+    process.exit(1);
+  }
+  const broadcast = JSON.parse(readFileSync(broadcastPath, 'utf8'));
+  const deploys = (broadcast.transactions ?? []).filter(
+    (t) => (t.transactionType === 'CREATE2' || t.transactionType === 'CREATE') && t.contractAddress,
+  );
+  const find = (re) => deploys.find((t) => re.test(t.contractName ?? ''))?.contractAddress;
+  return {
+    verifier: find(/Verifier$/),
+    factory: find(/Factory$/),
+    batchExecutor: find(/BatchExecutor$/),
+    forwarder: find(/Forwarder$/),
+    accountImpl: find(/Account$/),
+    attestation: find(/Attestation$/),
+    source: 'broadcast/run-latest.json',
+  };
 }
 
-const broadcast = JSON.parse(readFileSync(broadcastPath, 'utf8'));
-const deploys = (broadcast.transactions ?? []).filter(
-  (t) => (t.transactionType === 'CREATE2' || t.transactionType === 'CREATE') && t.contractAddress,
-);
-
-// Match by role so this survives contract renames.
-const find = (re) => deploys.find((t) => re.test(t.contractName ?? ''))?.contractAddress;
-const verifier = find(/Verifier$/);
-const factory = find(/Factory$/);
-const batchExecutor = find(/BatchExecutor$/);
-const forwarder = find(/Forwarder$/);
-const accountImpl = find(/Account$/);
-const attestation = find(/Attestation$/);
+const addrs = resolveAddresses();
 
 const missing = [
-  ['verifier', verifier],
-  ['factory', factory],
-  ['batchExecutor', batchExecutor],
-  ['forwarder', forwarder],
-  ['accountImpl', accountImpl],
-  ['attestation', attestation],
+  ['verifier', addrs.verifier],
+  ['factory', addrs.factory],
+  ['batchExecutor', addrs.batchExecutor],
+  ['forwarder', addrs.forwarder],
+  ['accountImpl', addrs.accountImpl],
+  ['attestation', addrs.attestation],
 ].filter(([, v]) => !v);
 if (missing.length) {
-  console.error(`Could not find addresses for: ${missing.map(([k]) => k).join(', ')}`);
-  console.error('Deployed contracts in broadcast:', deploys.map((t) => t.contractName).join(', '));
+  console.error(`Could not resolve addresses for: ${missing.map(([k]) => k).join(', ')}`);
+  console.error(`Source: ${addrs.source}`);
   process.exit(1);
 }
 
 const updates = {
-  NEXT_PUBLIC_VERIFIER_ADDRESS: verifier,
-  NEXT_PUBLIC_FACTORY_ADDRESS: factory,
-  NEXT_PUBLIC_BATCH_EXECUTOR_ADDRESS: batchExecutor,
-  NEXT_PUBLIC_FORWARDER_ADDRESS: forwarder,
-  NEXT_PUBLIC_ACCOUNT_IMPL_ADDRESS: accountImpl,
-  NEXT_PUBLIC_ATTESTATION_ADDRESS: attestation,
+  NEXT_PUBLIC_VERIFIER_ADDRESS: addrs.verifier,
+  NEXT_PUBLIC_FACTORY_ADDRESS: addrs.factory,
+  NEXT_PUBLIC_BATCH_EXECUTOR_ADDRESS: addrs.batchExecutor,
+  NEXT_PUBLIC_FORWARDER_ADDRESS: addrs.forwarder,
+  NEXT_PUBLIC_ACCOUNT_IMPL_ADDRESS: addrs.accountImpl,
+  NEXT_PUBLIC_ATTESTATION_ADDRESS: addrs.attestation,
   NEXT_PUBLIC_DEPLOYMENT_STAGE: stage,
 };
 
@@ -86,7 +106,7 @@ for (const [key, value] of Object.entries(updates)) {
 const output = next.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '');
 const finalOutput = output.endsWith('\n') ? output : `${output}\n`;
 
-console.log(`Chain ${chainId} (${stage})`);
+console.log(`Chain ${chainId} (${stage}) — from ${addrs.source}`);
 for (const [key, value] of Object.entries(updates)) console.log(`  ${key}=${value}`);
 
 if (dry) {

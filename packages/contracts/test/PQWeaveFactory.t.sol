@@ -23,8 +23,7 @@ contract PQWeaveFactoryTest is Test {
 
     function test_deploysAtPredictedAddress() public {
         address predicted = factory.getAddress(owner, pqcKey, verifier, threshold, salt);
-        PQWeaveAccount account =
-            factory.createAccount(owner, pqcKey, verifier, threshold, salt);
+        PQWeaveAccount account = factory.createAccount(owner, pqcKey, verifier, threshold, salt);
 
         assertEq(address(account), predicted);
         assertGt(predicted.code.length, 0);
