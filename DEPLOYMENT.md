@@ -20,6 +20,14 @@ Fund the printed address with Base Sepolia ETH from a faucet, e.g.:
 
 ~0.02 ETH is plenty for deployment.
 
+> **Use a key that has NOT been delegated (EIP-7702).** If you reuse a key that
+> once tested the migration flow, it carries a 7702 delegation designator, and
+> some RPCs cap in-flight transactions for delegated accounts — the deploy then
+> fails with `in-flight transaction limit reached for delegated accounts`. The
+> deploy script already passes `--slow` (one confirmed tx at a time) to stay
+> under that limit, but a fresh, never-delegated key avoids the issue entirely
+> and is the cleaner choice for canonical infra.
+
 ## 2. Deploy + wire the web app (one command)
 
 From the repo root, with your funded key in the environment:

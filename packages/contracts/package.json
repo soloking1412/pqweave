@@ -8,7 +8,7 @@
     "test": "forge test",
     "fmt": "forge fmt",
     "fmt:check": "forge fmt --check",
-    "deploy:base-sepolia": "forge script script/Deploy.s.sol --rpc-url ${RPC_URL_BASE_SEPOLIA:-https://sepolia.base.org} --broadcast && node script/write-web-env.mjs 84532",
+    "deploy:base-sepolia": "forge script script/Deploy.s.sol --rpc-url ${RPC_URL_BASE_SEPOLIA:-https://sepolia.base.org} --broadcast --slow && node script/write-web-env.mjs 84532",
     "verify:base-sepolia": "forge script script/Deploy.s.sol --rpc-url ${RPC_URL_BASE_SEPOLIA:-https://sepolia.base.org} --resume --verify --chain base-sepolia",
     "wire-web-env": "node script/write-web-env.mjs"
   }
