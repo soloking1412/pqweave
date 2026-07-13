@@ -18,8 +18,12 @@ coverage/
 npm-debug.log*
 pnpm-debug.log*
 
-broadcast/**/dryRun/
-broadcast/**/*-latest.json
+# Foundry deploy artifacts — the canonical record lives in packages/contracts/deployments/
+broadcast/
 
 # Rust / Solana build artifacts
 target/
+
+# Personal / local artifacts (pitch decks, scratch scripts) — not part of the repo
+*.pptx
+founder.py
