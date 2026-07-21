@@ -22,6 +22,7 @@ export default defineConfig({
     'src/polkadot/index.ts',
     'src/dogecoin/index.ts',
     'src/solana-vault/index.ts',
+    'src/stellar-vault/index.ts',
     'src/chains/index.ts',
     'src/forwarder/index.ts',
     'src/userop/index.ts',

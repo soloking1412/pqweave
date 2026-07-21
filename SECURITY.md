@@ -104,6 +104,16 @@ The web migration flow defaults to this mode.
     protect the coins.
   - **xpub cockpit / scanner** — watch-only; an extended _public_ key only. It
     can read a wallet's exposure, never spend.
+- **Solana and Stellar cannot be migrated in place — the vault is custody, not a
+  wallet fix.** On these chains the address _is_ the Ed25519 public key, exposed
+  from creation, so `migrationCapability` is `none` and nothing hardens the
+  existing account. PQWeave offers a **vault**: a Solana program / Stellar Soroban
+  custom account that releases funds only against a Lamport+Merkle post-quantum
+  signature. You **sweep funds into a new account**; the old key stays exposed
+  forever, only the swept funds are protected, and the sweep itself is signed by
+  the still-exposed Ed25519 key (a quantum attacker present at sweep time could
+  race it). The Stellar vault is on **testnet and unaudited**; the Solana vault on
+  devnet. This is transitional custody, not a quantum-safe wallet.
 - **Hybrid mode is defense-in-depth, not absolute.** Sub-threshold operations are
   still ECDSA-authorized. Use `pqcOnly` or sole authority for full coverage.
 - **Timeline is a projection.** "Q-Day" estimates (2029–2030) are forecasts, not

@@ -10,4 +10,6 @@ packages/contracts/out
 next-env.d.ts
 packages/contracts/broadcast
 packages/contracts/deployments
+packages/stellar-vault/deployments
+packages/stellar-vault/test_snapshots
 target

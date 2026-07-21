@@ -27,3 +27,7 @@ target/
 # Personal / local artifacts (pitch decks, scratch scripts) — not part of the repo
 *.pptx
 founder.py
+
+# Local tooling config (not part of the repo)
+.claude/
+CLAUDE.md

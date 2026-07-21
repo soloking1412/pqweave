@@ -57,6 +57,39 @@ export function getKnownPQWeave(): KnownPQWeave {
   return { implementations, verifiers: [contracts.verifier] };
 }
 
+export interface StellarVaultConfig {
+  /** Uploaded vault wasm hash; per-user instances deploy from this. */
+  wasmHash: string;
+  network: string;
+  networkPassphrase: string;
+  rpcUrl: string;
+}
+
+/**
+ * The Stellar (Soroban) post-quantum vault deployment. Non-EVM, so it is kept
+ * separate from getContracts. Returns null until the wasm is uploaded and wired
+ * (see packages/stellar-vault/deploy.sh) — the /protect/stellar page then
+ * degrades to an explainer only.
+ */
+export function getStellarVault(): StellarVaultConfig | null {
+  const wasmHash = process.env.NEXT_PUBLIC_STELLAR_VAULT_WASM_HASH;
+  if (!wasmHash) return null;
+  const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? 'testnet';
+  const isMainnet = network === 'mainnet' || network === 'public';
+  return {
+    wasmHash,
+    network,
+    networkPassphrase:
+      process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE ??
+      (isMainnet
+        ? 'Public Global Stellar Network ; September 2015'
+        : 'Test SDF Network ; September 2015'),
+    rpcUrl:
+      process.env.NEXT_PUBLIC_STELLAR_RPC_URL ??
+      (isMainnet ? 'https://mainnet.sorobanrpc.com' : 'https://soroban-testnet.stellar.org'),
+  };
+}
+
 const EXPLORERS: Record<number, string> = {
   1: 'https://etherscan.io',
   8453: 'https://basescan.org',

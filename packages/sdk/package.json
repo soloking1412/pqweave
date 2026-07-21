@@ -89,6 +89,10 @@
       "types": "./dist/solana-vault/index.d.ts",
       "import": "./dist/solana-vault/index.js"
     },
+    "./stellar-vault": {
+      "types": "./dist/stellar-vault/index.d.ts",
+      "import": "./dist/stellar-vault/index.js"
+    },
     "./chains": {
       "types": "./dist/chains/index.d.ts",
       "import": "./dist/chains/index.js"

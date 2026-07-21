@@ -1,0 +1,7 @@
+{
+  "network": "testnet",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "rpcUrl": "https://soroban-testnet.stellar.org",
+  "explorer": "https://stellar.expert/explorer/testnet",
+  "wasmHash": "bf69d26e0ebf1b66e0aef1c2bdb9b4e7b95aa08cc307878de1570fccfa42cff6"
+}

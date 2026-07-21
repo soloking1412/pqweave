@@ -32,7 +32,7 @@ so "the solution" differs sharply. The honest split:
 | **XRP Ledger**                        | secp256k1 ECDSA             | Signing public key revealed in every submitted transaction                                                    | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
 | **Cardano**                           | Ed25519                     | Payment public key revealed when the address is a transaction input                                           | Move to a fresh address; protocol fix                                                                                       | **Scan (built)**                                     |
 | **Algorand**                          | Ed25519                     | Address _is_ the public key — exposed from creation                                                           | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
-| **Stellar**                           | Ed25519                     | Address _is_ the public key — exposed from creation                                                           | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
+| **Stellar**                           | Ed25519                     | Address _is_ the public key — exposed from creation                                                           | No in-place fix; Soroban PQ-vault custody (sweep to a new `__check_auth` account) — testnet, unaudited                      | **Scan + vault (built, testnet)**                    |
 | **Dogecoin, Bitcoin Cash**            | secp256k1 ECDSA             | UTXO model                                                                                                    | Move to fresh address; protocol fix                                                                                         | Scan-ready (no reliable public Esplora endpoint yet) |
 | **NEAR**                              | Ed25519                     | Account access-key public keys stored on-chain                                                                | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
 | **Aptos**                             | Ed25519                     | Public key revealed on the first signed transaction (sequence > 0)                                            | Move to a fresh address; protocol fix                                                                                       | **Scan (built)**                                     |
@@ -59,6 +59,18 @@ options are:
 So for Bitcoin we are honest: PQWeave is an **awareness and detection** tool
 until the network ships a protocol-level remedy. We do not claim to "migrate"
 Bitcoin, because at the application layer that is not technically possible.
+
+## Vault custody for address-is-the-key chains (Solana, Stellar)
+
+On Solana and Stellar the address _is_ the Ed25519 public key, so nothing can
+harden your existing account — `migrationCapability` stays `none`, and we never
+call this "migration". What these chains _do_ allow is a **vault**: a program
+(Solana) or Soroban custom account (Stellar) that only releases funds against a
+Lamport+Merkle post-quantum signature, using the same key as the EVM account. You
+**sweep funds into a new account**; the old key stays exposed forever and only the
+swept funds are protected. Stellar's vault is on **testnet**, unaudited — see
+`/protect/stellar` and `packages/stellar-vault`. This is transitional custody, not
+a quantum-safe wallet, and every surface says so.
 
 ## SDK usage
 

@@ -62,6 +62,15 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
           What can actually be done on Solana →
         </Link>
       )}
+
+      {report.chain === 'Stellar' && (
+        <Link
+          href="/protect/stellar"
+          className="mt-4 inline-flex rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
+        >
+          What can actually be done on Stellar →
+        </Link>
+      )}
     </div>
   );
 }
