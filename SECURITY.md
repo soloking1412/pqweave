@@ -97,13 +97,40 @@ The web migration flow defaults to this mode.
     reveals the key and races the mempool. It only covers the UTXOs that existed
     when it was built; already-exposed addresses gain little. Reaction-time
     reduction, not a cure.
+    - **An unsignable escape hatch is worse than none**, because the failure
+      surfaces at the moment it is needed. Each PSBT input therefore carries
+      exactly what its script type requires — `nonWitnessUtxo` for legacy and
+      wrapped SegWit, `redeemScript` for wrapped SegWit, `tapInternalKey` for
+      Taproot, and `bip32Derivation` (master fingerprint + full path) so a
+      hardware wallet can match the input to one of its own keys. An input that
+      cannot be made signable is **rejected outright** rather than emitted.
+      Every script type is signed and finalized for real in the test suite.
+    - **Destination rails.** A sweep to an address that has already been spent
+      from lands the funds somewhere already exposed, so the destination is
+      checked on-chain and refused if used, refused if it is one of the source
+      addresses, and flagged if it is Taproot (a P2TR output publishes the key
+      the moment it is funded). If the indexer is unreachable the check degrades
+      to a warning — an outage must not block an emergency evacuation.
+    - **Dry run before signing.** `describePsbt` decodes the bundle and states
+      what it actually does (inputs, destination, amount, fee, RBF, change), and
+      `verifySweepMatchesPlan` asserts it matches the tier it claims to be. Read
+      it rather than trusting that we built it correctly.
   - **PQ attestation** — anchors a Bitcoin-address ↔ post-quantum-key binding as
     an immutable on-chain event. The Bitcoin signature is verified off-chain
     (BIP-322 on-chain is infeasible); the contract only timestamps. It records
     intent and ownership and prepares for a future migration path — it does not
     protect the coins.
-  - **xpub cockpit / scanner** — watch-only; an extended _public_ key only. It
-    can read a wallet's exposure, never spend.
+  - **xpub cockpit / wallet scan** — watch-only; an extended _public_ key only.
+    It can read a wallet's exposure, never spend. Scans whole wallets across
+    accounts with a real BIP-44 gap limit, is resumable via a cursor so an
+    interrupted run over hundreds of addresses continues rather than restarting,
+    and backs off on indexer rate limits. An address whose lookup fails is
+    reported as an error and does **not** end a gap run, so a transient failure
+    cannot silently truncate a wallet and under-report exposure.
+  - **Exposure reporting** — per-account rollups of exposed vs not-yet-exposed
+    balance, exportable as JSON or CSV. The classification rules ship with the
+    figures (`METHODOLOGY`), because an exposure number nobody can check
+    independently is worth very little.
 - **Solana and Stellar cannot be migrated in place — the vault is custody, not a
   wallet fix.** On these chains the address _is_ the Ed25519 public key, exposed
   from creation, so `migrationCapability` is `none` and nothing hardens the

@@ -12,6 +12,104 @@ export interface EsploraOptions {
   apiUrl?: string;
   /** Fetch implementation, for testing or a server-side proxy. */
   fetchImpl?: typeof fetch;
+  /** Retries on 429/5xx before giving up. Default 3. */
+  retries?: number;
+  /** Base backoff in ms, doubled per attempt. Default 400. */
+  backoffMs?: number;
+  /**
+   * Per-attempt timeout in ms. Default 10s. Bounding each attempt keeps the
+   * whole retry budget predictable: without it one hung request can outlast the
+   * caller's own deadline and retries make a slow call fail rather than
+   * recover.
+   */
+  timeoutMs?: number;
+  /** Cooperative cancellation for long batch scans. */
+  signal?: AbortSignal;
+}
+
+/** Thrown when an Esplora call fails after exhausting retries. */
+export class EsploraError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+  ) {
+    super(message);
+    this.name = 'EsploraError';
+  }
+}
+
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) return reject(new Error('aborted'));
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new Error('aborted'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+
+/**
+ * Fetch with bounded retries. Public indexers rate-limit aggressively, and a
+ * custodian-scale wallet scan walks hundreds of addresses — a single 429 must
+ * not sink the run. Retries 429 and 5xx with exponential backoff; 4xx (other
+ * than 429) fails immediately because retrying a bad request never helps.
+ */
+export async function fetchWithRetry(
+  url: string,
+  options: EsploraOptions = {},
+  init?: RequestInit,
+): Promise<Response> {
+  const doFetch = options.fetchImpl ?? fetch;
+  const retries = options.retries ?? 3;
+  const backoffMs = options.backoffMs ?? 400;
+
+  const timeoutMs = options.timeoutMs ?? 10_000;
+
+  let lastError: Error | undefined;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (options.signal?.aborted) throw new Error('aborted');
+    // One controller per attempt: it fires on timeout, and mirrors the caller's
+    // signal so cancellation still propagates.
+    const controller = new AbortController();
+    const onOuterAbort = () => controller.abort();
+    options.signal?.addEventListener('abort', onOuterAbort, { once: true });
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await doFetch(url, { ...init, signal: controller.signal });
+      if (response.ok) return response;
+      const retryable = response.status === 429 || response.status >= 500;
+      if (!retryable || attempt === retries) {
+        throw new EsploraError(`request failed (${response.status})`, response.status);
+      }
+      lastError = new EsploraError(`request failed (${response.status})`, response.status);
+    } catch (error) {
+      // The caller cancelling is final; our own per-attempt timeout is not.
+      if (options.signal?.aborted) throw new Error('aborted');
+      if (
+        error instanceof EsploraError &&
+        error.status &&
+        error.status < 500 &&
+        error.status !== 429
+      ) {
+        throw error;
+      }
+      const timedOut = controller.signal.aborted;
+      const wrapped = timedOut
+        ? new EsploraError(`request timed out after ${timeoutMs}ms`)
+        : (error as Error);
+      if (attempt === retries) throw wrapped;
+      lastError = wrapped;
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onOuterAbort);
+    }
+    await sleep(backoffMs * 2 ** attempt, options.signal);
+  }
+  throw lastError ?? new EsploraError('request failed');
 }
 
 /** A single unspent output as returned by `GET /address/:address/utxo`. */
@@ -34,9 +132,7 @@ export async function getAddressStats(
   network: UtxoNetwork = BITCOIN,
   options: EsploraOptions = {},
 ): Promise<EsploraAddressStats> {
-  const doFetch = options.fetchImpl ?? fetch;
-  const response = await doFetch(`${baseUrl(network, options)}/address/${address}`);
-  if (!response.ok) throw new Error(`failed to fetch ${network.name} address stats`);
+  const response = await fetchWithRetry(`${baseUrl(network, options)}/address/${address}`, options);
   return (await response.json()) as EsploraAddressStats;
 }
 
@@ -46,10 +142,25 @@ export async function listUtxos(
   network: UtxoNetwork = BITCOIN,
   options: EsploraOptions = {},
 ): Promise<EsploraUtxo[]> {
-  const doFetch = options.fetchImpl ?? fetch;
-  const response = await doFetch(`${baseUrl(network, options)}/address/${address}/utxo`);
-  if (!response.ok) throw new Error(`failed to fetch ${network.name} UTXOs`);
+  const response = await fetchWithRetry(
+    `${baseUrl(network, options)}/address/${address}/utxo`,
+    options,
+  );
   return (await response.json()) as EsploraUtxo[];
+}
+
+/**
+ * Fetch a full raw transaction (hex). Required to populate a PSBT's
+ * `nonWitnessUtxo`, without which a legacy (P2PKH) input cannot be signed at
+ * all — by a hardware wallet or otherwise.
+ */
+export async function getTxHex(
+  txid: string,
+  network: UtxoNetwork = BITCOIN,
+  options: EsploraOptions = {},
+): Promise<string> {
+  const response = await fetchWithRetry(`${baseUrl(network, options)}/tx/${txid}/hex`, options);
+  return (await response.text()).trim();
 }
 
 /**
@@ -60,9 +171,7 @@ export async function getFeeEstimates(
   network: UtxoNetwork = BITCOIN,
   options: EsploraOptions = {},
 ): Promise<FeeEstimates> {
-  const doFetch = options.fetchImpl ?? fetch;
-  const response = await doFetch(`${baseUrl(network, options)}/fee-estimates`);
-  if (!response.ok) throw new Error(`failed to fetch ${network.name} fee estimates`);
+  const response = await fetchWithRetry(`${baseUrl(network, options)}/fee-estimates`, options);
   return (await response.json()) as FeeEstimates;
 }
 

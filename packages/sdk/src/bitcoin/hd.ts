@@ -74,12 +74,72 @@ function encodeAddress(pubkey: Uint8Array, scriptType: ScriptType, testnet: bool
   }
 }
 
+/**
+ * Where an extended key sits in its wallet's tree. Both values are shown by
+ * every wallet that exports an xpub (Sparrow, Coldcard, Trezor, Ledger Live).
+ * They are required to build the `bip32Derivation` field a hardware wallet uses
+ * to recognize which of its keys signs an input — without them a device has
+ * nothing to match against and will refuse to sign.
+ */
+export interface KeyOrigin {
+  /** Master key fingerprint, 8 hex characters, e.g. "73c5da0a". */
+  masterFingerprint: string;
+  /** Account-level path the extended key was exported at, e.g. "m/84'/0'/0'". */
+  accountPath: string;
+}
+
+const HARDENED = 0x80000000;
+
+/**
+ * Parse a BIP-32 path ("m/84'/0'/0'" or "84h/0h/0h") into raw path components,
+ * applying the hardened bit. Throws rather than guessing, because a wrong path
+ * silently produces a PSBT no device will sign.
+ */
+export function parseDerivationPath(path: string): number[] {
+  const trimmed = path.trim().replace(/^m\//i, '').replace(/^m$/i, '');
+  if (trimmed === '') return [];
+  return trimmed.split('/').map((part) => {
+    const hardened = /['h]$/i.test(part);
+    const raw = hardened ? part.slice(0, -1) : part;
+    if (!/^\d+$/.test(raw)) throw new Error(`invalid derivation path segment: ${part}`);
+    const value = Number(raw);
+    if (value >= HARDENED) throw new Error(`derivation index out of range: ${part}`);
+    return hardened ? value + HARDENED : value;
+  });
+}
+
+/** Render path components back to a readable path, e.g. "m/84'/0'/0'/0/3". */
+export function formatDerivationPath(components: number[]): string {
+  const parts = components.map((c) => (c >= HARDENED ? `${c - HARDENED}'` : String(c)));
+  return ['m', ...parts].join('/');
+}
+
+/** Validate and normalize an 8-hex-character master fingerprint. */
+export function parseMasterFingerprint(fingerprint: string): number {
+  const clean = fingerprint.trim().replace(/^0x/i, '').toLowerCase();
+  if (!/^[0-9a-f]{8}$/.test(clean)) {
+    throw new Error('master fingerprint must be 8 hex characters');
+  }
+  // PSBT stores the fingerprint as the big-endian u32 the wallet displays.
+  return Number.parseInt(clean, 16);
+}
+
 export interface DerivedAddress {
   address: string;
   /** Relative path from the account key, e.g. "0/3" (chain/index). */
   path: string;
   chain: 'receive' | 'change';
   index: number;
+  /** 33-byte compressed public key controlling this address. */
+  pubkey: Uint8Array;
+  /**
+   * Full BIP-32 path components (account prefix + chain + index) when a
+   * {@link KeyOrigin} was supplied. Undefined otherwise, which means the
+   * resulting PSBT input cannot carry `bip32Derivation`.
+   */
+  pathComponents?: number[];
+  /** Master fingerprint from the origin, if provided. */
+  masterFingerprint?: string;
 }
 
 export interface DeriveAddressOptions {
@@ -87,6 +147,12 @@ export interface DeriveAddressOptions {
   gapLimit?: number;
   /** Hard cap on addresses per chain, regardless of gap. */
   maxPerChain?: number;
+  /** Wallet origin, needed for hardware-signable PSBTs. */
+  origin?: KeyOrigin;
+  /** Restrict derivation to one chain (used by the resumable wallet scan). */
+  chains?: ('receive' | 'change')[];
+  /** Start index, so a scan can continue past the first window. */
+  startIndex?: number;
 }
 
 /**
@@ -100,13 +166,18 @@ export function deriveAddresses(
   options: DeriveAddressOptions = {},
 ): DerivedAddress[] {
   const maxPerChain = options.maxPerChain ?? 25;
+  const startIndex = options.startIndex ?? 0;
+  const wanted = options.chains ?? ['receive', 'change'];
+  const accountPrefix = options.origin ? parseDerivationPath(options.origin.accountPath) : null;
+
   const out: DerivedAddress[] = [];
   for (const [chain, chainIndex] of [
     ['receive', 0],
     ['change', 1],
   ] as const) {
+    if (!wanted.includes(chain)) continue;
     const branch = parsed.hdKey.deriveChild(chainIndex);
-    for (let index = 0; index < maxPerChain; index++) {
+    for (let index = startIndex; index < startIndex + maxPerChain; index++) {
       const child = branch.deriveChild(index);
       if (!child.publicKey) continue;
       out.push({
@@ -114,6 +185,13 @@ export function deriveAddresses(
         path: `${chainIndex}/${index}`,
         chain,
         index,
+        pubkey: child.publicKey,
+        ...(accountPrefix
+          ? {
+              pathComponents: [...accountPrefix, chainIndex, index],
+              masterFingerprint: options.origin!.masterFingerprint,
+            }
+          : {}),
       });
     }
   }

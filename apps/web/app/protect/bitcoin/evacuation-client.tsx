@@ -4,8 +4,10 @@ import { useState } from 'react';
 import {
   buildEvacuationPsbts,
   classifyBitcoinAddress,
+  describePsbt,
   finalizeSweep,
   isBitcoinAddress,
+  type DestinationCheck,
   type EvacuationPlan,
   type EvacuationTier,
 } from '@pqweave/sdk/bitcoin';
@@ -47,6 +49,65 @@ function hexToBase64(hex: string): string {
 const fmtBtc = (sats: bigint) =>
   (Number(sats) / 1e8).toLocaleString('en-US', { maximumFractionDigits: 8 });
 
+/**
+ * Decode the PSBT and state what it actually does. Signing is irreversible once
+ * broadcast, so the transaction should be readable here rather than trusted
+ * because we built it.
+ */
+function DryRun({ psbtBase64, testnet }: { psbtBase64: string; testnet: boolean }) {
+  let summary: ReturnType<typeof describePsbt>;
+  try {
+    summary = describePsbt(psbtBase64, testnet);
+  } catch {
+    return null;
+  }
+  const out = summary.outputs[0];
+  return (
+    <details className="mt-3 rounded-lg border border-white/5 bg-black/30 p-2.5 text-xs text-zinc-400">
+      <summary className="cursor-pointer text-zinc-300">Verify before signing</summary>
+      <dl className="mt-2 space-y-1">
+        <div className="flex justify-between gap-3">
+          <dt>Spends</dt>
+          <dd className="text-zinc-200">
+            {summary.inputCount} input{summary.inputCount === 1 ? '' : 's'}
+            {summary.totalInputSats !== undefined && ` · ${fmtBtc(summary.totalInputSats)}`}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt>Pays</dt>
+          <dd className="break-all text-right font-mono text-zinc-200">
+            {out?.address ?? 'unknown'}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt>Amount</dt>
+          <dd className="text-zinc-200">{out ? fmtBtc(out.amountSats) : '—'}</dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt>Fee</dt>
+          <dd className="text-zinc-200">
+            {summary.feeSats !== undefined ? fmtBtc(summary.feeSats) : '—'}
+            {summary.feeRate !== undefined && ` (~${summary.feeRate} sat/vB)`}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt>Change</dt>
+          <dd className="text-zinc-200">{summary.isSweep ? 'none — full sweep' : 'present'}</dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt>Fee-bumpable (RBF)</dt>
+          <dd className="text-zinc-200">{summary.replaceable ? 'yes' : 'no'}</dd>
+        </div>
+      </dl>
+      {summary.notes.map((note) => (
+        <p key={note} className="mt-1.5 text-amber-200">
+          {note}
+        </p>
+      ))}
+    </details>
+  );
+}
+
 export function EvacuationClient() {
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
@@ -57,6 +118,7 @@ export function EvacuationClient() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [broadcast, setBroadcast] = useState<Record<string, string>>({});
+  const [destCheck, setDestCheck] = useState<DestinationCheck | null>(null);
 
   const net = testnet ? 'testnet' : 'bitcoin';
 
@@ -66,6 +128,7 @@ export function EvacuationClient() {
     setSigned({});
     setBroadcast({});
     setError(null);
+    setDestCheck(null);
   }
 
   async function loadAndBuild() {
@@ -92,8 +155,46 @@ export function EvacuationClient() {
       if (!fetched || fetched.length === 0) throw new Error('No UTXOs found at that address.');
       setUtxos(fetched);
 
+      // Refuse a destination that is already used (or is the source itself)
+      // before building anything — sweeping to an exposed address protects
+      // nothing.
+      const destRes = await fetch(
+        `/api/btc?op=destcheck&network=${network}&address=${encodeURIComponent(destination)}&sources=${encodeURIComponent(source)}`,
+      ).then((r) => r.json());
+      if (destRes.error) throw new Error(destRes.error);
+      const check = destRes.check as DestinationCheck;
+      setDestCheck(check);
+      if (check.verdict === 'unsafe') throw new Error(check.problems.join(' '));
+
+      // Legacy (1…) and wrapped SegWit (3…) inputs cannot be signed without the
+      // full previous transaction, so fetch one per distinct funding txid.
+      const sourceType = classifyBitcoinAddress(source);
+      const prevTxById: Record<string, string> = {};
+      if (sourceType === 'p2pkh' || sourceType === 'p2sh') {
+        const ids = [...new Set(fetched.map((u) => u.txid))];
+        const results = await Promise.all(
+          ids.map((txid) =>
+            fetch(`/api/btc?op=txhex&network=${network}&txid=${txid}`)
+              .then((r) => r.json())
+              .then((j) => ({ txid, hex: j.hex as string | undefined, error: j.error })),
+          ),
+        );
+        for (const r of results) {
+          if (!r.hex) {
+            throw new Error(
+              `Could not fetch the previous transaction for ${r.txid.slice(0, 12)}… — a ${sourceType === 'p2pkh' ? 'legacy' : 'wrapped SegWit'} input cannot be signed without it.`,
+            );
+          }
+          prevTxById[r.txid] = r.hex;
+        }
+      }
+
       const built = buildEvacuationPsbts({
-        inputs: fetched.map((u) => ({ ...u, address: source })),
+        inputs: fetched.map((u) => ({
+          ...u,
+          address: source,
+          ...(prevTxById[u.txid] ? { prevTxHex: prevTxById[u.txid] } : {}),
+        })),
         destination,
         feeRates: feeRes.tiers,
         testnet: isTest,
@@ -284,6 +385,47 @@ export function EvacuationClient() {
             {plan.network === 'testnet' ? 'tBTC' : 'BTC'} to sweep · est. {plan.vsize} vB
           </div>
 
+          {destCheck && destCheck.warnings.length > 0 && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+              {destCheck.warnings.map((w) => (
+                <p key={w}>{w}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Who can sign this. A PSBT without key derivation is useless to a
+              hardware wallet, and finding that out at signing time is too late. */}
+          <div
+            className={`rounded-lg border p-3 text-xs leading-relaxed ${
+              plan.signability.ready
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+                : 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+            }`}
+          >
+            <div className="font-medium">
+              {plan.signability.ready
+                ? 'Ready for hardware signing'
+                : 'Signable by your wallet software, not by a hardware device'}
+            </div>
+            {plan.signability.warnings.map((w) => (
+              <p key={w} className="mt-1">
+                {w}
+              </p>
+            ))}
+            {plan.signability.inputs.some((i) => i.issues.length > 0) && (
+              <ul className="mt-1 space-y-1">
+                {plan.signability.inputs
+                  .filter((i) => i.issues.length > 0)
+                  .slice(0, 3)
+                  .map((i) => (
+                    <li key={i.index}>
+                      Input {i.index} ({i.type}): {i.issues.join(' ')}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+
           {plan.tiers.map((tier) => (
             <div key={tier.label} className="rounded-xl border border-white/10 bg-black/20 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -294,6 +436,7 @@ export function EvacuationClient() {
                   fee {fmtBtc(tier.feeSats)} → sweeps {fmtBtc(tier.outputSats)}
                 </div>
               </div>
+              <DryRun psbtBase64={tier.psbtBase64} testnet={plan.network === 'testnet'} />
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => signWithWallet(tier)}
