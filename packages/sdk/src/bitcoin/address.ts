@@ -24,10 +24,17 @@ export function classifyUtxoAddress(
       for (const hrp of network.bech32Hrps) {
         if (!lower.startsWith(hrp)) continue;
         const witnessChar = lower[hrp.length];
+        // bech32m encodes the witness version as its first data character:
+        // q = v0, p = v1 (Taproot), z = v2 (BIP-360 P2MR).
+        const body = lower.slice(hrp.length);
         if (network.taproot && witnessChar === 'p') return 'p2tr';
         if (witnessChar === 'q') {
           // Witness v0: 20-byte program (P2WPKH) vs 32-byte program (P2WSH).
-          return lower.slice(hrp.length).length <= 39 ? 'p2wpkh' : 'p2wsh';
+          return body.length <= 39 ? 'p2wpkh' : 'p2wsh';
+        }
+        if (witnessChar === 'z') {
+          // P2MR commits to a 32-byte Merkle root; any other length is not P2MR.
+          return body.length > 39 ? 'p2mr' : 'unknown';
         }
         return 'unknown';
       }

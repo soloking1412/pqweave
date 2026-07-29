@@ -3,7 +3,12 @@ import type { UtxoNetworkId } from './networks.js';
 
 export type { RiskLevel };
 
-export type UtxoAddressType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh' | 'p2tr' | 'unknown';
+/**
+ * `p2mr` is BIP-360 Pay-to-Merkle-Root (SegWit v2, `bc1z…`). The BIP is Draft
+ * and not activated on any network, so these outputs are recognized but not yet
+ * spendable — see `bitcoin/p2mr.ts`.
+ */
+export type UtxoAddressType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh' | 'p2tr' | 'p2mr' | 'unknown';
 
 /** Minimal subset of the Esplora `/address/:address` response the scanner uses. */
 export interface EsploraAddressStats {

@@ -52,9 +52,16 @@ options are:
 1. **Scan** to learn whether a given address is already exposed (what we provide).
 2. **Move to a fresh address** never spent from — this delays exposure but does
    not remove it, since spending re-reveals the key.
-3. **Wait for the protocol fix** — [BIP-360 (P2MR)](https://bip360.org/bip360.html),
-   a draft soft fork adding a quantum-resistant output type (`bc1r`) using
-   NIST ML-DSA. It is **not yet merged or scheduled.**
+3. **Wait for the protocol fix** —
+   [BIP-360 (P2MR, Pay-to-Merkle-Root)](https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki),
+   a draft soft fork adding an output type that commits to a script tree with no
+   public key (SegWit v2, `bc1z…`). It was **merged into bitcoin/bips in Feb 2026
+   but is `Status: Draft` and not activated.** It deliberately contains no
+   post-quantum signatures — those are deferred to a companion BIP via
+   `OP_SUCCESSx`. Until it activates, witness v2 outputs are **anyone-can-spend**,
+   so nothing should be sent to a `bc1z` address on mainnet. PQWeave ships tested
+   construction and migration tooling for it (`packages/sdk/BIP360.md`), hard-
+   blocked on mainnet, so the path is ready the day activation lands.
 
 So for Bitcoin we are honest: PQWeave is an **awareness and detection** tool
 until the network ships a protocol-level remedy. We do not claim to "migrate"

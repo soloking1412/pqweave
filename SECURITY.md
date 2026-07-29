@@ -134,6 +134,18 @@ The web migration flow defaults to this mode.
     balance, exportable as JSON or CSV. The classification rules ship with the
     figures (`METHODOLOGY`), because an exposure number nobody can check
     independently is worth very little.
+  - **BIP-360 (P2MR) migration tooling** — built now so it is tested before it is
+    urgent, **not** because it can be used today. BIP-360 is `Status: Draft` and
+    no network enforces its rules. Under BIP-141 forward compatibility, witness
+    versions 2–16 are **anyone-can-spend**, and P2MR is witness version 2 — so
+    coins sent to a `bc1z…` address right now could be taken by anybody and never
+    recovered. The library therefore **refuses** a mainnet P2MR migration outright
+    rather than warning about it, requires an explicit acknowledgement even on
+    test networks, marks a mainnet `bc1z` destination `unsafe`, and throws if you
+    try to sweep _from_ a P2MR output (no node can validate that spend). It ships
+    no post-quantum leaf templates, because BIP-360 defines no PQ signature
+    opcodes yet — those come in a companion BIP, and inventing them would be
+    fiction. See `packages/sdk/BIP360.md`.
 - **Solana and Stellar cannot be migrated in place — the vault is custody, not a
   wallet fix.** On these chains the address _is_ the Ed25519 public key, exposed
   from creation, so `migrationCapability` is `none` and nothing hardens the

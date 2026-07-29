@@ -33,7 +33,9 @@ export function assessUtxoExposure(
   const type = classifyUtxoAddress(address, network);
   const hasSpent = stats.chain_stats.spent_txo_count > 0;
   // Taproot key-path reveals the public key in the output itself; other types
-  // reveal it only once the address has been spent from.
+  // reveal it only once the address has been spent from. BIP-360 (P2MR) commits
+  // to a script tree with no internal key, so funding it exposes nothing — that
+  // is the whole point of the output type.
   const exposed = type === 'p2tr' || hasSpent;
   const balanceSats =
     BigInt(stats.chain_stats.funded_txo_sum) - BigInt(stats.chain_stats.spent_txo_sum);
@@ -51,6 +53,23 @@ export function assessUtxoExposure(
 export function assessUtxoRisk(exposure: UtxoExposureResult, symbol: string): UtxoRiskAssessment {
   const reasons: string[] = [];
   let score = 0;
+
+  if (exposure.type === 'p2mr') {
+    // BIP-360 output. No key is committed, so nothing is exposed — but the
+    // proposal is still a draft, which is the more urgent fact for a holder.
+    reasons.push(
+      'BIP-360 (P2MR) output: it commits to a script tree with no public key, so there is nothing for a quantum attacker to recover from the output.',
+      'BIP-360 is still a draft and is not active on any network. Under current consensus rules a witness v2 output is anyone-can-spend, so funds here are not protected by the network today.',
+    );
+    return {
+      ...exposure,
+      symbol,
+      balance: formatCoins(exposure.balanceSats),
+      score: exposure.balanceSats > 0n ? 95 : 20,
+      level: exposure.balanceSats > 0n ? 'critical' : 'low',
+      reasons,
+    };
+  }
 
   if (!exposure.exposed) {
     reasons.push('Public key not yet revealed; the address has not been spent from.');

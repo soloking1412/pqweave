@@ -38,6 +38,7 @@ const INPUT_VSIZE: Record<UtxoAddressType, number> = {
   p2sh: 91, // assume P2SH-P2WPKH (nested segwit) — the common wrapped case
   p2pkh: 148,
   p2wsh: 105, // conservative single-sig-ish estimate
+  p2mr: 105, // BIP-360 script-path spend; not spendable until activation
   unknown: 148,
 };
 const OUTPUT_VSIZE_P2WPKH = 31;
@@ -172,6 +173,13 @@ function buildInput(
       'p2wsh-unsupported',
     );
   }
+  if (type === 'p2mr') {
+    throw new UnsignableInputError(
+      `Cannot sweep ${utxo.address}: BIP-360 (P2MR) is still a draft and no network enforces its spending rules, so a spend cannot be constructed. Under current consensus this output is anyone-can-spend.`,
+      utxo.address,
+      'p2mr-not-activated',
+    );
+  }
   if (needsPrevTx && !utxo.prevTxHex) {
     throw new UnsignableInputError(
       `Cannot sweep ${utxo.address}: a ${type === 'p2pkh' ? 'legacy' : 'wrapped SegWit'} input requires its full previous transaction (nonWitnessUtxo). Fetch it with getTxHex before building.`,
@@ -241,6 +249,51 @@ function buildInput(
   };
 }
 
+/** Everything a sweep needs about its inputs, before an output is chosen. */
+export interface PreparedSweepInputs {
+  /** PSBT input fields, ready to hand to `Transaction.addInput`. */
+  fields: Record<string, unknown>[];
+  inputTypes: UtxoAddressType[];
+  totalInputSats: bigint;
+  /** Estimated signed vsize for a sweep to a single P2WPKH-sized output. */
+  vsize: number;
+  signability: SignabilityReport;
+}
+
+/**
+ * Validate and prepare every input up front, so a bad one fails before any PSBT
+ * is produced rather than partway through the bundle. Shared by the evacuation
+ * kit and the BIP-360 migration builder so both inherit the same fail-loud
+ * rules — the signing correctness lives in exactly one place.
+ */
+export function prepareSweepInputs(
+  inputs: EvacuationInput[],
+  network: UtxoNetwork = BITCOIN,
+  testnet = false,
+): PreparedSweepInputs {
+  if (inputs.length === 0) throw new Error('no UTXOs to sweep');
+  const btcNet = testnet ? btc.TEST_NETWORK : btc.NETWORK;
+
+  const inputTypes = inputs.map((utxo) => classifyUtxoAddress(utxo.address, network));
+  const prepared = inputs.map((utxo, i) => buildInput(utxo, inputTypes[i]!, i, btcNet));
+
+  const notes = prepared.map((p) => p.note);
+  const warnings: string[] = [];
+  if (notes.some((n) => !n.hardwareSignable)) {
+    warnings.push(
+      'Some inputs have no key origin, so a hardware wallet will not sign them. Supply the master fingerprint and account path from your wallet to fix this.',
+    );
+  }
+
+  return {
+    fields: prepared.map((p) => p.fields),
+    inputTypes,
+    totalInputSats: inputs.reduce((sum, utxo) => sum + BigInt(utxo.value), 0n),
+    vsize: estimateSweepVsize(inputTypes),
+    signability: { ready: notes.every((n) => n.hardwareSignable), inputs: notes, warnings },
+  };
+}
+
 /**
  * Build one unsigned sweep PSBT per fee tier. Every input is spent; a single
  * output pays the destination; RBF is enabled so a stuck broadcast can be
@@ -254,31 +307,15 @@ export function buildEvacuationPsbts(params: BuildEvacuationParams): EvacuationP
   // The evacuation kit is Bitcoin-only; testnet is selected explicitly.
   const btcNet = params.testnet ? btc.TEST_NETWORK : btc.NETWORK;
 
-  if (inputs.length === 0) throw new Error('no UTXOs to evacuate');
   if (classifyUtxoAddress(destination, network) === 'unknown') {
     throw new Error('destination is not a recognized address');
   }
 
-  const inputTypes = inputs.map((utxo) => classifyUtxoAddress(utxo.address, network));
-  // Validate and prepare every input up front, so a bad one fails before any
-  // PSBT is produced rather than partway through the bundle.
-  const prepared = inputs.map((utxo, i) => buildInput(utxo, inputTypes[i]!, i, btcNet));
-
-  const vsize = estimateSweepVsize(inputTypes);
-  const totalInputSats = inputs.reduce((sum, utxo) => sum + BigInt(utxo.value), 0n);
-
-  const notes = prepared.map((p) => p.note);
-  const warnings: string[] = [];
-  if (notes.some((n) => !n.hardwareSignable)) {
-    warnings.push(
-      'Some inputs have no key origin, so a hardware wallet will not sign them. Supply the master fingerprint and account path from your wallet to fix this.',
-    );
-  }
-  const signability: SignabilityReport = {
-    ready: notes.every((n) => n.hardwareSignable),
-    inputs: notes,
-    warnings,
-  };
+  const { fields, totalInputSats, vsize, signability } = prepareSweepInputs(
+    inputs,
+    network,
+    params.testnet ?? false,
+  );
 
   const tiers: EvacuationTier[] = [];
   const skipped: { label: string; reason: string }[] = [];
@@ -296,8 +333,8 @@ export function buildEvacuationPsbts(params: BuildEvacuationParams): EvacuationP
     }
 
     const tx = new btc.Transaction();
-    for (const { fields } of prepared) {
-      tx.addInput(fields as Parameters<btc.Transaction['addInput']>[0]);
+    for (const input of fields) {
+      tx.addInput(input as Parameters<btc.Transaction['addInput']>[0]);
     }
     tx.addOutputAddress(destination, outputSats, btcNet);
     tiers.push({ label, feeRate, feeSats, outputSats, psbtBase64: base64.encode(tx.toPSBT()) });

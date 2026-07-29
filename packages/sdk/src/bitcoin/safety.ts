@@ -73,6 +73,15 @@ export async function checkDestination(
     );
   }
 
+  if (type === 'p2mr') {
+    // Stronger than the Taproot warning: this is not "less private", it is
+    // "anyone can take it". BIP-360 is a draft and no network enforces it, so a
+    // witness v2 output is unencumbered under BIP-141 forward compatibility.
+    problems.push(
+      'This is a BIP-360 (P2MR) address, and BIP-360 is not active on any network. Under current consensus rules a witness v2 output is anyone-can-spend, so coins sent here could be taken by anybody and never recovered.',
+    );
+  }
+
   let txCount: number | undefined;
   if (!options.skipChainCheck) {
     try {

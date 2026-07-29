@@ -9,6 +9,8 @@ const TYPE_LABELS: Record<UtxoScanReport['type'], string> = {
   p2wpkh: 'SegWit (P2WPKH)',
   p2wsh: 'SegWit script (P2WSH)',
   p2tr: 'Taproot (P2TR)',
+  // BIP-360 Pay-to-Merkle-Root. Draft, not active on any network.
+  p2mr: 'Merkle root (P2MR, BIP-360 draft)',
   unknown: 'Unknown',
 };
 

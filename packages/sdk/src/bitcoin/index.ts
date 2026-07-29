@@ -67,6 +67,28 @@ export type {
 } from './wallet-scan.js';
 export { buildWalletReport, METHODOLOGY, toCsv, toJson } from './report.js';
 export type { AccountRollup, BuildReportOptions, ExposureBucket, WalletReport } from './report.js';
+export {
+  buildControlBlock,
+  decodeP2mrAddress,
+  encodeP2mrAddress,
+  isP2mrAddress,
+  P2MR_LEAF_VERSION,
+  P2MR_WITNESS_VERSION,
+  p2mrMerkleRoot,
+  p2mrScript,
+  tapBranchHash,
+  tapLeafHash,
+} from './p2mr.js';
+export type { DecodedP2mr, P2mrLeaf, P2mrLeafPosition, P2mrNetwork, P2mrTree } from './p2mr.js';
+export {
+  assertP2mrSpendable,
+  P2mrNotActivatedError,
+  planP2mrMigration,
+  rawLeafTemplate,
+} from './p2mr-migration.js';
+export type { P2mrMigrationParams, P2mrMigrationPlan, PqLeafTemplate } from './p2mr-migration.js';
+export { prepareSweepInputs } from './evacuation.js';
+export type { PreparedSweepInputs } from './evacuation.js';
 export { describePsbt, verifySweepMatchesPlan } from './verify.js';
 export type {
   PlanMatch,
