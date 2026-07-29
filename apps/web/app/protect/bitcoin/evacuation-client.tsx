@@ -119,6 +119,7 @@ export function EvacuationClient() {
   const [error, setError] = useState<string | null>(null);
   const [broadcast, setBroadcast] = useState<Record<string, string>>({});
   const [destCheck, setDestCheck] = useState<DestinationCheck | null>(null);
+  const [ownsDestination, setOwnsDestination] = useState(false);
 
   const net = testnet ? 'testnet' : 'bitcoin';
 
@@ -129,6 +130,7 @@ export function EvacuationClient() {
     setBroadcast({});
     setError(null);
     setDestCheck(null);
+    setOwnsDestination(false);
   }
 
   async function loadAndBuild() {
@@ -426,8 +428,32 @@ export function EvacuationClient() {
             )}
           </div>
 
+          {/* A sweep sends the entire balance with no change output. If the
+              destination is not actually yours, the coins are gone for good, so
+              this is confirmed explicitly rather than assumed. */}
+          <label className="flex items-start gap-2.5 rounded-lg border border-white/10 bg-black/20 p-3 text-xs leading-relaxed text-zinc-300">
+            <input
+              type="checkbox"
+              checked={ownsDestination}
+              onChange={(e) => setOwnsDestination(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#7c6cff]"
+            />
+            <span>
+              I control{' '}
+              <span className="break-all font-mono text-zinc-200">{plan.destination}</span> and can
+              still spend from it. This sweep moves the whole balance with no change output — if
+              this address is not mine, the coins cannot be recovered.
+            </span>
+          </label>
+
           {plan.tiers.map((tier) => (
-            <div key={tier.label} className="rounded-xl border border-white/10 bg-black/20 p-4">
+            <div
+              key={tier.label}
+              className={`rounded-xl border border-white/10 bg-black/20 p-4 transition ${
+                ownsDestination ? '' : 'pointer-events-none opacity-40'
+              }`}
+              aria-disabled={!ownsDestination}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-sm font-semibold capitalize text-white">
                   {tier.label} · {tier.feeRate} sat/vB

@@ -110,7 +110,10 @@ The web migration flow defaults to this mode.
       checked on-chain and refused if used, refused if it is one of the source
       addresses, and flagged if it is Taproot (a P2TR output publishes the key
       the moment it is funded). If the indexer is unreachable the check degrades
-      to a warning — an outage must not block an emergency evacuation.
+      to a warning — an outage must not block an emergency evacuation. A sweep
+      sends the whole balance with no change output, so the UI also requires an
+      explicit confirmation that you control the destination before anything can
+      be signed: if that address is not yours, the coins are unrecoverable.
     - **Dry run before signing.** `describePsbt` decodes the bundle and states
       what it actually does (inputs, destination, amount, fee, RBF, change), and
       `verifySweepMatchesPlan` asserts it matches the tier it claims to be. Read
