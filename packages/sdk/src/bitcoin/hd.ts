@@ -96,14 +96,24 @@ const HARDENED = 0x80000000;
  * silently produces a PSBT no device will sign.
  */
 export function parseDerivationPath(path: string): number[] {
-  const trimmed = path.trim().replace(/^m\//i, '').replace(/^m$/i, '');
-  if (trimmed === '') return [];
-  return trimmed.split('/').map((part) => {
+  const raw = path.trim();
+  // The master key itself is a valid, empty path.
+  if (raw === '' || /^m$/i.test(raw)) return [];
+
+  // Anything after "m/" must be real segments. A trailing separator or a
+  // whitespace-only segment used to slip through and yield an empty path, which
+  // silently dropped the account prefix from bip32Derivation — the device then
+  // refused to sign, turning a typo into a failure at signing time instead of
+  // build time. Reject it here instead.
+  const body = /^m\//i.test(raw) ? raw.slice(2) : raw;
+  if (body === '') throw new Error(`invalid derivation path: ${path}`);
+
+  return body.split('/').map((part) => {
     const hardened = /['h]$/i.test(part);
-    const raw = hardened ? part.slice(0, -1) : part;
-    if (!/^\d+$/.test(raw)) throw new Error(`invalid derivation path segment: ${part}`);
-    const value = Number(raw);
-    if (value >= HARDENED) throw new Error(`derivation index out of range: ${part}`);
+    const digits = hardened ? part.slice(0, -1) : part;
+    if (!/^\d+$/.test(digits)) throw new Error(`invalid derivation path segment: "${part}"`);
+    const value = Number(digits);
+    if (value >= HARDENED) throw new Error(`derivation index out of range: "${part}"`);
     return hardened ? value + HARDENED : value;
   });
 }
