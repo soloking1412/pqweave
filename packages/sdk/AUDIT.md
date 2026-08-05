@@ -168,6 +168,16 @@ examples. They are the claims we would like independently challenged.
   depth-0 tree as anyone-can-spend ("If m = 0, succeed immediately"), so every
   leaf must have a non-empty Merkle path.
 
+**Indexer data is verified, not trusted**
+
+- A supplied previous transaction must hash to the outpoint's txid, contain the
+  claimed `vout`, pay exactly the claimed number of satoshis, and pay exactly
+  the script the address encodes. Any mismatch **throws**.
+- A supplied public key must re-derive the address it claims to control, for
+  every script type. Any mismatch **throws**.
+- One inconsistent input aborts the whole bundle; a partial sweep is never
+  emitted.
+
 **Winternitz signatures**
 
 - A signature verifies on chain if and only if it verifies in the SDK; the two
@@ -184,37 +194,51 @@ examples. They are the claims we would like independently challenged.
 
 ## 5. Test coverage
 
-299 tests total; **154 across 11 Bitcoin files**, of which **38 are
+315 tests total; **173 across 12 Bitcoin files**, of which **38 are
 property-based** across 3 files, generating several thousand cases per run, plus
 **24 covering the Winternitz scheme** in the SDK and 10 more (4 fuzzed) on chain.
 
-| File                                | What it covers                                            |
-| ----------------------------------- | --------------------------------------------------------- |
-| `bitcoin-signing.test.ts`           | Real sign-and-finalize for p2pkh, p2wpkh, p2sh, p2tr      |
-| `bitcoin-psbt-compliance.test.ts`   | What a hardware wallet verifies before signing            |
-| `bitcoin-properties.test.ts`        | Fee, dust, conservation, PSBT structure (generated)       |
-| `bitcoin-properties-wallet.test.ts` | Derivation, gap limit, report arithmetic, CSV (generated) |
-| `bitcoin-properties-p2mr.test.ts`   | P2MR construction and the activation guard (generated)    |
-| `bitcoin-safety.test.ts`            | Destination rails and the dry run                         |
-| `bitcoin-p2mr.test.ts`              | BIP-360 wire format against the BIP's published vector    |
-| `bitcoin-wallet-scan.test.ts`       | Gap limit, cursor resume, rate-limit retry                |
-| `bitcoin-tools.test.ts`             | BIP-84 vector, fee tiers, sweep basics                    |
-| `bitcoin.test.ts`                   | Address classification and exposure scoring               |
-| `bitcoin-bip361.test.ts`            | Signature-sunset scope, the two clocks, wallet rollups    |
-| `winternitz.test.ts`                | WOTS+ signing, tampering, one-time enforcement            |
+| File                                | What it covers                                                |
+| ----------------------------------- | ------------------------------------------------------------- |
+| `bitcoin-signing.test.ts`           | Real sign-and-finalize for p2pkh, p2wpkh, p2sh, p2tr          |
+| `bitcoin-psbt-compliance.test.ts`   | What a hardware wallet verifies before signing                |
+| `bitcoin-properties.test.ts`        | Fee, dust, conservation, PSBT structure (generated)           |
+| `bitcoin-properties-wallet.test.ts` | Derivation, gap limit, report arithmetic, CSV (generated)     |
+| `bitcoin-properties-p2mr.test.ts`   | P2MR construction and the activation guard (generated)        |
+| `bitcoin-safety.test.ts`            | Destination rails and the dry run                             |
+| `bitcoin-p2mr.test.ts`              | BIP-360 wire format against the BIP's published vector        |
+| `bitcoin-wallet-scan.test.ts`       | Gap limit, cursor resume, rate-limit retry                    |
+| `bitcoin-tools.test.ts`             | BIP-84 vector, fee tiers, sweep basics                        |
+| `bitcoin.test.ts`                   | Address classification and exposure scoring                   |
+| `bitcoin-bip361.test.ts`            | Signature-sunset scope, the two clocks, wallet rollups        |
+| `winternitz.test.ts`                | WOTS+ signing, tampering, one-time enforcement                |
+| `bitcoin-hostile-indexer.test.ts`   | Adversarial: forged amounts, substituted prev txs, wrong keys |
 
 ### Known gaps we would like the review to cover
 
 1. **No physical hardware-wallet test.** PSBT fields are verified
    programmatically against what devices check, but nothing has been signed on a
    real Coldcard, Trezor, or Ledger.
-2. **Hostile-indexer testing is thin.** We handle the indexer being _down_. We do
-   not systematically test it being _lying_.
+2. ~~**Hostile-indexer testing is thin.**~~ **Closed.** Every fact the indexer
+   supplies about a UTXO is now cross-checked against the previous transaction
+   it also supplies, and a mismatched amount, txid, vout or script aborts the
+   build. `bitcoin-hostile-indexer.test.ts` is the adversary: forged amounts
+   (including a property test over every perturbation), substituted previous
+   transactions, out-of-range vouts, wrong scripts, unparseable data, and keys
+   that do not control their address. What remains untested is an indexer that
+   is _internally consistent but globally wrong_ — one serving a coherent view
+   of a chain that does not exist. Detecting that needs a second source.
 3. **No differential testing** against Bitcoin Core or another PSBT
    implementation.
 4. **P2MR cannot be exercised end to end anywhere**, because no network
    implements BIP-360.
-5. Fee estimation assumes single-sig inputs; multisig vsize would be understated.
+5. ~~Fee estimation assumes single-sig inputs; multisig vsize would be
+   understated.~~ **Closed by rejection rather than estimation.** A watch-only
+   address does not reveal its witness script, so a multisig input's true size
+   cannot be known — guessing would underpay the fee and strand the sweep. P2WSH
+   was already refused; a P2SH-multisig is now refused too, because the supplied
+   key does not re-derive the address. We decline to build rather than build
+   something that underpays.
 
 ---
 
@@ -237,7 +261,7 @@ where bugs have historically lived.
 
 ```bash
 pnpm install
-pnpm --filter @pqweave/sdk test        # 299 tests
+pnpm --filter @pqweave/sdk test        # 315 tests
 pnpm --filter @pqweave/sdk typecheck
 pnpm format:check
 ```

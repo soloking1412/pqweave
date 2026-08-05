@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { BIP361, bip361Outlook, bip361Timeline, summarizeBip361 } from '../src/bitcoin/bip361.js';
+import {
+  BIP361,
+  bip361Outlook,
+  bip361Timeline,
+  EC_DISABLING_MODELS,
+  EVIDENCE_TRIGGER_CONSEQUENCE,
+  summarizeBip361,
+} from '../src/bitcoin/bip361.js';
 import type { UtxoAddressType, UtxoExposureResult } from '../src/bitcoin/types.js';
 
 /**
@@ -103,6 +110,33 @@ describe('wallet rollup', () => {
     const summary = summarizeBip361([]);
     expect(summary.totalSats).toBe(0n);
     expect(summary.addressesInScope).toBe(0);
+  });
+});
+
+describe('evidence-triggered disabling', () => {
+  it('covers all three proposed triggers', () => {
+    expect(EC_DISABLING_MODELS.map((m) => m.trigger)).toEqual([
+      'scheduled',
+      'tripwire',
+      'miner-lockdown',
+    ]);
+  });
+
+  it('states plainly that the tripwire gives no warning', () => {
+    const tripwire = EC_DISABLING_MODELS.find((m) => m.trigger === 'tripwire')!;
+    expect(tripwire.warning).toMatch(/effectively none/i);
+    // The whole point: it fires when the break is demonstrated, not before.
+    expect(tripwire.condition).toMatch(/broken|demonstrat/i);
+  });
+
+  it('marks every model as unactivated', () => {
+    for (const model of EC_DISABLING_MODELS) {
+      expect(model.status).toMatch(/draft|proposal/i);
+    }
+  });
+
+  it('says preparation must finish before the trigger, not start at it', () => {
+    expect(EVIDENCE_TRIGGER_CONSEQUENCE).toMatch(/before the trigger/i);
   });
 });
 

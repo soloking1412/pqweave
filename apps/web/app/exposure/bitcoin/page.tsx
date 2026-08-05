@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { EC_DISABLING_MODELS, EVIDENCE_TRIGGER_CONSEQUENCE } from '@pqweave/sdk/bitcoin';
 import { Reveal, StaggerGroup, StaggerItem } from '@/components/motion';
 
 export const metadata: Metadata = {
@@ -211,6 +212,36 @@ export default function BitcoinExposurePage() {
           rather than a side effect. It may be amended or may never activate, and no activation has
           been scheduled. We surface it because the dates would matter if it does, not because we
           are predicting that it will.
+        </p>
+      </Reveal>
+
+      <Reveal className="mt-12">
+        <h2 className="text-xl font-semibold tracking-tight">
+          The trigger might not be a date at all
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+          BIP-361 runs on a calendar. Pieter Wuille proposed something different in July 2026:
+          disabling elliptic-curve spending on{' '}
+          <em className="not-italic text-zinc-200">evidence</em> rather than schedule. Which model
+          wins changes what &ldquo;I&apos;ll migrate when it gets close&rdquo; is worth.
+        </p>
+        <div className="mt-5 grid gap-px overflow-hidden rounded-panel border border-rule bg-rule sm:grid-cols-3">
+          {EC_DISABLING_MODELS.map((model) => (
+            <div key={model.trigger} className="bg-panel p-5">
+              <div className="text-sm font-semibold text-white">{model.label}</div>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">{model.condition}</p>
+              <div className="mt-3 border-t border-rule pt-2.5">
+                <div className="text-[10px] uppercase tracking-wide text-zinc-600">
+                  Warning given
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-300">{model.warning}</p>
+              </div>
+              <p className="mt-2.5 text-[10px] leading-relaxed text-zinc-600">{model.status}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 max-w-2xl border-l-2 border-amber-500/40 pl-3 text-xs leading-relaxed text-zinc-400">
+          {EVIDENCE_TRIGGER_CONSEQUENCE}
         </p>
       </Reveal>
 

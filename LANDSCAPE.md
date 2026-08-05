@@ -13,11 +13,20 @@ through better algorithms rather than better hardware. That is the part worth
 paying attention to: hardware improvement is visible and forecastable, algorithmic
 improvement is not.
 
-| Source                               | Finding                                                                                       |
-| ------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Gidney, Google Quantum AI (May 2025) | RSA-2048 in under a week with <1M noisy physical qubits — 20x below his own 2019 estimate     |
-| Iceberg Quantum (Feb 2026)           | RSA-2048 plausibly under 100k physical qubits with qLDPC codes. Simulation only, not hardware |
-| Google Quantum AI (Mar 2026)         | ECC/secp256k1 with **<500k physical qubits**, ~1,200–1,450 logical, runtime in **minutes**    |
+| Source                                | Finding                                                                                                                                             |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gidney, Google Quantum AI (May 2025)  | RSA-2048 in under a week with <1M noisy physical qubits — 20x below his own 2019 estimate                                                           |
+| Iceberg Quantum (Feb 2026)            | RSA-2048 plausibly under 100k physical qubits with qLDPC codes. Simulation only, not hardware                                                       |
+| Google Quantum AI (Mar 2026)          | ECC/secp256k1 with **<500k physical qubits**, ~1,200–1,450 logical, runtime in **minutes**                                                          |
+| Project Eleven Q-Day Prize (Apr 2026) | **15-bit** ECC key broken on real cloud quantum hardware via a Shor variant, claimed by Giancarlo Lelli. Prior public record was 6 bits (Sept 2025) |
+
+The Q-Day Prize result is the one to read carefully, because it is easy to
+mis-cite in both directions. It is the first meaningful _hardware_ progression —
+a 512x jump in search space in seven months — and it is also nowhere near
+Bitcoin. A 15-bit key has a search space of 32,767; secp256k1 is 256-bit. The
+honest reading is that hardware demonstrations are now tracking a curve at all,
+which they were not before, and that the resource estimates above remain the
+number that matters.
 
 The Google cryptocurrency paper also estimates roughly a **41% chance a primed
 quantum computer could derive a private key before a Bitcoin transaction
@@ -104,8 +113,41 @@ and hash-based signatures are the near-term answer. Two concrete consequences:
   - The BIP does **not** resolve whether Phase B applies to all legacy outputs or
     only exposed ones. `src/bitcoin/bip361.ts` reports both readings.
   - It is contentious. It makes coins unspendable by design.
+- **EC disabling by evidence, not schedule (Wuille, 3 Jul 2026).** Pieter Wuille
+  proposed codifying how elliptic-curve spending gets switched off inside
+  post-quantum output types that initially allow a cheaper EC spend. Two
+  mechanisms: a **tripwire** that fires after a successful NUMS-point spend —
+  which is only possible if secp256k1 is genuinely broken — and **miner
+  lockdown** by hashrate majority.
+
+  This is strategically different from BIP-361 and arguably more likely to reach
+  consensus, because it does not freeze anyone's coins on a calendar. It is also
+  worse for anyone planning to migrate late: a schedule can be planned against,
+  a tripwire fires at the moment the break is demonstrated, which is the same
+  moment exposed keys start being drained. Modelled in `bip361.ts` as
+  `EC_DISABLING_MODELS`.
+
+- **Bird of Prey 2 (EuroCrypt 2026).** A signature combiner that makes a
+  hybrid Schnorr + PQ signature non-malleable, by having the Schnorr challenge
+  hash commit to the PQ signature rather than concatenating the two. Not a
+  Bitcoin proposal, but it is the correct way to build a hybrid if one is ever
+  wanted — naive concatenation preserves unforgeability and loses strong
+  unforgeability.
+- **SLH-DSA STARK aggregation benchmarks (Jul 2026).** Aggregating SPHINCS+
+  verifications into one STARK proof in RISC Zero: ~3.1 s proving per signature
+  on an RTX 5090, proofs growing sublinearly (218 KiB for 1 signature, 454 KiB
+  for 512, against 3.8 MiB raw), and constant 12–15 ms verification. Full-block
+  proving still takes hours on a single GPU. Relevant because it is the same
+  bet Ethereum's leanVM is making: hash-based signatures are large, and
+  aggregation is how a chain absorbs that.
+- **Lattice-versus-hash, settled for now.** The list revisited why Bitcoin's PQ
+  work leans hash-based despite lattices being smaller and more functional. The
+  answer given was weaker security assumptions, implementation simplicity, fast
+  verification and suitability as a long-term fallback — the same reasoning
+  behind our default, from people with no stake in our choice.
 - Also live in discussion: Hourglass V2 (limiting P2PK spends), Falcon and
-  SLH-DSA script proposals, Winternitz via `OP_CAT`.
+  SLH-DSA script proposals, Winternitz via `OP_CAT`, post-quantum Lightning,
+  and a PQ path for BIP324.
 
 ---
 

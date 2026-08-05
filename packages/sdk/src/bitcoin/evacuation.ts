@@ -31,13 +31,24 @@ import type { UtxoAddressType } from './types.js';
  * is discovered at the moment it is needed.
  */
 
-/** Rough signed vsize contribution per input type (vbytes). */
+/**
+ * Signed vsize contribution per input type (vbytes), **single-signature only**.
+ *
+ * A multisig input is several times larger than these figures, so estimating
+ * one here would underpay the fee and leave the sweep stuck in the mempool —
+ * which, during an evacuation, is indistinguishable from failing. We do not
+ * guess: script types whose true size cannot be known from a watch-only address
+ * are rejected outright in `buildInput`, and a key that does not derive its own
+ * address (the way a P2SH-multisig would not) is rejected by
+ * `verifyPubkeyControlsAddress`. The entries below are reachable only for the
+ * single-sig types those checks let through.
+ */
 const INPUT_VSIZE: Record<UtxoAddressType, number> = {
   p2wpkh: 68,
   p2tr: 58,
-  p2sh: 91, // assume P2SH-P2WPKH (nested segwit) — the common wrapped case
+  p2sh: 91, // P2SH-P2WPKH; any other P2SH shape is rejected before it gets here
   p2pkh: 148,
-  p2wsh: 105, // conservative single-sig-ish estimate
+  p2wsh: 105, // rejected at build — kept so the public estimator stays total
   p2mr: 105, // BIP-360 script-path spend; not spendable until activation
   unknown: 148,
 };
@@ -144,6 +155,137 @@ export class UnsignableInputError extends Error {
 const XONLY = (pubkey: Uint8Array) => pubkey.subarray(1, 33);
 
 /**
+ * Thrown when the facts supplied about a UTXO contradict each other — the
+ * previous transaction does not match the outpoint, the amount disagrees, or
+ * the public key does not control the address.
+ *
+ * Distinct from {@link UnsignableInputError} because the cause is different and
+ * so is the fix: that one means "your signer cannot handle this input", this
+ * one means "the data you were given is wrong, and possibly hostile".
+ */
+export class InconsistentUtxoError extends Error {
+  constructor(
+    message: string,
+    readonly address: string,
+    readonly reason: string,
+  ) {
+    super(message);
+    this.name = 'InconsistentUtxoError';
+  }
+}
+
+/**
+ * Check the supplied previous transaction really is the one being spent.
+ *
+ * The indexer is untrusted. If it can put a previous transaction into a PSBT
+ * that does not correspond to the outpoint, it controls what the signing device
+ * believes the input is worth — and the difference between the believed amount
+ * and the real one is paid to the miner. That is the fee-inflation attack that
+ * forced hardware wallets to demand full previous transactions in the first
+ * place (CVE-2020-14199), and attaching `nonWitnessUtxo` without checking it
+ * reintroduces exactly the hole the field exists to close.
+ */
+function verifyPrevTx(utxo: EvacuationInput, script: Uint8Array): void {
+  let prev: btc.Transaction;
+  try {
+    prev = btc.Transaction.fromRaw(hex.decode(utxo.prevTxHex!), {
+      allowUnknownOutputs: true,
+      allowLegacyWitnessUtxo: true,
+      disableScriptCheck: true,
+    });
+  } catch (error) {
+    throw new InconsistentUtxoError(
+      `Cannot sweep ${utxo.address}: the supplied previous transaction could not be parsed (${(error as Error).message}).`,
+      utxo.address,
+      'prevtx-unparseable',
+    );
+  }
+
+  if (prev.id !== utxo.txid) {
+    throw new InconsistentUtxoError(
+      `Cannot sweep ${utxo.address}: the supplied previous transaction hashes to ${prev.id}, but this UTXO is on ${utxo.txid}. Refusing to build a PSBT from mismatched data.`,
+      utxo.address,
+      'prevtx-txid-mismatch',
+    );
+  }
+
+  if (utxo.vout >= prev.outputsLength) {
+    throw new InconsistentUtxoError(
+      `Cannot sweep ${utxo.address}: output index ${utxo.vout} does not exist in transaction ${utxo.txid} (it has ${prev.outputsLength}).`,
+      utxo.address,
+      'prevtx-vout-out-of-range',
+    );
+  }
+
+  const output = prev.getOutput(utxo.vout);
+  if (output.amount !== BigInt(utxo.value)) {
+    throw new InconsistentUtxoError(
+      `Cannot sweep ${utxo.address}: the indexer reports ${utxo.value} sats but the previous transaction pays ${output.amount} sats to this outpoint. Signing against a wrong amount hands the difference to the miner.`,
+      utxo.address,
+      'prevtx-amount-mismatch',
+    );
+  }
+
+  if (!output.script || hex.encode(output.script) !== hex.encode(script)) {
+    throw new InconsistentUtxoError(
+      `Cannot sweep ${utxo.address}: the previous transaction pays a different script than this address. The UTXO does not belong to it.`,
+      utxo.address,
+      'prevtx-script-mismatch',
+    );
+  }
+}
+
+/**
+ * Check the supplied public key actually controls the address.
+ *
+ * Every script we build from a key — the wrapped-SegWit redeem script, the
+ * Taproot internal key — is only correct if the key is the right one. Rebuilding
+ * the address from the key and comparing is the cheapest possible proof.
+ *
+ * It also closes the multisig hole: a P2SH-multisig address classifies as
+ * `p2sh`, and without this check it would be handed a single-sig redeem script,
+ * producing a PSBT that no signer can use and whose fee estimate is far too low.
+ */
+function verifyPubkeyControlsAddress(
+  utxo: EvacuationInput,
+  type: UtxoAddressType,
+  btcNet: BtcNetwork,
+): void {
+  const pubkey = utxo.pubkey;
+  if (!pubkey) return; // absence is handled by the per-type required checks
+
+  let derived: string | undefined;
+  try {
+    switch (type) {
+      case 'p2pkh':
+        derived = btc.p2pkh(pubkey, btcNet).address;
+        break;
+      case 'p2wpkh':
+        derived = btc.p2wpkh(pubkey, btcNet).address;
+        break;
+      case 'p2sh':
+        derived = btc.p2sh(btc.p2wpkh(pubkey, btcNet), btcNet).address;
+        break;
+      case 'p2tr':
+        derived = btc.p2tr(XONLY(pubkey), undefined, btcNet).address;
+        break;
+      default:
+        return;
+    }
+  } catch {
+    derived = undefined;
+  }
+
+  if (derived !== utxo.address) {
+    throw new InconsistentUtxoError(
+      `Cannot sweep ${utxo.address}: the supplied public key derives ${derived ?? 'nothing'} for a ${type} address, not this one. Either the key is wrong, or this is a script (e.g. multisig) address that only looks single-sig.`,
+      utxo.address,
+      'pubkey-address-mismatch',
+    );
+  }
+}
+
+/**
  * Build the PSBT input fields for one UTXO, or throw if the result would be
  * unsignable. Returns the fields plus a signability note.
  */
@@ -203,6 +345,12 @@ function buildInput(
   }
 
   const script = scriptFor(utxo.address, btcNet);
+
+  // Everything below builds signing material out of the caller's data, so
+  // check that data is self-consistent before trusting any of it.
+  verifyPubkeyControlsAddress(utxo, type, btcNet);
+  if (utxo.prevTxHex) verifyPrevTx(utxo, script);
+
   const fields: Record<string, unknown> = {
     txid: hex.decode(utxo.txid),
     index: utxo.vout,

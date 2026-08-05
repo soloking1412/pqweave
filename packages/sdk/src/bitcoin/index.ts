@@ -34,6 +34,7 @@ export {
   buildEvacuationPsbts,
   estimateSweepVsize,
   finalizeSweep,
+  InconsistentUtxoError,
   UnsignableInputError,
 } from './evacuation.js';
 export type {
@@ -69,10 +70,19 @@ export {
   BIP361,
   bip361Outlook,
   bip361Timeline,
+  EC_DISABLING_MODELS,
+  EVIDENCE_TRIGGER_CONSEQUENCE,
   PHASE_B_SCOPE_IS_AMBIGUOUS,
   summarizeBip361,
 } from './bip361.js';
-export type { Bip361Outlook, Bip361Phase, Bip361Summary, Bip361Timeline } from './bip361.js';
+export type {
+  Bip361Outlook,
+  Bip361Phase,
+  Bip361Summary,
+  Bip361Timeline,
+  EcDisablingModel,
+  EcDisablingTrigger,
+} from './bip361.js';
 export { buildWalletReport, METHODOLOGY, toCsv, toJson } from './report.js';
 export type { AccountRollup, BuildReportOptions, ExposureBucket, WalletReport } from './report.js';
 export {
