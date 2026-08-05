@@ -4,9 +4,25 @@
   --color-brand: #7c6cff;
   --color-brand-bright: #9a8cff;
   --color-accent: #34e2e4;
+
+  /* Structural greys. The page is a panel, not a canvas. */
+  --color-panel: #0a0a11;
+  --color-panel-raised: #101019;
+  --color-rule: rgba(255, 255, 255, 0.09);
+  --color-rule-strong: rgba(255, 255, 255, 0.16);
+
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+
+  /* Radius carries meaning: instrument panels are near-sharp, controls are
+     softer, and only status chips are pills. Uniform radius everywhere is what
+     makes an interface read as generated rather than designed. */
+  --radius-panel: 3px;
+  --radius-control: 7px;
+
+  /* Entry decelerates; measurements settle rather than bounce. */
+  --ease-settle: cubic-bezier(0.16, 0.84, 0.44, 1);
 }
 
 :root {
@@ -14,9 +30,17 @@
 }
 
 body {
-  background:
-    radial-gradient(1100px 620px at 82% -12%, rgba(124, 108, 255, 0.2), transparent),
-    radial-gradient(900px 520px at -12% 6%, rgba(52, 226, 228, 0.1), transparent), #06060a;
+  /* A point lattice, not a blur blob. Lattices are the other half of
+     post-quantum cryptography, and a regular grid reads as measurement —
+     which is what the scanner actually does. */
+  background-color: #06060a;
+  background-image:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(124, 108, 255, 0.07), transparent 42rem);
+  background-size:
+    28px 28px,
+    100% 100%;
+  background-attachment: fixed, scroll;
   color: #e7e7ee;
 }
 
@@ -25,5 +49,55 @@ a {
 }
 
 ::selection {
-  background: rgba(124, 108, 255, 0.35);
+  background: rgba(52, 226, 228, 0.3);
+}
+
+/* Every measured value on this site is monospaced with aligned digits, so
+   columns of numbers line up and a changing value never reflows its row. */
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Instrument panel: hairline border with corner ticks, in place of a soft card.
+   The ticks are what make a rectangle read as a measurement frame. */
+.panel {
+  position: relative;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-panel);
+  background-color: var(--color-panel);
+}
+
+.panel::before,
+.panel::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: rgba(52, 226, 228, 0.55);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.panel::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+
+.panel::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

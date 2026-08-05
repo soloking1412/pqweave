@@ -3,48 +3,80 @@ import { ChainsSection } from '@/components/landing/chains-section';
 import { Hero } from '@/components/landing/hero';
 import { PartnerCta } from '@/components/landing/partner-cta';
 import { RoadmapSection } from '@/components/landing/roadmap-section';
+import { VerifierComparison } from '@/components/landing/verifier-comparison';
 import { Reveal } from '@/components/motion';
 import { LIVE_CHAIN_COUNT } from '@/lib/chains-directory';
+
+/** Measured facts, with the source attached. No number here is ours to round. */
+const READINGS = [
+  {
+    value: '~1,200',
+    unit: 'logical qubits',
+    label: 'to derive a secp256k1 private key, in minutes of runtime',
+    source: 'Google Quantum AI, Mar 2026',
+  },
+  {
+    value: '34',
+    unit: '% of BTC',
+    label: 'had already revealed a public key on chain by 1 March 2026',
+    source: 'BIP-361',
+  },
+  {
+    value: '41',
+    unit: '% odds',
+    label: 'of a key being derived before a Bitcoin transaction confirms',
+    source: 'Google Quantum AI, Mar 2026',
+  },
+  {
+    value: String(LIVE_CHAIN_COUNT),
+    unit: 'chains',
+    label: 'scanned live across all three exposure families',
+    source: 'This repository',
+  },
+];
 
 const TIERS = [
   {
     step: '01',
     title: 'Scan',
-    body: `Check whether an address has revealed its public key and score its quantum risk — across ${LIVE_CHAIN_COUNT} chains and three exposure families. No wallet connection required.`,
+    body: `Check whether an address has published its public key and score the exposure — ${LIVE_CHAIN_COUNT} chains, three exposure families, no wallet connection.`,
     href: '/scan',
     cta: 'Open the scanner',
   },
   {
     step: '02',
-    title: 'Migrate in one click',
-    body: 'Sweep an entire wallet — native, ERC-20, and NFTs — into a quantum-safe account in a single EIP-7702 transaction. One signature, same address kept or left behind.',
+    title: 'Migrate',
+    body: 'Sweep an entire EVM wallet — native, ERC-20 and NFTs — into a post-quantum account in one EIP-7702 transaction, or keep the address and harden it in place.',
     href: '/migrate',
     cta: 'Migrate a wallet',
   },
   {
     step: '03',
-    title: 'Create',
-    body: 'New users start on a fresh account that is quantum-safe from block one, whose public key is never exposed as a vulnerable EOA. Hybrid ECDSA + post-quantum from day one.',
-    href: '/migrate',
+    title: 'Start clean',
+    body: 'New accounts are post-quantum from the first block, with a counterfactual address safe to fund before it is even deployed.',
+    href: '/start',
     cta: 'Create an account',
   },
 ];
 
-const SCHEMES = [
+const VERIFIERS = [
+  {
+    name: 'Winternitz + Merkle',
+    standard: 'WOTS+, keccak256',
+    role: 'Default. Same construction family as Ethereum’s leanSig. 2,304-byte signatures.',
+    state: 'shipped' as const,
+  },
   {
     name: 'Lamport + Merkle',
-    standard: 'Hash-based (FIPS 205 family)',
-    role: 'Default on-chain gate — keccak256 only, no lattice assumptions',
+    standard: 'Hash-based, keccak256',
+    role: 'The original verifier, still deployed. Simpler to audit, 10x larger on the wire.',
+    state: 'shipped' as const,
   },
   {
     name: 'Falcon-512',
     standard: 'FIPS 206',
-    role: 'Compact lattice verifier (ETHFALCON), pluggable per account',
-  },
-  {
-    name: 'ML-DSA (Dilithium)',
-    standard: 'FIPS 204',
-    role: 'NIST primary signature standard, available in the SDK',
+    role: 'Blocked: FIPS 206 is still a draft, expected final late 2026. Pluggable when it lands.',
+    state: 'blocked' as const,
   },
 ];
 
@@ -53,27 +85,25 @@ export default function HomePage() {
     <div className="mx-auto max-w-6xl px-5">
       <Hero />
 
-      {/* Threat numbers */}
+      {/* Readings — an instrument strip, not a row of cards. */}
       <Reveal>
-        <section className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
-          {[
-            {
-              stat: '~1,200',
-              label:
-                'Logical qubits Google Quantum AI estimates would break secp256k1, in minutes of runtime',
-            },
-            {
-              stat: 'Every spend',
-              label: 'A public key is recoverable from — or embedded in — your address',
-            },
-            {
-              stat: `${LIVE_CHAIN_COUNT} chains`,
-              label: 'Scanned today across all three exposure families, with more landing soon',
-            },
-          ].map((item) => (
-            <div key={item.label} className="bg-[#0b0b12] p-6">
-              <div className="text-2xl font-semibold tracking-tight text-white">{item.stat}</div>
-              <div className="mt-2 text-sm leading-relaxed text-zinc-400">{item.label}</div>
+        <section
+          aria-label="Measured threat readings"
+          className="grid border-y border-rule sm:grid-cols-2 lg:grid-cols-4"
+        >
+          {READINGS.map((r, i) => (
+            <div
+              key={r.label}
+              className={`px-5 py-6 ${i > 0 ? 'border-t border-rule sm:border-t-0 sm:border-l' : ''} ${
+                i === 2 ? 'lg:border-l' : ''
+              } ${i % 2 === 0 ? 'sm:border-l-0 lg:border-l' : ''} ${i === 0 ? 'lg:border-l-0' : ''}`}
+            >
+              <div className="flex items-baseline gap-1.5">
+                <span className="tabular text-2xl text-white">{r.value}</span>
+                <span className="tabular text-[11px] text-accent">{r.unit}</span>
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-zinc-400">{r.label}</p>
+              <p className="tabular mt-2 text-[10px] text-zinc-600">{r.source}</p>
             </div>
           ))}
         </section>
@@ -81,28 +111,30 @@ export default function HomePage() {
 
       <ChainsSection />
 
+      {/* What the verifier upgrade actually bought — measured, not asserted. */}
+      <VerifierComparison />
+
       {/* How it works */}
       <Reveal>
-        <section id="how" className="scroll-mt-20 py-20 sm:py-28">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Scan, migrate, create
+        <section id="how" className="scroll-mt-20 border-t border-rule py-20 sm:py-28">
+          <h2 className="text-[1.7rem] font-semibold tracking-tight sm:text-4xl">
+            Scan, migrate, start clean
           </h2>
-          <p className="mt-3 max-w-2xl text-zinc-400">
-            Understand your exposure, move an existing wallet to safety in one transaction, or start
-            new on an account that is quantum-safe from the first block.
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-zinc-400">
+            Measure the exposure, move an existing wallet behind a post-quantum signature, or begin
+            on an account that never had a vulnerable key to begin with.
           </p>
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="mt-10 grid gap-px overflow-hidden border border-rule bg-rule lg:grid-cols-3">
             {TIERS.map((tier) => (
-              <div
-                key={tier.step}
-                className="group flex flex-col rounded-2xl border border-white/10 bg-[#0b0b12] p-6 transition hover:border-brand/40"
-              >
-                <div className="font-mono text-sm text-brand-bright">{tier.step}</div>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight">{tier.title}</h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-zinc-400">{tier.body}</p>
+              <div key={tier.step} className="group flex flex-col bg-panel p-6">
+                <div className="tabular text-[11px] text-accent">{tier.step}</div>
+                <h3 className="mt-3 text-lg font-semibold tracking-tight">{tier.title}</h3>
+                <p className="mt-2.5 flex-1 text-[13px] leading-relaxed text-zinc-400">
+                  {tier.body}
+                </p>
                 <Link
                   href={tier.href}
-                  className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-brand-bright transition group-hover:gap-2.5"
+                  className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-brand-bright transition-all duration-150 group-hover:gap-2.5"
                 >
                   {tier.cta} <span aria-hidden>→</span>
                 </Link>
@@ -114,42 +146,61 @@ export default function HomePage() {
 
       {/* Hybrid circuit-breaker */}
       <Reveal>
-        <section className="grid gap-10 rounded-2xl border border-white/10 bg-[#0b0b12] p-8 sm:p-10 lg:grid-cols-2">
+        <section className="grid gap-10 border-t border-rule py-20 sm:py-28 lg:grid-cols-2">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              A hybrid circuit-breaker, not a rip-and-replace
+            <h2 className="text-[1.7rem] font-semibold tracking-tight sm:text-3xl">
+              A circuit-breaker, not a rip-and-replace
             </h2>
-            <p className="mt-4 text-zinc-400">
-              ECDSA keeps signing routine activity for a familiar experience. The moment an
-              operation gets dangerous — a large transfer, a token approval, an account change —
-              PQWeave requires a second, post-quantum signature. Even if the ECDSA key is broken, an
-              attacker cannot pass the gate.
+            <p className="mt-4 text-[15px] leading-relaxed text-zinc-400">
+              ECDSA keeps signing routine activity, so the wallet still feels like the wallet. The
+              moment an operation gets dangerous — a large transfer, a token approval, an account
+              change — a second post-quantum signature is required. Break the ECDSA key and the gate
+              still holds.
             </p>
-            <ul className="mt-6 space-y-3 text-sm text-zinc-300">
+            <ul className="mt-6 space-y-2.5 text-[13px] text-zinc-300">
               {[
                 'Large native transfers above a configurable threshold',
                 'Token approvals (approve / setApprovalForAll)',
                 'Administrative changes: key rotation, verifier swap, owner change',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  <span className="mt-1.5 h-1 w-1 shrink-0 bg-accent" />
                   {item}
                 </li>
               ))}
             </ul>
+            <p className="mt-6 max-w-lg border-l-2 border-amber-500/40 pl-3 text-[12px] leading-relaxed text-zinc-500">
+              Fully quantum-safe means removing ECDSA from the trust model entirely — sweeping into
+              an account where the post-quantum key is sole authority. Keeping your old address is
+              always transitional, because an EIP-7702 delegation stays revocable by the ECDSA key.
+            </p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <div className="text-sm font-medium text-zinc-300">
-              Pluggable post-quantum verifiers
+
+          <div className="panel h-fit p-6">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
+                Pluggable verifiers
+              </span>
+              <span className="tabular text-[10px] text-zinc-600">IPQCVerifier</span>
             </div>
             <div className="mt-4 divide-y divide-white/5">
-              {SCHEMES.map((scheme) => (
-                <div key={scheme.name} className="py-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-white">{scheme.name}</span>
-                    <span className="font-mono text-xs text-zinc-500">{scheme.standard}</span>
+              {VERIFIERS.map((v) => (
+                <div key={v.name} className="py-3.5 first:pt-0 last:pb-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 text-[13px] font-medium text-white">
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          v.state === 'shipped' ? 'bg-accent' : 'bg-zinc-600'
+                        }`}
+                        aria-hidden
+                      />
+                      {v.name}
+                    </span>
+                    <span className="tabular text-[10px] text-zinc-500">{v.standard}</span>
                   </div>
-                  <div className="mt-1 text-sm text-zinc-400">{scheme.role}</div>
+                  <div className="mt-1.5 pl-3.5 text-[12px] leading-relaxed text-zinc-400">
+                    {v.role}
+                  </div>
                 </div>
               ))}
             </div>
