@@ -65,15 +65,26 @@ export type {
   WalletScanOptions,
   WalletScanResult,
 } from './wallet-scan.js';
+export {
+  BIP361,
+  bip361Outlook,
+  bip361Timeline,
+  PHASE_B_SCOPE_IS_AMBIGUOUS,
+  summarizeBip361,
+} from './bip361.js';
+export type { Bip361Outlook, Bip361Phase, Bip361Summary, Bip361Timeline } from './bip361.js';
 export { buildWalletReport, METHODOLOGY, toCsv, toJson } from './report.js';
 export type { AccountRollup, BuildReportOptions, ExposureBucket, WalletReport } from './report.js';
 export {
   buildControlBlock,
   decodeP2mrAddress,
   encodeP2mrAddress,
+  isDepthZeroControlBlock,
   isP2mrAddress,
   P2MR_LEAF_VERSION,
+  P2MR_MIN_LEAVES,
   P2MR_WITNESS_VERSION,
+  P2mrUnsafeTreeError,
   p2mrMerkleRoot,
   p2mrScript,
   tapBranchHash,

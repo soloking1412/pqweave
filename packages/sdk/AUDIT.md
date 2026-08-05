@@ -38,14 +38,32 @@ reviewed.
 | ------------------------------- | --- | ---------------------------------------------------------------------------------------------------- |
 | `src/bitcoin/evacuation.ts`     | 366 | PSBT construction, fee/vsize maths, dust handling, RBF, per-type signing data                        |
 | `src/bitcoin/hd.ts`             | 214 | Extended-key parsing and address derivation; an error sweeps to an address the user does not control |
-| `src/bitcoin/p2mr-migration.ts` | 211 | BIP-360 migration and the mainnet activation guard                                                   |
+| `src/bitcoin/p2mr-migration.ts` | 218 | BIP-360 migration and the mainnet activation guard                                                   |
 | `src/bitcoin/verify.ts`         | 235 | Pre-signing dry run; if it misreports, a user approves the wrong transaction                         |
-| `src/bitcoin/p2mr.ts`           | 199 | P2MR address/script/Merkle-tree construction                                                         |
+| `src/bitcoin/p2mr.ts`           | 252 | P2MR address/script/Merkle-tree construction, incl. the depth-0 refusal                              |
 | `src/bitcoin/safety.ts`         | 129 | Destination rails (used / self / P2MR-on-mainnet)                                                    |
 | `src/bitcoin/address.ts`        | 59  | Address classification; drives every downstream decision                                             |
 
-**Total in scope: ~1,413 LOC** of TypeScript, no external services, no key
+**Total in scope: ~1,473 LOC** of TypeScript, no external services, no key
 handling.
+
+### Also in scope — the post-quantum signature schemes
+
+Not Bitcoin code, but the same "a bug here costs funds" test applies: these
+authorize spends from a PQWeave account. A reviewer with hash-based signature
+experience should take them; a Bitcoin/PSBT specialist reasonably would not.
+
+| File                                                   | LOC | Why it is money-critical                                               |
+| ------------------------------------------------------ | --- | ---------------------------------------------------------------------- |
+| `src/pqc/winternitz.ts`                                | 334 | WOTS+ signing/verification; must agree byte-for-byte with the contract |
+| `contracts/src/verifiers/WinternitzMerkleVerifier.sol` | 115 | The on-chain gate; a flaw here forges authorization                    |
+| `src/pqc/hashsig.ts`                                   | 250 | The Lamport scheme the above replaces, still deployed                  |
+
+The single most dangerous invariant in the whole repository is that a one-time
+key signs **once**. Winternitz makes reuse worse than Lamport does: revealing a
+signature for a lower digit exposes every chain step above it, so two signatures
+under one leaf leak substantially more than two Lamport signatures would.
+`WinternitzSigner` is the only intended entry point and is strictly monotonic.
 
 ### Supporting, lower priority
 
@@ -140,19 +158,35 @@ examples. They are the claims we would like independently challenged.
   wallet totals.
 - CSV fields containing delimiters are quoted; satoshis are written as integers.
 
-**BIP-360 activation guard**
+**BIP-360 activation guard and tree shape**
 
 - A mainnet P2MR migration **always throws**, regardless of inputs or
   acknowledgement flag.
 - Omitting the target defaults to mainnet, so the failure mode is safe.
 - Non-mainnet targets still require an explicit acknowledgement.
+- A script tree of fewer than two leaves **always throws**. BIP-360 treats a
+  depth-0 tree as anyone-can-spend ("If m = 0, succeed immediately"), so every
+  leaf must have a non-empty Merkle path.
+
+**Winternitz signatures**
+
+- A signature verifies on chain if and only if it verifies in the SDK; the two
+  implementations agree byte for byte (asserted against a shared vector).
+- Altering any single chain value invalidates the signature.
+- Advancing a message chain without correcting the checksum invalidates it —
+  this is the forgery barrier, and it is fuzzed, not assumed.
+- Relabelling a signature with a different leaf index invalidates it, because
+  the chain tweaks are per-leaf.
+- `WinternitzSigner` never returns the same leaf index twice, and throws rather
+  than wrapping when the tree is exhausted.
 
 ---
 
 ## 5. Test coverage
 
-258 tests total; **140 across 10 Bitcoin files**, of which **36 are
-property-based** across 3 files, generating several thousand cases per run.
+299 tests total; **154 across 11 Bitcoin files**, of which **38 are
+property-based** across 3 files, generating several thousand cases per run, plus
+**24 covering the Winternitz scheme** in the SDK and 10 more (4 fuzzed) on chain.
 
 | File                                | What it covers                                            |
 | ----------------------------------- | --------------------------------------------------------- |
@@ -166,6 +200,8 @@ property-based** across 3 files, generating several thousand cases per run.
 | `bitcoin-wallet-scan.test.ts`       | Gap limit, cursor resume, rate-limit retry                |
 | `bitcoin-tools.test.ts`             | BIP-84 vector, fee tiers, sweep basics                    |
 | `bitcoin.test.ts`                   | Address classification and exposure scoring               |
+| `bitcoin-bip361.test.ts`            | Signature-sunset scope, the two clocks, wallet rollups    |
+| `winternitz.test.ts`                | WOTS+ signing, tampering, one-time enforcement            |
 
 ### Known gaps we would like the review to cover
 
@@ -187,12 +223,13 @@ property-based** across 3 files, generating several thousand cases per run.
 Reported here so the review does not re-derive them, and because they indicate
 where bugs have historically lived.
 
-| Issue                                                                                                                                                                                                                                                                                                                                         | Severity | How found                                                           |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------- |
-| Sweep PSBTs carried only `witnessUtxo`, making **legacy (P2PKH) inputs unsignable** — in-process signing with the correct key returned "No inputs signed". No input carried `bip32Derivation`, so no hardware wallet could sign any type. Reused P2PKH is the quantum-exposed case, so the escape hatch was broken exactly where it mattered. | Critical | Manual review; the test suite missed it by only ever signing p2wpkh |
-| Destination freshness was a code comment with nothing enforcing it; a sweep could land funds on an already-exposed address.                                                                                                                                                                                                                   | High     | Manual review                                                       |
-| `parseDerivationPath("m/ ")` returned an empty path instead of throwing, silently dropping the account prefix from `bip32Derivation`. The device would refuse to sign — a failure at signing time rather than build time.                                                                                                                     | Low      | **Property test**                                                   |
-| A retry budget nested inside the caller's timeout could turn a slow indexer response into a hard failure.                                                                                                                                                                                                                                     | Low      | Live testing                                                        |
+| Issue                                                                                                                                                                                                                                                                                                                                                                   | Severity | How found                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------- |
+| Sweep PSBTs carried only `witnessUtxo`, making **legacy (P2PKH) inputs unsignable** — in-process signing with the correct key returned "No inputs signed". No input carried `bip32Derivation`, so no hardware wallet could sign any type. Reused P2PKH is the quantum-exposed case, so the escape hatch was broken exactly where it mattered.                           | Critical | Manual review; the test suite missed it by only ever signing p2wpkh |
+| Destination freshness was a code comment with nothing enforcing it; a sweep could land funds on an already-exposed address.                                                                                                                                                                                                                                             | High     | Manual review                                                       |
+| `parseDerivationPath("m/ ")` returned an empty path instead of throwing, silently dropping the account prefix from `bip32Derivation`. The device would refuse to sign — a failure at signing time rather than build time.                                                                                                                                               | Low      | **Property test**                                                   |
+| A retry budget nested inside the caller's timeout could turn a slow indexer response into a hard failure.                                                                                                                                                                                                                                                               | Low      | Live testing                                                        |
+| `p2mrMerkleRoot` accepted a single-leaf script tree. BIP-360 (as amended by BIPs #2198, June 2026) makes a depth-0 tree anyone-can-spend on purpose — the control block carries an empty Merkle path and validation succeeds without running the leaf. The mainnet guard meant no funds were reachable, but the structure was wrong and a test asserted it was correct. | High     | Spec re-read against shipped code                                   |
 
 ---
 
@@ -200,7 +237,7 @@ where bugs have historically lived.
 
 ```bash
 pnpm install
-pnpm --filter @pqweave/sdk test        # 258 tests
+pnpm --filter @pqweave/sdk test        # 299 tests
 pnpm --filter @pqweave/sdk typecheck
 pnpm format:check
 ```

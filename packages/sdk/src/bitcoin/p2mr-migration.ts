@@ -4,6 +4,8 @@ import { prepareSweepInputs, type EvacuationInput, type SignabilityReport } from
 import { BITCOIN, type UtxoNetwork } from './networks.js';
 import {
   encodeP2mrAddress,
+  P2MR_MIN_LEAVES,
+  P2mrUnsafeTreeError,
   p2mrMerkleRoot,
   p2mrScript,
   type P2mrLeaf,
@@ -155,8 +157,12 @@ export function planP2mrMigration(params: P2mrMigrationParams): P2mrMigrationPla
       : {}),
   });
 
-  if (params.leaves.length === 0) {
-    throw new Error('a P2MR migration needs at least one leaf script');
+  // p2mrMerkleRoot enforces this too, but failing here keeps the error attached
+  // to the migration the caller asked for rather than to tree internals.
+  if (params.leaves.length < P2MR_MIN_LEAVES) {
+    throw new P2mrUnsafeTreeError(
+      `a P2MR migration needs at least ${P2MR_MIN_LEAVES} leaf scripts, got ${params.leaves.length}. A single-leaf tree is anyone-can-spend under BIP-360, so migrating into one would hand the coins to whoever sees the spend.`,
+    );
   }
   if (!Number.isFinite(params.feeRate) || params.feeRate <= 0) {
     throw new Error('feeRate must be a positive number of sat/vB');
@@ -206,6 +212,7 @@ export function planP2mrMigration(params: P2mrMigrationParams): P2mrMigrationPla
       'BIP-360 is a draft and is not active on any network. This output is anyone-can-spend under current consensus rules.',
       'Do not broadcast this on mainnet. It exists to test the migration path before activation, not to protect funds today.',
       'BIP-360 defines no post-quantum signature opcodes yet, so the leaf scripts here carry whatever spending condition you supplied.',
+      `This tree has ${tree.leaves.length} leaves. BIP-360 treats a single-leaf tree as anyone-can-spend, so one of these should be a fallback spending path, not padding.`,
     ],
   };
 }

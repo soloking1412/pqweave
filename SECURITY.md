@@ -29,6 +29,32 @@ and collision resistance of keccak256:
 There is no lattice or discrete-log assumption. The scheme is also pluggable
 (`IPQCVerifier`), so NIST lattice verifiers (Falcon, ML-DSA) can be swapped in.
 
+### Two hash-based verifiers
+
+A second verifier, **Winternitz (WOTS+) + Merkle**, ships alongside the Lamport
+one. Same assumption, same keccak256, much cheaper: it derives the one-time
+public key by finishing each hash chain instead of transmitting it, so the
+signature is 2,304 bytes rather than 24,736.
+
+| Verifier   | Signature | Calldata gas | Execution gas | Total       |
+| ---------- | --------- | ------------ | ------------- | ----------- |
+| Lamport    | 24,736 B  | 393,496      | 276,566       | **670,062** |
+| Winternitz | 2,304 B   | 35,664       | 218,554       | **254,218** |
+
+Measured at tree depth 2 by `VerifierGas.t.sol`, so the figures can be
+reproduced rather than taken on trust.
+
+This is the same family Ethereum's own post-quantum work selected (leanSig /
+leanXMSS is a generalized XMSS with Winternitz chains), though it instantiates
+the hash with Poseidon2 for SNARK-friendliness while we stay on keccak256.
+Poseidon2 has been under cryptanalytic pressure from recent algebraic attacks;
+keccak256 has not, and on EVM it is a precompile-cheap native operation.
+
+**Reuse is worse here than under Lamport.** A Winternitz signature reveals a
+point partway along each chain, so signing twice under one leaf exposes every
+step above the lower digit. `WinternitzSigner` is strictly monotonic and is the
+only intended entry point.
+
 ## Security levels (choose per account)
 
 | Mode                                      | ECDSA       | Post-quantum       | Use for                      |

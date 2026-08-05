@@ -59,6 +59,34 @@ const SOURCES = [
     claim: 'Breaking secp256k1 estimated at <1,200 logical qubits, minutes of runtime.',
     href: 'https://quantumai.google/static/site-assets/downloads/cryptocurrency-whitepaper.pdf',
   },
+  {
+    name: 'BIP-361',
+    claim: 'Over 34% of all bitcoin had revealed a public key on-chain as of 1 March 2026.',
+    href: 'https://github.com/bitcoin/bips/blob/master/bip-0361.mediawiki',
+  },
+];
+
+/**
+ * BIP-361 is a second, separate clock. Quantum exposure is a fact about an
+ * address today; the sunset is a proposed rule that would apply to legacy
+ * signatures whether or not a key ever leaked. Holders conflate the two.
+ */
+const SUNSET_PHASES = [
+  {
+    phase: 'Phase A',
+    when: '160,000 blocks (~3 years) after activation',
+    effect: 'Legacy addresses can still be spent from, but can no longer receive.',
+  },
+  {
+    phase: 'Phase B',
+    when: '2 years after Phase A',
+    effect: 'ECDSA and Schnorr spends from legacy outputs are rejected. Unmoved coins are stuck.',
+  },
+  {
+    phase: 'Phase C',
+    when: 'Unscheduled',
+    effect: 'A proposed zero-knowledge recovery path for frozen coins. Not specified, not built.',
+  },
 ];
 
 export default function BitcoinExposurePage() {
@@ -159,6 +187,34 @@ export default function BitcoinExposurePage() {
             </p>
           </Link>
         </div>
+      </Reveal>
+
+      <Reveal className="mt-12">
+        <h2 className="text-xl font-semibold tracking-tight">
+          The second clock: BIP-361&apos;s signature sunset
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+          Quantum exposure is a fact about your address today. BIP-361 is something else: a proposal
+          to stop accepting ECDSA and Schnorr signatures on legacy outputs entirely, on a schedule.
+          As drafted it turns on the signature type, not on whether a key ever leaked — so an
+          untouched address with no quantum exposure would still be caught by it.
+        </p>
+        <div className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
+          {SUNSET_PHASES.map((phase) => (
+            <div key={phase.phase} className="bg-black/40 p-5">
+              <div className="text-sm font-semibold text-white">{phase.phase}</div>
+              <div className="mt-1 text-xs text-amber-200/80">{phase.when}</div>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">{phase.effect}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 max-w-2xl text-xs leading-relaxed text-zinc-500">
+          BIP-361 is <span className="text-zinc-300">Status: Draft</span> and is not activated. It
+          is contentious for the obvious reason — it makes coins unspendable, and that is the intent
+          rather than a side effect. It may be amended or may never activate, and no activation has
+          been scheduled. We surface it because the dates would matter if it does, not because we
+          are predicting that it will.
+        </p>
       </Reveal>
 
       <Reveal className="mt-12">

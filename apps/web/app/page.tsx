@@ -4,12 +4,13 @@ import { Hero } from '@/components/landing/hero';
 import { PartnerCta } from '@/components/landing/partner-cta';
 import { RoadmapSection } from '@/components/landing/roadmap-section';
 import { Reveal } from '@/components/motion';
+import { LIVE_CHAIN_COUNT } from '@/lib/chains-directory';
 
 const TIERS = [
   {
     step: '01',
     title: 'Scan',
-    body: 'Check whether an address has revealed its public key and score its quantum risk — across 11 chains and three exposure families. No wallet connection required.',
+    body: `Check whether an address has revealed its public key and score its quantum risk — across ${LIVE_CHAIN_COUNT} chains and three exposure families. No wallet connection required.`,
     href: '/scan',
     cta: 'Open the scanner',
   },
@@ -57,15 +58,16 @@ export default function HomePage() {
         <section className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
           {[
             {
-              stat: '2029–2030',
-              label: 'Estimated arrival of a cryptographically-relevant quantum computer',
+              stat: '~1,200',
+              label:
+                'Logical qubits Google Quantum AI estimates would break secp256k1, in minutes of runtime',
             },
             {
               stat: 'Every spend',
               label: 'A public key is recoverable from — or embedded in — your address',
             },
             {
-              stat: '11 chains',
+              stat: `${LIVE_CHAIN_COUNT} chains`,
               label: 'Scanned today across all three exposure families, with more landing soon',
             },
           ].map((item) => (

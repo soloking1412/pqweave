@@ -5,7 +5,9 @@ import {
   buildControlBlock,
   decodeP2mrAddress,
   encodeP2mrAddress,
+  isDepthZeroControlBlock,
   isP2mrAddress,
+  P2mrUnsafeTreeError,
   P2MR_LEAF_VERSION,
   p2mrMerkleRoot,
   p2mrScript,
@@ -106,7 +108,7 @@ describe('address encoding round-trips for every root', () => {
 describe('script trees are sound for any set of leaves', () => {
   it('every leaf path rebuilds the root', () => {
     fc.assert(
-      fc.property(fc.array(leafArb, { minLength: 1, maxLength: 17 }), (leaves) => {
+      fc.property(fc.array(leafArb, { minLength: 2, maxLength: 17 }), (leaves) => {
         const tree = p2mrMerkleRoot(leaves);
         expect(tree.leaves).toHaveLength(leaves.length);
         for (const leaf of tree.leaves) {
@@ -122,7 +124,7 @@ describe('script trees are sound for any set of leaves', () => {
 
   it('tree construction is deterministic', () => {
     fc.assert(
-      fc.property(fc.array(leafArb, { minLength: 1, maxLength: 12 }), (leaves) => {
+      fc.property(fc.array(leafArb, { minLength: 2, maxLength: 12 }), (leaves) => {
         expect(hex.encode(p2mrMerkleRoot(leaves).root)).toBe(
           hex.encode(p2mrMerkleRoot(leaves).root),
         );
@@ -134,9 +136,12 @@ describe('script trees are sound for any set of leaves', () => {
 
   it('control blocks are always 1 + 32·m bytes with the parity bit set', () => {
     fc.assert(
-      fc.property(fc.array(leafArb, { minLength: 1, maxLength: 17 }), (leaves) => {
+      fc.property(fc.array(leafArb, { minLength: 2, maxLength: 17 }), (leaves) => {
         for (const leaf of p2mrMerkleRoot(leaves).leaves) {
           expect(leaf.controlBlock.length).toBe(1 + leaf.path.length * 32);
+          // m >= 1 always: an empty path is the anyone-can-spend case.
+          expect(leaf.path.length).toBeGreaterThanOrEqual(1);
+          expect(isDepthZeroControlBlock(leaf.controlBlock)).toBe(false);
           // BIP-360 fixes the parity bit to 1: there is no key path to disagree with.
           expect(leaf.controlBlock[0]! & 1).toBe(1);
           expect(leaf.controlBlock[0]! & 0xfe).toBe(P2MR_LEAF_VERSION & 0xfe);
@@ -149,7 +154,7 @@ describe('script trees are sound for any set of leaves', () => {
 
   it('path depth stays logarithmic in the number of leaves', () => {
     fc.assert(
-      fc.property(fc.array(leafArb, { minLength: 1, maxLength: 33 }), (leaves) => {
+      fc.property(fc.array(leafArb, { minLength: 2, maxLength: 33 }), (leaves) => {
         const bound = Math.ceil(Math.log2(Math.max(leaves.length, 1))) + 1;
         for (const leaf of p2mrMerkleRoot(leaves).leaves) {
           expect(leaf.path.length).toBeLessThanOrEqual(bound);
@@ -175,6 +180,44 @@ describe('script trees are sound for any set of leaves', () => {
   });
 });
 
+describe('depth-zero trees are always refused', () => {
+  it('a single leaf never produces a tree, whatever the script', () => {
+    fc.assert(
+      fc.property(leafArb, (leaf) => {
+        expect(() => p2mrMerkleRoot([leaf])).toThrow(P2mrUnsafeTreeError);
+        return true;
+      }),
+      { numRuns: 300 },
+    );
+  });
+
+  it('a single leaf never produces a migration, on any network', () => {
+    fc.assert(
+      fc.property(leafArb, networkArb, (leaf, target) => {
+        expect(() =>
+          planP2mrMigration({
+            inputs: [
+              {
+                txid: '33'.repeat(32),
+                vout: 0,
+                value: 400_000,
+                status: { confirmed: true },
+                address: 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+              },
+            ],
+            leaves: [leaf],
+            feeRate: 5,
+            target,
+            acknowledgeAnyoneCanSpend: true,
+          }),
+        ).toThrow(target === 'bitcoin' ? P2mrNotActivatedError : P2mrUnsafeTreeError);
+        return true;
+      }),
+      { numRuns: 200 },
+    );
+  });
+});
+
 describe('the activation guard cannot be bypassed', () => {
   const utxoArb = fc.record({
     value: fc.integer({ min: 10_000, max: 10_000_000 }),
@@ -184,7 +227,7 @@ describe('the activation guard cannot be bypassed', () => {
 
   it('mainnet always throws, whatever the inputs or the acknowledgement', () => {
     fc.assert(
-      fc.property(utxoArb, fc.array(leafArb, { minLength: 1, maxLength: 5 }), (params, leaves) => {
+      fc.property(utxoArb, fc.array(leafArb, { minLength: 2, maxLength: 5 }), (params, leaves) => {
         expect(() =>
           planP2mrMigration({
             inputs: [
@@ -222,7 +265,7 @@ describe('the activation guard cannot be bypassed', () => {
 
   it('the default target is mainnet, so omitting it fails safe', () => {
     fc.assert(
-      fc.property(fc.array(leafArb, { minLength: 1, maxLength: 3 }), (leaves) => {
+      fc.property(fc.array(leafArb, { minLength: 2, maxLength: 3 }), (leaves) => {
         expect(() =>
           planP2mrMigration({
             inputs: [

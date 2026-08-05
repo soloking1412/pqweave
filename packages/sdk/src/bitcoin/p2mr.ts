@@ -26,11 +26,41 @@ import { bech32m } from '@scure/base';
  * are deferred to a companion BIP via `OP_SUCCESSx`. This module therefore takes
  * leaf scripts from the caller and never invents opcodes.
  *
+ * A P2MR script tree must carry **at least two leaves**; see
+ * {@link P2MR_MIN_LEAVES} for why a single-leaf tree is anyone-can-spend.
+ *
  * @see https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki
  */
 
 /** SegWit version P2MR occupies. bech32m maps v2 to the character `z`. */
 export const P2MR_WITNESS_VERSION = 2;
+
+/**
+ * Thrown when a script tree would produce an output the specification treats as
+ * anyone-can-spend. Distinct from {@link Error} so callers can tell a structural
+ * hazard apart from a bad argument.
+ */
+export class P2mrUnsafeTreeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'P2mrUnsafeTreeError';
+  }
+}
+
+/**
+ * Minimum leaves in a safe P2MR tree.
+ *
+ * BIP-360 diverges from BIP-341 here: "script trees of depth 0 - those with a
+ * single leaf script - are considered anyone-can-spend in P2MR", and the
+ * validation rules say "If m = 0, succeed immediately" — the script is never
+ * executed. A single-leaf tree therefore yields a control block with an empty
+ * Merkle path, and anyone who sees the revealed leaf can take the output.
+ *
+ * This is deliberate (BIPs #2198, June 2026): it removes the incentive to drop a
+ * post-quantum fallback leaf to save witness bytes. Two leaves is the floor, not
+ * a style preference.
+ */
+export const P2MR_MIN_LEAVES = 2;
 
 /** Default tapleaf version, shared with BIP-341. */
 export const P2MR_LEAF_VERSION = TAP_LEAF_VERSION; // 0xc0
@@ -101,6 +131,16 @@ export function buildControlBlock(path: Uint8Array[], leafVersion = P2MR_LEAF_VE
 }
 
 /**
+ * True when a control block carries an empty Merkle path (`m = 0`). Under
+ * BIP-360's validation rules such a spend "succeeds immediately" without the
+ * leaf script running, so the output it spends was anyone-can-spend. Use this to
+ * audit control blocks that came from somewhere else.
+ */
+export function isDepthZeroControlBlock(controlBlock: Uint8Array): boolean {
+  return controlBlock.length === 1;
+}
+
+/**
  * Build a P2MR script tree and its Merkle root.
  *
  * BIP-341 permits any binary tree shape; this builds a balanced one, carrying an
@@ -108,7 +148,11 @@ export function buildControlBlock(path: Uint8Array[], leafVersion = P2MR_LEAF_VE
  * always produce the same address.
  */
 export function p2mrMerkleRoot(leaves: P2mrLeaf[]): P2mrTree {
-  if (leaves.length === 0) throw new Error('a P2MR tree needs at least one leaf script');
+  if (leaves.length < P2MR_MIN_LEAVES) {
+    throw new P2mrUnsafeTreeError(
+      `a P2MR tree needs at least ${P2MR_MIN_LEAVES} leaf scripts, got ${leaves.length}. BIP-360 treats a depth-0 tree as anyone-can-spend: its control block carries an empty Merkle path (m = 0), so validation succeeds without running the leaf and anyone who sees the revealed script can take the output. Add a fallback leaf.`,
+    );
+  }
 
   const positions: P2mrLeafPosition[] = leaves.map((leaf, index) => ({
     index,
@@ -144,6 +188,15 @@ export function p2mrMerkleRoot(leaves: P2mrLeaf[]): P2mrTree {
   }
 
   for (const position of positions) {
+    // Belt and braces: the leaf count is checked above, but the tree-shaping
+    // loop is what actually determines path length. An empty path here is the
+    // anyone-can-spend case, so assert it at the point of construction rather
+    // than trusting the loop to stay correct.
+    if (position.path.length === 0) {
+      throw new P2mrUnsafeTreeError(
+        `leaf ${position.index} has an empty Merkle path (m = 0), which BIP-360 treats as anyone-can-spend`,
+      );
+    }
     const leafVersion = leaves[position.index]!.leafVersion ?? P2MR_LEAF_VERSION;
     position.controlBlock = buildControlBlock(position.path, leafVersion);
   }

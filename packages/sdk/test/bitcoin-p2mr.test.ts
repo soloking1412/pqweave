@@ -15,9 +15,11 @@ import {
   buildControlBlock,
   decodeP2mrAddress,
   encodeP2mrAddress,
+  isDepthZeroControlBlock,
   isP2mrAddress,
   P2MR_LEAF_VERSION,
   P2MR_WITNESS_VERSION,
+  P2mrUnsafeTreeError,
   p2mrMerkleRoot,
   p2mrScript,
   tapBranchHash,
@@ -125,10 +127,20 @@ describe('BIP-341 tagged hashes', () => {
     expect(hex.encode(tapBranchHash(a, b))).toBe(hex.encode(tapBranchHash(b, a)));
   });
 
-  it('a single-leaf tree roots at the leaf hash itself, with an empty path', () => {
-    const tree = p2mrMerkleRoot([{ script: scriptA }]);
-    expect(hex.encode(tree.root)).toBe(hex.encode(tapLeafHash(scriptA)));
-    expect(tree.leaves[0]!.path).toHaveLength(0);
+  // BIP-360 diverges from BIP-341: a depth-0 tree validates without running the
+  // leaf ("If m = 0, succeed immediately"), so the output is anyone-can-spend.
+  // This test previously asserted the empty path was correct; it is a hazard.
+  it('refuses a single-leaf tree, which would be anyone-can-spend', () => {
+    expect(() => p2mrMerkleRoot([{ script: scriptA }])).toThrow(P2mrUnsafeTreeError);
+    expect(() => p2mrMerkleRoot([{ script: scriptA }])).toThrow(/anyone-can-spend/);
+  });
+
+  it('every leaf of a two-leaf tree has a non-empty path', () => {
+    const tree = p2mrMerkleRoot([{ script: scriptA }, { script: scriptB }]);
+    for (const leaf of tree.leaves) {
+      expect(leaf.path.length).toBeGreaterThanOrEqual(1);
+      expect(isDepthZeroControlBlock(leaf.controlBlock)).toBe(false);
+    }
   });
 });
 
@@ -174,7 +186,7 @@ describe('script tree and control blocks', () => {
   });
 
   it('rejects an empty tree', () => {
-    expect(() => p2mrMerkleRoot([])).toThrow(/at least one leaf/);
+    expect(() => p2mrMerkleRoot([])).toThrow(P2mrUnsafeTreeError);
   });
 
   it('buildControlBlock lays the path out in order', () => {
@@ -196,7 +208,11 @@ describe('activation safety — the point of this phase', () => {
   // Inputs live on the same network as the migration target — signet/testnet
   // share the `tb` prefix, so build them with TEST_NETWORK.
   const payment = btc.p2wpkh(pubkey, btc.TEST_NETWORK);
+  // A P2MR tree needs two leaves minimum: a depth-0 tree is anyone-can-spend.
+  // In production one of these is the post-quantum fallback path.
   const leaf = { script: Uint8Array.of(0x51) };
+  const fallbackLeaf = { script: Uint8Array.of(0x52) };
+  const leaves = [leaf, fallbackLeaf];
 
   function inputs(): EvacuationInput[] {
     const fund = new btc.Transaction({ allowUnknownOutputs: true, allowLegacyWitnessUtxo: true });
@@ -224,27 +240,27 @@ describe('activation safety — the point of this phase', () => {
     expect(() =>
       planP2mrMigration({
         inputs: inputs(),
-        leaves: [leaf],
+        leaves,
         feeRate: 5,
         target: 'bitcoin',
         acknowledgeAnyoneCanSpend: true, // even with the flag, mainnet is refused
       }),
     ).toThrow(P2mrNotActivatedError);
     expect(() =>
-      planP2mrMigration({ inputs: inputs(), leaves: [leaf], feeRate: 5, target: 'bitcoin' }),
+      planP2mrMigration({ inputs: inputs(), leaves, feeRate: 5, target: 'bitcoin' }),
     ).toThrow(/anyone-can-spend/i);
   });
 
   it('refuses a test network without an explicit acknowledgement', () => {
     expect(() =>
-      planP2mrMigration({ inputs: inputs(), leaves: [leaf], feeRate: 5, target: 'signet' }),
+      planP2mrMigration({ inputs: inputs(), leaves, feeRate: 5, target: 'signet' }),
     ).toThrow(P2mrNotActivatedError);
   });
 
   it('builds on a test network once the hazard is acknowledged', () => {
     const plan = planP2mrMigration({
       inputs: inputs(),
-      leaves: [leaf],
+      leaves,
       feeRate: 5,
       target: 'signet',
       acknowledgeAnyoneCanSpend: true,
@@ -367,7 +383,7 @@ describe('migration transaction shape', () => {
             pubkey,
           },
         ],
-        leaves: [{ script: Uint8Array.of(0x51) }],
+        leaves: [{ script: Uint8Array.of(0x51) }, { script: Uint8Array.of(0x52) }],
         feeRate: 4,
         target: 'signet',
         acknowledgeAnyoneCanSpend: true,
@@ -389,9 +405,19 @@ describe('migration transaction shape', () => {
       target: 'signet' as const,
       acknowledgeAnyoneCanSpend: true,
     };
-    expect(() => planP2mrMigration({ ...base, leaves: [], feeRate: 4 })).toThrow(/at least one/);
+    expect(() => planP2mrMigration({ ...base, leaves: [], feeRate: 4 })).toThrow(
+      P2mrUnsafeTreeError,
+    );
+    // One leaf is a tree, but an anyone-can-spend one.
     expect(() =>
-      planP2mrMigration({ ...base, leaves: [{ script: Uint8Array.of(0x51) }], feeRate: 0 }),
+      planP2mrMigration({ ...base, leaves: [{ script: Uint8Array.of(0x51) }], feeRate: 4 }),
+    ).toThrow(P2mrUnsafeTreeError);
+    expect(() =>
+      planP2mrMigration({
+        ...base,
+        leaves: [{ script: Uint8Array.of(0x51) }, { script: Uint8Array.of(0x52) }],
+        feeRate: 0,
+      }),
     ).toThrow(/sat\/vB/);
   });
 

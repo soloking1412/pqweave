@@ -16,3 +16,14 @@ export {
   verifyHashSig,
 } from './hashsig.js';
 export type { HashSigKey, HashSigSignerState } from './hashsig.js';
+export {
+  WINTERNITZ_CHAINS,
+  createWinternitzKey,
+  decodeWinternitz,
+  signWinternitz,
+  toDigits,
+  verifyWinternitz,
+  W,
+  WinternitzSigner,
+} from './winternitz.js';
+export type { WinternitzKey, WinternitzParts, WinternitzSignerState } from './winternitz.js';

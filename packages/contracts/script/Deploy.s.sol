@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {LamportMerkleVerifier} from "../src/verifiers/LamportMerkleVerifier.sol";
+import {WinternitzMerkleVerifier} from "../src/verifiers/WinternitzMerkleVerifier.sol";
 import {PQWeaveAccount} from "../src/PQWeaveAccount.sol";
 import {PQWeaveFactory} from "../src/PQWeaveFactory.sol";
 import {PQWeaveForwarder} from "../src/PQWeaveForwarder.sol";
@@ -37,6 +38,7 @@ contract Deploy is Script {
 
         // Predict every address up front (pure, no broadcast needed).
         address verifierAddr = _predict(keccak256(type(LamportMerkleVerifier).creationCode));
+        address winternitzAddr = _predict(keccak256(type(WinternitzMerkleVerifier).creationCode));
         address factoryAddr = _predict(
             keccak256(abi.encodePacked(type(PQWeaveFactory).creationCode, abi.encode(entryPoint)))
         );
@@ -50,6 +52,7 @@ contract Deploy is Script {
 
         vm.startBroadcast(deployerKey);
         if (verifierAddr.code.length == 0) new LamportMerkleVerifier{salt: SALT}();
+        if (winternitzAddr.code.length == 0) new WinternitzMerkleVerifier{salt: SALT}();
         if (factoryAddr.code.length == 0) new PQWeaveFactory{salt: SALT}(entryPoint);
         if (sweeperAddr.code.length == 0) new MigrationSweeper{salt: SALT}();
         if (executorAddr.code.length == 0) new BatchExecutor{salt: SALT}();
@@ -61,6 +64,7 @@ contract Deploy is Script {
         console2.log("Chain id:           ", block.chainid);
         console2.log("EntryPoint:         ", entryPoint);
         console2.log("LamportVerifier:    ", verifierAddr);
+        console2.log("WinternitzVerifier: ", winternitzAddr);
         console2.log("PQWeaveFactory:", factoryAddr);
         console2.log("MigrationSweeper:   ", sweeperAddr);
         console2.log("BatchExecutor:      ", executorAddr);
@@ -72,6 +76,7 @@ contract Deploy is Script {
         // has all of them even when some were skipped as already-deployed.
         string memory k = "pqweave";
         vm.serializeAddress(k, "verifier", verifierAddr);
+        vm.serializeAddress(k, "winternitzVerifier", winternitzAddr);
         vm.serializeAddress(k, "factory", factoryAddr);
         vm.serializeAddress(k, "sweeper", sweeperAddr);
         vm.serializeAddress(k, "batchExecutor", executorAddr);
