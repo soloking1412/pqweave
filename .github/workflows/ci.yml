@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# A security tool whose tests nobody can see running is asking for trust it has
+# not earned. Everything below runs on every push and is reproducible locally
+# with the same commands.
+jobs:
+  sdk:
+    name: SDK and web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: SDK tests
+        run: pnpm --filter @pqweave/sdk test
+
+      - name: Web build
+        run: pnpm --filter @pqweave/web build
+
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Format
+        run: forge fmt --check
+        working-directory: packages/contracts
+
+      - name: Tests
+        # Fork tests skip without RPC_URL_BASE_SEPOLIA, which is deliberate:
+        # CI must not depend on a third-party endpoint being up.
+        run: forge test -vv
+        working-directory: packages/contracts
+
+  cross-runtime:
+    name: TS and Solidity agree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - run: pnpm install --frozen-lockfile
+
+      # A hash-based signature has to agree byte for byte across runtimes. One
+      # differing byte in a tweak, a digit order or a leaf commitment invalidates
+      # every signature, and the failure would only surface on chain. Regenerate
+      # the vectors from the SDK and check the contracts still accept them.
+      - name: Build SDK
+        run: pnpm --filter @pqweave/sdk build
+
+      - name: Regenerate cross-runtime vectors
+        run: |
+          node packages/sdk/scripts/gen-hashsig-vector.mjs
+          node packages/sdk/scripts/gen-winternitz-vector.mjs
+
+      - name: Vectors must be unchanged
+        run: git diff --exit-code packages/contracts/test/vectors/
+
+      - name: Contracts accept SDK-generated signatures
+        run: forge test --match-contract CrossCompat -vv
+        working-directory: packages/contracts

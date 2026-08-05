@@ -2,7 +2,7 @@
   "name": "pqweave",
   "version": "0.1.0",
   "private": true,
-  "description": "Post-quantum migration layer for EVM wallets",
+  "description": "Open-source tooling for the post-quantum transition: exposure scanning across 16 chains, EVM migration, and Bitcoin evacuation",
   "packageManager": "pnpm@9.15.9",
   "engines": {
     "node": ">=20"
