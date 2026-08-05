@@ -7,12 +7,16 @@ claim on trust.
 ## Before you start
 
 ```bash
-pnpm install
+pnpm install         # also builds the SDK, which the web app typechecks against
 pnpm test            # 315 SDK tests
 pnpm contracts:test  # 74 contract tests (needs foundry)
 pnpm typecheck
 pnpm format
 ```
+
+If `pnpm typecheck` reports `Cannot find module '@pqweave/sdk/...'`, the SDK has
+not been built. Its `exports` map points at `dist/`, so run
+`pnpm --filter @pqweave/sdk build`.
 
 For a security issue, **do not open an issue**. Email security@pqweave.com. See
 [SECURITY.md](SECURITY.md).

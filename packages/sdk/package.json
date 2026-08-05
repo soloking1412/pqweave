@@ -115,6 +115,7 @@
   ],
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=6144 tsup",
+    "prepare": "pnpm build",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",

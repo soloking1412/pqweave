@@ -26,6 +26,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The SDK's exports map points at dist/, so the web app cannot typecheck
+      # until the SDK is built. The `prepare` script means install already does
+      # this, but doing it explicitly keeps a build failure reported as a build
+      # failure rather than a confusing install failure.
+      - name: Build SDK
+        run: pnpm --filter @pqweave/sdk build
+
       - name: Format
         run: pnpm format:check
 
