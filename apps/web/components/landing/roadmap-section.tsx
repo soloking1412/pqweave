@@ -19,7 +19,7 @@ interface Product {
  */
 const STATE_STYLE: Record<State, { label: string; dot: string; text: string }> = {
   shipped: { label: 'Shipped', dot: 'bg-accent', text: 'text-accent' },
-  building: { label: 'Building', dot: 'bg-brand-bright', text: 'text-brand-bright' },
+  building: { label: 'Building', dot: 'bg-zinc-500', text: 'text-zinc-300' },
   blocked: { label: 'Blocked', dot: 'bg-amber-400', text: 'text-amber-300' },
 };
 

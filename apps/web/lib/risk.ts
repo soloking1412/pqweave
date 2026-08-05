@@ -7,36 +7,45 @@ export interface RiskStyle {
   bar: string;
 }
 
+/**
+ * A monotonic ramp: neutral → steel → sodium → ember → vermilion.
+ *
+ * The previous scale ran emerald → sky → amber → orange → rose, which reads
+ * wrong because it is not perceptually ordered — sky is calmer than emerald, so
+ * "low risk" looked safer than "safe". Here severity rises with both warmth and
+ * saturation, and `safe` is deliberately colourless: nothing to report should
+ * not compete for attention with something to report.
+ */
 export const RISK_STYLES: Record<RiskLevel, RiskStyle> = {
   safe: {
     label: 'Safe',
-    badge: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
-    text: 'text-emerald-300',
-    bar: 'bg-emerald-400',
+    badge: 'bg-risk-safe/10 text-risk-safe ring-risk-safe/25',
+    text: 'text-risk-safe',
+    bar: 'bg-risk-safe',
   },
   low: {
     label: 'Low risk',
-    badge: 'bg-sky-500/10 text-sky-300 ring-sky-500/30',
-    text: 'text-sky-300',
-    bar: 'bg-sky-400',
+    badge: 'bg-risk-low/10 text-risk-low ring-risk-low/25',
+    text: 'text-risk-low',
+    bar: 'bg-risk-low',
   },
   medium: {
     label: 'Medium risk',
-    badge: 'bg-amber-500/10 text-amber-300 ring-amber-500/30',
-    text: 'text-amber-300',
-    bar: 'bg-amber-400',
+    badge: 'bg-risk-medium/10 text-risk-medium ring-risk-medium/30',
+    text: 'text-risk-medium',
+    bar: 'bg-risk-medium',
   },
   high: {
     label: 'High risk',
-    badge: 'bg-orange-500/10 text-orange-300 ring-orange-500/30',
-    text: 'text-orange-300',
-    bar: 'bg-orange-400',
+    badge: 'bg-risk-high/10 text-risk-high ring-risk-high/30',
+    text: 'text-risk-high',
+    bar: 'bg-risk-high',
   },
   critical: {
     label: 'Critical',
-    badge: 'bg-rose-500/10 text-rose-300 ring-rose-500/30',
-    text: 'text-rose-300',
-    bar: 'bg-rose-400',
+    badge: 'bg-risk-critical/12 text-risk-critical ring-risk-critical/35',
+    text: 'text-risk-critical',
+    bar: 'bg-risk-critical',
   },
 };
 

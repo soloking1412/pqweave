@@ -318,7 +318,7 @@ export function EvacuationClient() {
     destination && isBitcoinAddress(destination) ? classifyBitcoinAddress(destination) : null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6">
+    <div className="rounded-panel border border-rule bg-panel p-6">
       <div className="flex items-center gap-2">
         <h2 className="text-xl font-semibold tracking-tight">Evacuation kit</h2>
         <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-200">
@@ -347,7 +347,7 @@ export function EvacuationClient() {
           onChange={(e) => setSource(e.target.value.trim())}
           placeholder="bc1q… address holding the coins"
           spellCheck={false}
-          className="rounded-xl bg-black/30 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 focus:ring-brand/60"
+          className="rounded-control bg-black/30 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 focus:ring-brand/60"
         />
         <label className="text-xs uppercase tracking-wide text-zinc-500">
           Fresh destination address (never used)
@@ -357,7 +357,7 @@ export function EvacuationClient() {
           onChange={(e) => setDestination(e.target.value.trim())}
           placeholder="bc1q… brand-new address from your wallet"
           spellCheck={false}
-          className="rounded-xl bg-black/30 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 focus:ring-brand/60"
+          className="rounded-control bg-black/30 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 focus:ring-brand/60"
         />
         {destType === 'p2tr' && (
           <p className="text-xs text-amber-300">
@@ -368,7 +368,7 @@ export function EvacuationClient() {
         <button
           onClick={loadAndBuild}
           disabled={busy === 'build' || !source || !destination}
-          className="mt-1 w-fit rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+          className="mt-1 w-fit rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
         >
           {busy === 'build' ? 'Building…' : 'Build evacuation kit'}
         </button>
@@ -431,12 +431,12 @@ export function EvacuationClient() {
           {/* A sweep sends the entire balance with no change output. If the
               destination is not actually yours, the coins are gone for good, so
               this is confirmed explicitly rather than assumed. */}
-          <label className="flex items-start gap-2.5 rounded-lg border border-white/10 bg-black/20 p-3 text-xs leading-relaxed text-zinc-300">
+          <label className="flex items-start gap-2.5 rounded-lg border border-rule bg-black/20 p-3 text-xs leading-relaxed text-zinc-300">
             <input
               type="checkbox"
               checked={ownsDestination}
               onChange={(e) => setOwnsDestination(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#7c6cff]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#3f7fbf]"
             />
             <span>
               I control{' '}
@@ -449,7 +449,7 @@ export function EvacuationClient() {
           {plan.tiers.map((tier) => (
             <div
               key={tier.label}
-              className={`rounded-xl border border-white/10 bg-black/20 p-4 transition ${
+              className={`rounded-control border border-rule bg-black/20 p-4 transition ${
                 ownsDestination ? '' : 'pointer-events-none opacity-40'
               }`}
               aria-disabled={!ownsDestination}
@@ -473,11 +473,11 @@ export function EvacuationClient() {
                 </button>
                 <button
                   onClick={() => downloadPsbt(tier)}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5"
+                  className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5"
                 >
                   Download PSBT
                 </button>
-                <label className="cursor-pointer rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5">
+                <label className="cursor-pointer rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5">
                   Upload signed
                   <input
                     type="file"
@@ -518,7 +518,7 @@ export function EvacuationClient() {
 
           <button
             onClick={saveBundle}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
           >
             Save evacuation bundle (.json)
           </button>

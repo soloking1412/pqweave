@@ -26,7 +26,7 @@ function balanceSummary(report: ScanReport): string {
 function ChainRow({ entry }: { entry: MultiChainScanEntry }) {
   if (!entry.ok) {
     return (
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-4 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-control border border-white/5 bg-black/20 px-4 py-3">
         <span className="text-sm font-medium text-zinc-300">{chainLabel(entry.chain)}</span>
         <span className="text-xs text-zinc-500">{entry.error}</span>
       </div>
@@ -36,7 +36,7 @@ function ChainRow({ entry }: { entry: MultiChainScanEntry }) {
   const style = RISK_STYLES[entry.report.level];
   const protectedByPqweave = entry.report.hardened || entry.report.pqweaveProtected;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-white/5 bg-black/20 px-4 py-3">
       <div className="flex items-center gap-3">
         <span className="w-20 text-sm font-medium text-zinc-100 sm:w-24">
           {chainLabel(entry.report.chain)}
@@ -73,7 +73,7 @@ export function MultiChainReportCard({ report }: { report: MultiChainScanReport 
   );
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6 sm:p-7">
+    <div className="rounded-panel border border-rule bg-panel p-6 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${style.badge}`}>
@@ -104,7 +104,7 @@ export function MultiChainReportCard({ report }: { report: MultiChainScanReport 
       {showProtect && (
         <Link
           href={`/migrate?address=${report.address}`}
-          className="mt-4 inline-flex rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright"
+          className="mt-4 inline-flex rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright"
         >
           Protect this wallet →
         </Link>

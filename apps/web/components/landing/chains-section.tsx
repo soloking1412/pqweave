@@ -180,10 +180,10 @@ function ChainTile({ chain }: { chain: DirectoryChain }) {
  */
 function BuildingIndicator() {
   const reduce = useReducedMotion();
-  if (reduce) return <span className="h-1.5 w-1.5 rounded-full bg-brand-bright" aria-hidden />;
+  if (reduce) return <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" aria-hidden />;
   return (
     <motion.span
-      className="h-1.5 w-1.5 rounded-full bg-brand-bright"
+      className="h-1.5 w-1.5 rounded-full bg-zinc-500"
       aria-hidden
       animate={{ opacity: [0.3, 1, 0.3] }}
       transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}

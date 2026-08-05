@@ -189,7 +189,7 @@ export function BitcoinChecklistClient() {
   const exposedCount = rows?.filter((row) => row.status === 'exposed').length ?? 0;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6">
+    <div className="rounded-panel border border-rule bg-panel p-6">
       <h2 className="text-xl font-semibold tracking-tight">Build your migration plan</h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
         Paste your Bitcoin addresses (up to 20), or one extended public key (xpub / ypub / zpub) to
@@ -204,12 +204,12 @@ export function BitcoinChecklistClient() {
         placeholder="bc1q… addresses (comma/newline separated), or an xpub/zpub…"
         spellCheck={false}
         rows={3}
-        className="mt-4 w-full rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+        className="mt-4 w-full rounded-control bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
       />
       <button
         onClick={scan}
         disabled={scanning || input.trim() === ''}
-        className="mt-3 rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+        className="mt-3 rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
       >
         {scanning ? 'Checking…' : 'Check my addresses'}
       </button>
@@ -278,7 +278,7 @@ export function BitcoinChecklistClient() {
                     type="checkbox"
                     checked={checked[index] ?? false}
                     onChange={() => toggle(index)}
-                    className="mt-1 h-4 w-4 shrink-0 accent-[#7c6cff]"
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#3f7fbf]"
                   />
                   <span
                     className={`text-sm leading-relaxed ${
@@ -294,7 +294,7 @@ export function BitcoinChecklistClient() {
 
           <button
             onClick={downloadPlan}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
           >
             Download plan (.txt)
           </button>

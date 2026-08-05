@@ -109,7 +109,7 @@ export default function BitcoinExposurePage() {
 
       {/* Stacked supply bar */}
       <Reveal className="mt-12">
-        <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6 sm:p-7">
+        <div className="rounded-panel border border-rule bg-panel p-6 sm:p-7">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold tracking-tight">Bitcoin supply by exposure</h2>
             <span className="text-xs text-zinc-500">of ~19.9M BTC · {AS_OF}</span>
@@ -137,10 +137,7 @@ export default function BitcoinExposurePage() {
 
       <StaggerGroup className="mt-6 grid gap-4 sm:grid-cols-3">
         {SEGMENTS.map((seg) => (
-          <StaggerItem
-            key={seg.label}
-            className="rounded-2xl border border-white/10 bg-[#0b0b12] p-5"
-          >
+          <StaggerItem key={seg.label} className="rounded-panel border border-rule bg-panel p-5">
             <div className="flex items-center gap-2">
               <span className={`h-2.5 w-2.5 rounded-sm ${seg.swatch}`} />
               <span className="text-sm font-semibold text-white">{seg.coins}</span>
@@ -161,7 +158,7 @@ export default function BitcoinExposurePage() {
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <Link
             href="/scan?chain=bitcoin"
-            className="rounded-2xl border border-white/10 bg-black/20 p-5 transition hover:bg-white/5"
+            className="rounded-panel border border-rule bg-black/20 p-5 transition hover:bg-white/5"
           >
             <div className="text-sm font-semibold text-white">Scan your addresses</div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
@@ -170,7 +167,7 @@ export default function BitcoinExposurePage() {
           </Link>
           <Link
             href="/protect/bitcoin"
-            className="rounded-2xl border border-white/10 bg-black/20 p-5 transition hover:bg-white/5"
+            className="rounded-panel border border-rule bg-black/20 p-5 transition hover:bg-white/5"
           >
             <div className="text-sm font-semibold text-white">Build an evacuation kit</div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
@@ -179,7 +176,7 @@ export default function BitcoinExposurePage() {
           </Link>
           <Link
             href="/attest"
-            className="rounded-2xl border border-white/10 bg-black/20 p-5 transition hover:bg-white/5"
+            className="rounded-panel border border-rule bg-black/20 p-5 transition hover:bg-white/5"
           >
             <div className="text-sm font-semibold text-white">Attest a post-quantum key</div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
@@ -199,7 +196,7 @@ export default function BitcoinExposurePage() {
           As drafted it turns on the signature type, not on whether a key ever leaked — so an
           untouched address with no quantum exposure would still be caught by it.
         </p>
-        <div className="mt-5 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
+        <div className="mt-5 grid gap-px overflow-hidden rounded-panel border border-rule bg-white/10 sm:grid-cols-3">
           {SUNSET_PHASES.map((phase) => (
             <div key={phase.phase} className="bg-black/40 p-5">
               <div className="text-sm font-semibold text-white">{phase.phase}</div>

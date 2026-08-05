@@ -101,7 +101,7 @@ export default function SecurityPage() {
         <h2 className="text-xl font-semibold tracking-tight">
           Security tiers (choose per account)
         </h2>
-        <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
+        <div className="mt-4 overflow-hidden rounded-panel border border-rule">
           <table className="w-full text-left text-sm">
             <thead className="bg-white/5 text-xs uppercase tracking-wide text-zinc-400">
               <tr>
@@ -111,7 +111,7 @@ export default function SecurityPage() {
                 <th className="px-4 py-3 font-medium">Use for</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-rule">
               {TIERS.map((tier) => (
                 <tr key={tier.mode}>
                   <td className="px-4 py-3 font-medium text-white">{tier.mode}</td>
@@ -136,7 +136,7 @@ export default function SecurityPage() {
         </h2>
         <div className="mt-4 grid gap-3">
           {RESIDUAL.map((risk) => (
-            <div key={risk.title} className="rounded-2xl border border-white/10 bg-[#0b0b12] p-5">
+            <div key={risk.title} className="rounded-panel border border-rule bg-panel p-5">
               <h3 className="text-base font-semibold text-white">{risk.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{risk.body}</p>
             </div>

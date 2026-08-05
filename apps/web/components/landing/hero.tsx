@@ -58,13 +58,13 @@ export function Hero() {
         >
           <Link
             href="/scan"
-            className="rounded-[7px] bg-brand px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060a]"
+            className="rounded-[7px] bg-brand px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base"
           >
             Scan an address
           </Link>
           <Link
             href="/#how"
-            className="rounded-[7px] border border-rule-strong px-5 py-2.5 text-sm font-medium text-zinc-200 transition-colors duration-150 hover:border-white/30 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060a]"
+            className="rounded-[7px] border border-rule-strong px-5 py-2.5 text-sm font-medium text-zinc-200 transition-colors duration-150 hover:border-rule-strong hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-base"
           >
             How it works
           </Link>

@@ -93,7 +93,7 @@ export function StartClient() {
     <div className="space-y-4">
       <MigrateStatusBanner stage={status.stage} />
 
-      <section className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6">
+      <section className="rounded-panel border border-rule bg-panel p-6">
         <h2 className="text-lg font-semibold tracking-tight">1 · Generate your post-quantum key</h2>
         <div className="mt-4">
           <PqcKeygen onChange={setKey} />
@@ -101,7 +101,7 @@ export function StartClient() {
       </section>
 
       <section
-        className={`rounded-2xl border p-6 ${key?.seedSaved ? 'border-brand/40 bg-[#0b0b12]' : 'border-white/10 bg-[#0b0b12]/60'}`}
+        className={`rounded-panel border p-6 ${key?.seedSaved ? 'border-brand/40 bg-panel' : 'border-rule bg-panel/60'}`}
       >
         <h2 className="text-lg font-semibold tracking-tight">2 · Your quantum-safe address</h2>
         {!key?.seedSaved ? (
@@ -119,7 +119,7 @@ export function StartClient() {
           <p className="mt-3 text-sm text-zinc-400">Deriving your address…</p>
         ) : (
           <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="rounded-xl bg-white p-3">
+            <div className="rounded-control bg-white p-3">
               <QRCodeSVG value={predicted} size={132} marginSize={0} />
             </div>
             <div className="min-w-0 flex-1 space-y-3">
@@ -131,7 +131,7 @@ export function StartClient() {
               </div>
               <button
                 onClick={copyAddress}
-                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
               >
                 {copied ? 'Copied ✓' : 'Copy address'}
               </button>
@@ -150,7 +150,7 @@ export function StartClient() {
       </section>
 
       <section
-        className={`rounded-2xl border p-6 ${predicted && key?.seedSaved ? 'border-white/10 bg-[#0b0b12]' : 'border-white/10 bg-[#0b0b12]/60'}`}
+        className={`rounded-panel border p-6 ${predicted && key?.seedSaved ? 'border-rule bg-panel' : 'border-rule bg-panel/60'}`}
       >
         <h2 className="text-lg font-semibold tracking-tight">3 · Activate on-chain (optional)</h2>
         {txHash ? (
@@ -181,7 +181,7 @@ export function StartClient() {
               <button
                 onClick={() => connect({ connector: connectors[0]! })}
                 disabled={connecting || !predicted}
-                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:opacity-60"
+                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:opacity-60"
               >
                 {connecting ? 'Connecting…' : 'Connect a gas wallet'}
               </button>
@@ -189,7 +189,7 @@ export function StartClient() {
               <button
                 onClick={activate}
                 disabled={!predicted || activating || !status.live}
-                className="rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+                className="rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
               >
                 {activating ? 'Deploying…' : 'Deploy my account'}
               </button>

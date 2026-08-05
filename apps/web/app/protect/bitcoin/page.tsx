@@ -79,10 +79,7 @@ export default function BitcoinProtectPage() {
         <h2 className="text-xl font-semibold tracking-tight">The steps, in detail</h2>
         <ol className="mt-4 space-y-3">
           {STEPS.map((step) => (
-            <li
-              key={step.n}
-              className="flex gap-4 rounded-2xl border border-white/10 bg-[#0b0b12] p-5"
-            >
+            <li key={step.n} className="flex gap-4 rounded-panel border border-rule bg-panel p-5">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
                 {step.n}
               </span>
@@ -118,13 +115,13 @@ export default function BitcoinProtectPage() {
       <Reveal className="mt-10 flex flex-wrap gap-3">
         <Link
           href="/scan"
-          className="rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
+          className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
         >
           Scan another address
         </Link>
         <Link
           href="/migrate"
-          className="rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+          className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
         >
           Quantum-safe migration (EVM)
         </Link>

@@ -14,7 +14,7 @@ interface FieldErrors {
 }
 
 const inputClass =
-  'w-full rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-brand/60 aria-[invalid=true]:ring-rose-500/60';
+  'w-full rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-brand/60 aria-[invalid=true]:ring-rose-500/60';
 
 export function PartnerForm() {
   const [form, setForm] = useState({
@@ -69,7 +69,7 @@ export function PartnerForm() {
 
   if (status === 'sent') {
     return (
-      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 text-center">
+      <div className="rounded-panel border border-emerald-500/30 bg-emerald-500/10 p-8 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-2xl text-emerald-300">
           ✓
         </div>
@@ -162,7 +162,7 @@ export function PartnerForm() {
       </Field>
 
       {serverError && (
-        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+        <p className="rounded-control border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
           {serverError}
         </p>
       )}
@@ -171,7 +171,7 @@ export function PartnerForm() {
         type="submit"
         disabled={status === 'sending'}
         aria-busy={status === 'sending'}
-        className="rounded-xl bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060a] disabled:opacity-60"
+        className="rounded-control bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:opacity-60"
       >
         {status === 'sending' ? 'Sending…' : 'Request partnership'}
       </button>

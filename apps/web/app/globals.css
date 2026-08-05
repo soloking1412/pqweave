@@ -1,15 +1,93 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-brand: #7c6cff;
-  --color-brand-bright: #9a8cff;
-  --color-accent: #34e2e4;
+/**
+ * Palette: cyanotype.
+ *
+ * Named for the blueprint process — iron-blue lines on warm paper. Two rules
+ * hold the whole system together:
+ *
+ * 1. **The chrome is one cool hue family. Risk is the only warm.** Nothing in
+ *    the interface competes with a risk reading, so when something turns warm it
+ *    means something. An instrument that is colourful when idle cannot signal.
+ * 2. **The base is warm-neutral graphite, not blue-black.** Blue-black under a
+ *    violet glow is the single most recognisable generated-UI signature; a
+ *    neutral base with warm bone text reads like printed technical paper.
+ */
 
-  /* Structural greys. The page is a panel, not a canvas. */
-  --color-panel: #0a0a11;
-  --color-panel-raised: #101019;
-  --color-rule: rgba(255, 255, 255, 0.09);
-  --color-rule-strong: rgba(255, 255, 255, 0.16);
+@theme {
+  /* Cool chrome — actions, links, measured values. One hue, three values. */
+  --color-brand: #3f7fbf;
+  --color-brand-bright: #6aa6dd;
+  --color-accent: #93c5e0;
+
+  /* Structure. The page is a panel, not a canvas. */
+  --color-base: #0a0a0b;
+  --color-panel: #111113;
+  --color-panel-raised: #17181b;
+  --color-rule: rgba(233, 231, 226, 0.1);
+  --color-rule-strong: rgba(233, 231, 226, 0.18);
+
+  /* Warm bone rather than cold white — the paper half of the blueprint. */
+  --color-ink: #e9e7e2;
+  --color-ink-dim: #9d9a94;
+
+  /**
+   * Risk ramp. Monotonic and warm-going: neutral → steel → sodium → ember →
+   * vermilion. The old scale ran emerald → sky → amber → orange → rose, which
+   * is not perceptually ordered: sky reads calmer than emerald, so "low risk"
+   * looked safer than "safe".
+   */
+  --color-risk-safe: #8d918c;
+  --color-risk-low: #b9c3cc;
+  --color-risk-medium: #d9a441;
+  --color-risk-high: #e8763c;
+  --color-risk-critical: #e0484f;
+
+  /**
+   * Warm the neutral ramp at the source.
+   *
+   * `zinc` is used ~290 times for text and borders. Tailwind's zinc is cool
+   * blue-grey, which fights warm bone ink and pulls the whole page back toward
+   * the blue-black look this palette exists to leave behind. Redefining the
+   * scale here warms every one of those call sites without touching them.
+   */
+  --color-zinc-100: #f0eeea;
+  --color-zinc-200: #ddd9d3;
+  --color-zinc-300: #c2beb7;
+  --color-zinc-400: #9d9a94;
+  --color-zinc-500: #7c7974;
+  --color-zinc-600: #5c5a56;
+  --color-zinc-700: #403f3c;
+
+  /**
+   * Re-tune the semantic hues to the same warmth, so a warning sits in the same
+   * world as the risk ramp instead of shouting from Tailwind's default palette.
+   * Meaning is unchanged: emerald = ok/live, amber = caution, rose = error.
+   */
+  --color-emerald-100: #dcebe2;
+  --color-emerald-200: #b9d8c6;
+  --color-emerald-300: #8fbfa3;
+  --color-emerald-400: #6da588;
+  --color-emerald-500: #4f8a6c;
+
+  --color-amber-100: #f6e8cd;
+  --color-amber-200: #ecd3a3;
+  --color-amber-300: #e0b96f;
+  --color-amber-400: #d9a441;
+  --color-amber-500: #bd8a2c;
+
+  --color-orange-300: #f0a077;
+  --color-orange-400: #e8763c;
+  --color-orange-500: #cf5f28;
+
+  --color-rose-200: #f3c4c6;
+  --color-rose-300: #eb999d;
+  --color-rose-400: #e0484f;
+  --color-rose-500: #c8353c;
+
+  --color-sky-100: #dbe9f4;
+  --color-sky-400: #6aa6dd;
+  --color-sky-500: #3f7fbf;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
@@ -33,15 +111,15 @@ body {
   /* A point lattice, not a blur blob. Lattices are the other half of
      post-quantum cryptography, and a regular grid reads as measurement —
      which is what the scanner actually does. */
-  background-color: #06060a;
+  background-color: var(--color-base);
   background-image:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(124, 108, 255, 0.07), transparent 42rem);
+    radial-gradient(circle at center, rgba(233, 231, 226, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(63, 127, 191, 0.07), transparent 42rem);
   background-size:
     28px 28px,
     100% 100%;
   background-attachment: fixed, scroll;
-  color: #e7e7ee;
+  color: var(--color-ink);
 }
 
 a {
@@ -49,7 +127,7 @@ a {
 }
 
 ::selection {
-  background: rgba(52, 226, 228, 0.3);
+  background: rgba(63, 127, 191, 0.35);
 }
 
 /* Every measured value on this site is monospaced with aligned digits, so
@@ -75,7 +153,7 @@ a {
   position: absolute;
   width: 6px;
   height: 6px;
-  border-color: rgba(52, 226, 228, 0.55);
+  border-color: rgba(147, 197, 224, 0.5);
   border-style: solid;
   pointer-events: none;
 }

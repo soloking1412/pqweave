@@ -57,7 +57,7 @@ const FAMILIES = [
 export default function ExposurePage() {
   return (
     <div className="mx-auto max-w-4xl px-5 py-16 sm:py-20">
-      <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
+      <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-white/5 px-3 py-1 text-xs text-zinc-300">
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
         Quantum Exposure Index
       </span>
@@ -72,10 +72,7 @@ export default function ExposurePage() {
 
       <StaggerGroup className="mt-12 grid gap-4 sm:grid-cols-3">
         {STATS.map((stat) => (
-          <StaggerItem
-            key={stat.value}
-            className="rounded-2xl border border-white/10 bg-[#0b0b12] p-5"
-          >
+          <StaggerItem key={stat.value} className="rounded-panel border border-rule bg-panel p-5">
             <div className="text-2xl font-semibold tracking-tight text-white">{stat.value}</div>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">{stat.label}</p>
           </StaggerItem>
@@ -90,7 +87,7 @@ export default function ExposurePage() {
         </p>
         <div className="mt-6 grid gap-4">
           {FAMILIES.map((family) => (
-            <div key={family.tag} className={`rounded-2xl border p-5 ${family.tone}`}>
+            <div key={family.tag} className={`rounded-panel border p-5 ${family.tone}`}>
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${family.dot}`} />
                 <span className="text-sm font-semibold text-white">{family.tag}</span>
@@ -118,7 +115,7 @@ export default function ExposurePage() {
       </Reveal>
 
       <Reveal className="mt-12">
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-brand/15 to-accent/10 p-6 sm:p-8">
+        <div className="rounded-panel border border-rule bg-gradient-to-br from-brand/15 to-accent/10 p-6 sm:p-8">
           <h2 className="text-xl font-semibold tracking-tight text-white">Check any address</h2>
           <p className="mt-2 max-w-xl text-sm text-zinc-300">
             Paste an address from any of the {LIVE_CHAIN_COUNT} live chains and see its exposure
@@ -127,19 +124,19 @@ export default function ExposurePage() {
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/scan"
-              className="rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
+              className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
             >
               Scan a wallet
             </Link>
             <Link
               href="/exposure/bitcoin"
-              className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+              className="rounded-control border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
             >
               Bitcoin breakdown
             </Link>
             <Link
               href="/partners"
-              className="rounded-xl border border-white/15 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+              className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
             >
               Scan at scale (partners)
             </Link>

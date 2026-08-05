@@ -97,7 +97,7 @@ export function AttestClient() {
     <div className="space-y-4">
       <MigrateStatusBanner stage={status.stage} />
 
-      <section className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6">
+      <section className="rounded-panel border border-rule bg-panel p-6">
         <h2 className="text-lg font-semibold tracking-tight">1 · Generate your post-quantum key</h2>
         <div className="mt-4">
           <PqcKeygen onChange={setKey} />
@@ -105,7 +105,7 @@ export function AttestClient() {
       </section>
 
       <section
-        className={`rounded-2xl border p-6 ${pqcRoot ? 'border-brand/40 bg-[#0b0b12]' : 'border-white/10 bg-[#0b0b12]/60'}`}
+        className={`rounded-panel border p-6 ${pqcRoot ? 'border-brand/40 bg-panel' : 'border-rule bg-panel/60'}`}
       >
         <h2 className="text-lg font-semibold tracking-tight">2 · Sign with your Bitcoin wallet</h2>
         {!pqcRoot ? (
@@ -127,7 +127,7 @@ export function AttestClient() {
             <button
               onClick={connectAndSignBtc}
               disabled={busy === 'btc'}
-              className="mt-4 rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              className="mt-4 rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
             >
               {busy === 'btc' ? 'Waiting for wallet…' : 'Connect Bitcoin wallet & sign'}
             </button>
@@ -136,7 +136,7 @@ export function AttestClient() {
       </section>
 
       <section
-        className={`rounded-2xl border p-6 ${binding ? 'border-white/10 bg-[#0b0b12]' : 'border-white/10 bg-[#0b0b12]/60'}`}
+        className={`rounded-panel border p-6 ${binding ? 'border-rule bg-panel' : 'border-rule bg-panel/60'}`}
       >
         <h2 className="text-lg font-semibold tracking-tight">3 · Anchor it on-chain</h2>
         {!attestation ? (
@@ -170,7 +170,7 @@ export function AttestClient() {
               <button
                 onClick={() => connect({ connector: connectors[0]! })}
                 disabled={connecting || !binding}
-                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:opacity-60"
+                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:opacity-60"
               >
                 {connecting ? 'Connecting…' : 'Connect an EVM wallet to anchor'}
               </button>
@@ -178,7 +178,7 @@ export function AttestClient() {
               <button
                 onClick={anchor}
                 disabled={!binding || busy === 'anchor' || !status.live}
-                className="rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+                className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
               >
                 {busy === 'anchor' ? 'Anchoring…' : 'Anchor attestation'}
               </button>

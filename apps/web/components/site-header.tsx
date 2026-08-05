@@ -3,7 +3,7 @@ import { Logo } from './logo';
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-white/5 bg-[#06060a]/70 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0a0a0b]/70 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <Link href="/" className="flex items-center gap-2.5">
           <Logo className="h-7 w-7" />
@@ -54,7 +54,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/scan"
-            className="ml-1 rounded-lg bg-brand px-3.5 py-2 font-medium text-white shadow-[0_0_30px_-8px_rgba(124,108,255,0.8)] transition hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-[#06060a]"
+            className="ml-1 rounded-lg bg-brand px-3.5 py-2 font-medium text-white shadow-[0_0_30px_-8px_rgba(124,108,255,0.8)] transition hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base"
           >
             Scan
           </Link>

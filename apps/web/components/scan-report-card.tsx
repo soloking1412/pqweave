@@ -19,7 +19,7 @@ export function ScanReportCard({ report }: { report: ScanReport }) {
   const showProtect = report.exposed && !protectedByPqweave;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6 sm:p-7">
+    <div className="rounded-panel border border-rule bg-panel p-6 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${style.badge}`}>
@@ -92,7 +92,7 @@ export function ScanReportCard({ report }: { report: ScanReport }) {
       {showProtect && (
         <Link
           href={`/migrate?address=${report.address}`}
-          className="mt-4 inline-flex rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright"
+          className="mt-4 inline-flex rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright"
         >
           Protect this wallet →
         </Link>

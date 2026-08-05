@@ -32,7 +32,7 @@ export default function Image() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        backgroundColor: '#06060a',
+        backgroundColor: '#0a0a0b',
         backgroundImage:
           'radial-gradient(900px 520px at 88% -10%, rgba(124,108,255,0.22), transparent), radial-gradient(720px 520px at -8% 110%, rgba(52,226,228,0.14), transparent)',
         padding: '72px',
@@ -46,7 +46,7 @@ export default function Image() {
               width: '44px',
               height: '44px',
               borderRadius: '13px',
-              backgroundColor: '#7c6cff',
+              backgroundColor: '#3f7fbf',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
@@ -75,7 +75,7 @@ export default function Image() {
               width: '9px',
               height: '9px',
               borderRadius: '999px',
-              backgroundColor: '#34e2e4',
+              backgroundColor: '#93c5e0',
             }}
           />
           Quantum Exposure Index
@@ -99,7 +99,7 @@ export default function Image() {
             display: 'flex',
             fontSize: '88px',
             lineHeight: 1.04,
-            color: '#34e2e4',
+            color: '#93c5e0',
             letterSpacing: '-3px',
           }}
         >

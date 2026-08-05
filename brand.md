@@ -29,27 +29,58 @@ the things it asks for:
   what the verifier recomputes. If a visual cannot be traced to real behaviour,
   it does not ship.
 
-## Palette (dark-first; the product is dark-only by design)
+## Palette: cyanotype (dark-first; the product is dark-only by design)
 
-| Token          | Value                   | Use                                                     |
-| -------------- | ----------------------- | ------------------------------------------------------- |
-| Base           | `#06060a`               | Page background (near-black, slight blue)               |
-| Panel          | `#0a0a11`               | Instrument panels, tiles                                |
-| Panel raised   | `#101019`               | Panels sitting on top of panels                         |
-| Rule           | `rgba(255,255,255,.09)` | Hairline dividers — the main structural device          |
-| Brand (violet) | `#7c6cff`               | Primary actions and brand only                          |
-| Brand bright   | `#9a8cff`               | Hovers; "carried in the signature" in diagrams          |
-| Accent (cyan)  | `#34e2e4`               | **Measured / live / shipped** — one meaning, held to it |
-| Text           | `#e7e7ee`               | Body                                                    |
-| Muted          | `zinc-400 / zinc-500`   | Secondary text                                          |
+Named for the blueprint process — iron-blue lines on warm paper. It replaced a
+violet-and-cyan-on-blue-black scheme, which is the single most recognisable
+generated-UI palette in crypto. Two rules hold the system together:
 
-Accent discipline: cyan means _this is measured or shipped_. Violet means
-_this is us, or an action_. A colour that means two things means nothing.
+1. **The chrome is one cool hue family. Risk is the only warm.** Nothing in the
+   interface competes with a risk reading, so when something turns warm it means
+   something. An instrument that is colourful when idle cannot signal.
+2. **The base is warm-neutral graphite, not blue-black.** With warm bone ink it
+   reads like printed technical paper rather than a dark-mode dashboard.
 
-Risk semantics (`lib/risk.ts`): emerald = safe, sky = low, amber = medium,
-orange = high, rose = critical. Migration semantics: emerald = quantum-safe,
-amber = transitional, zinc = none. Status semantics: cyan = shipped, violet =
-building, amber = blocked.
+| Token        | Value                   | Use                                              |
+| ------------ | ----------------------- | ------------------------------------------------ |
+| Base         | `#0a0a0b`               | Page background — neutral graphite, no blue cast |
+| Panel        | `#111113`               | Instrument panels, tiles                         |
+| Panel raised | `#17181b`               | Panels sitting on top of panels                  |
+| Rule         | `rgba(233,231,226,.10)` | Hairline dividers — the main structural device   |
+| Brand        | `#3f7fbf`               | Primary actions                                  |
+| Brand bright | `#6aa6dd`               | Hovers, links, "recomputed by the verifier"      |
+| Accent       | `#93c5e0`               | **Measured / live / shipped**                    |
+| Ink          | `#e9e7e2`               | Warm bone body text                              |
+| Ink dim      | `#9d9a94`               | Secondary text                                   |
+
+**The neutral ramp is warmed at the source.** `zinc` is used ~290 times for text
+and borders; Tailwind's zinc is cool blue-grey and fights the bone ink, so
+`globals.css` redefines `--color-zinc-*` to warm neutrals. Same for the semantic
+hues (`emerald`, `amber`, `orange`, `rose`, `sky`) — retuned to the same warmth,
+meanings unchanged. Never reach for a raw Tailwind default colour; it will be
+cooler than everything around it.
+
+### Risk ramp
+
+`lib/risk.ts` runs neutral → steel → sodium → ember → vermilion. Severity rises
+with both warmth and saturation, and `safe` is deliberately colourless —
+"nothing to report" should not compete with "something to report".
+
+| Level    | Token                   | Value     |
+| -------- | ----------------------- | --------- |
+| safe     | `--color-risk-safe`     | `#8d918c` |
+| low      | `--color-risk-low`      | `#b9c3cc` |
+| medium   | `--color-risk-medium`   | `#d9a441` |
+| high     | `--color-risk-high`     | `#e8763c` |
+| critical | `--color-risk-critical` | `#e0484f` |
+
+The previous scale (emerald → sky → amber → orange → rose) was not perceptually
+ordered: sky reads calmer than emerald, so "low risk" looked safer than "safe".
+
+Migration semantics: emerald = quantum-safe, amber = transitional, zinc = none.
+Status semantics: accent = shipped, **warm grey = building**, amber = blocked.
+Building is grey on purpose — colour means a signal, and work in progress is not
+yet one. It carries a slow pulse instead.
 
 ## Typography
 

@@ -183,7 +183,7 @@ export default function HomePage() {
               </span>
               <span className="tabular text-[10px] text-zinc-600">IPQCVerifier</span>
             </div>
-            <div className="mt-4 divide-y divide-white/5">
+            <div className="mt-4 divide-y divide-rule">
               {VERIFIERS.map((v) => (
                 <div key={v.name} className="py-3.5 first:pt-0 last:pb-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">

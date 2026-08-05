@@ -16,7 +16,7 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
   const style = RISK_STYLES[report.level];
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6 sm:p-7">
+    <div className="rounded-panel border border-rule bg-panel p-6 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${style.badge}`}>
@@ -57,7 +57,7 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
       {report.chain === 'Solana' && (
         <Link
           href="/protect/solana"
-          className="mt-4 inline-flex rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
+          className="mt-4 inline-flex rounded-control border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
         >
           What can actually be done on Solana →
         </Link>
@@ -66,7 +66,7 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
       {report.chain === 'Stellar' && (
         <Link
           href="/protect/stellar"
-          className="mt-4 inline-flex rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
+          className="mt-4 inline-flex rounded-control border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
         >
           What can actually be done on Stellar →
         </Link>

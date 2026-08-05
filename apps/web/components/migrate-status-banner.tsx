@@ -28,7 +28,7 @@ const COPY: Record<
 export function MigrateStatusBanner({ stage }: { stage: DeploymentStage }) {
   const copy = COPY[stage];
   return (
-    <div className={`rounded-2xl border p-4 ${copy.className}`}>
+    <div className={`rounded-panel border p-4 ${copy.className}`}>
       <div className="flex items-center gap-2">
         <span className={`h-1.5 w-1.5 rounded-full ${copy.dot}`} />
         <span className="text-xs font-semibold uppercase tracking-wide">{copy.label}</span>

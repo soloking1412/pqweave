@@ -248,7 +248,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
 
   if (!vault) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-5">
+      <div className="rounded-panel border border-rule bg-panel p-5">
         <h2 className="text-xl font-semibold tracking-tight">Try the vault</h2>
         <p className="mt-2 text-sm text-zinc-400">
           The vault is not wired to a network in this build. Deploy the wasm with{' '}
@@ -261,7 +261,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-5">
+    <div className="rounded-panel border border-rule bg-panel p-5">
       <h2 className="text-xl font-semibold tracking-tight">Try the vault on {vault.network}</h2>
       <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
         Testnet only, unaudited. This creates a new post-quantum account; it does not protect your
@@ -290,7 +290,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
           <button
             onClick={connectWallet}
             disabled={!keyState}
-            className="mt-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
+            className="mt-2 rounded-control bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
           >
             Connect Freighter
           </button>
@@ -326,7 +326,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
                 <button
                   onClick={deployVault}
                   disabled={busy !== null}
-                  className="mt-3 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
+                  className="mt-3 rounded-control bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
                 >
                   {busy === 'deploy' ? 'Deploying…' : 'Deploy my vault'}
                 </button>
@@ -349,7 +349,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="Destination address (G…)"
-              className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+              className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
             />
             <div className="grid gap-3 sm:grid-cols-2">
               <input
@@ -357,20 +357,20 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Amount (XLM)"
                 inputMode="decimal"
-                className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
               />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Keystore password"
-                className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
               />
             </div>
             <button
               onClick={withdraw}
               disabled={busy !== null}
-              className="rounded-xl bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
+              className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
             >
               {busy === 'withdraw' ? 'Signing & submitting…' : 'Withdraw'}
             </button>

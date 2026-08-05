@@ -78,7 +78,7 @@ export function VerifierDiagram() {
                 y1={y}
                 x2={stepX(STEPS - 1)}
                 y2={y}
-                stroke="rgba(255,255,255,0.10)"
+                stroke="rgba(233,231,226,0.10)"
                 strokeWidth={1}
               />
               {/* The portion the verifier walks, drawn as it is computed. */}
@@ -87,7 +87,7 @@ export function VerifierDiagram() {
                 y1={y}
                 x2={stepX(STEPS - 1)}
                 y2={y}
-                stroke="rgba(52,226,228,0.55)"
+                stroke="rgba(106,166,221,0.6)"
                 strokeWidth={1}
                 initial={{ pathLength: reduce ? 1 : 0 }}
                 animate={{ pathLength: 1 }}
@@ -104,7 +104,7 @@ export function VerifierDiagram() {
                       cx={stepX(step)}
                       cy={y}
                       r={2}
-                      fill="rgba(255,255,255,0.14)"
+                      fill="rgba(233,231,226,0.14)"
                     />
                   );
                 }
@@ -118,7 +118,7 @@ export function VerifierDiagram() {
                       width={7}
                       height={7}
                       rx={1}
-                      fill="#9a8cff"
+                      fill="#e9e7e2"
                     />
                   );
                 }
@@ -128,7 +128,7 @@ export function VerifierDiagram() {
                     cx={stepX(step)}
                     cy={y}
                     r={2.5}
-                    fill="#34e2e4"
+                    fill="#6aa6dd"
                     initial={{ opacity: reduce ? 1 : 0 }}
                     animate={{ opacity: 1 }}
                     transition={loop(0.3 + row * 0.07 + (step - signed) * 0.06, 0.25)}
@@ -185,11 +185,11 @@ export function VerifierDiagram() {
 
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-rule pt-3 text-[11px] text-zinc-500">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-[1px] bg-brand-bright" />
+          <span className="h-2 w-2 rounded-[1px] bg-ink" />
           carried in the signature
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-accent" />
+          <span className="h-2 w-2 rounded-full bg-brand-bright" />
           recomputed by the verifier
         </span>
       </div>
@@ -221,7 +221,7 @@ function TreeNode({
           key={i}
           d={`M ${childX} ${cy} H ${(childX + x) / 2} V ${y} H ${x}`}
           fill="none"
-          stroke={root ? 'rgba(154,140,255,0.6)' : 'rgba(255,255,255,0.16)'}
+          stroke={root ? 'rgba(106,166,221,0.65)' : 'rgba(233,231,226,0.16)'}
           strokeWidth={1}
           initial={{ pathLength: reduce ? 1 : 0 }}
           animate={{ pathLength: 1 }}
@@ -232,8 +232,8 @@ function TreeNode({
         cx={x}
         cy={y}
         r={root ? 6 : 3.5}
-        fill={root ? '#9a8cff' : '#0a0a11'}
-        stroke={root ? '#9a8cff' : 'rgba(255,255,255,0.35)'}
+        fill={root ? '#6aa6dd' : '#0a0a11'}
+        stroke={root ? '#6aa6dd' : 'rgba(233,231,226,0.35)'}
         strokeWidth={1}
         initial={{ scale: reduce ? 1 : 0.4, opacity: reduce ? 1 : 0 }}
         animate={{ scale: 1, opacity: 1 }}

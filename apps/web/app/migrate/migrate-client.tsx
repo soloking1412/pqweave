@@ -85,8 +85,8 @@ function Step({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-6 transition ${
-        active ? 'border-brand/40 bg-[#0b0b12]' : 'border-white/10 bg-[#0b0b12]/60'
+      className={`rounded-panel border p-6 transition ${
+        active ? 'border-brand/40 bg-panel' : 'border-rule bg-panel/60'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ export function MigrateClient() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-sm text-zinc-200">{shortenAddress(address)}</span>
               {network ? (
-                <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-zinc-400">
+                <span className="rounded-full border border-rule px-2 py-0.5 text-xs text-zinc-400">
                   {network}
                 </span>
               ) : (
@@ -312,7 +312,7 @@ export function MigrateClient() {
             </div>
             <button
               onClick={() => disconnect()}
-              className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5"
+              className="rounded-lg border border-rule px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5"
             >
               Disconnect
             </button>
@@ -326,7 +326,7 @@ export function MigrateClient() {
             <button
               onClick={() => connect({ connector: connectors[0]! })}
               disabled={connecting}
-              className="mt-4 rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
             >
               {connecting ? 'Connecting…' : 'Connect wallet'}
             </button>
@@ -362,16 +362,16 @@ export function MigrateClient() {
             <button
               key={meta.key}
               onClick={() => chooseOutcome(meta.key)}
-              className={`rounded-xl border p-4 text-left transition ${
+              className={`rounded-control border p-4 text-left transition ${
                 outcome === meta.key
                   ? 'border-brand/50 bg-brand/5'
-                  : 'border-white/10 bg-black/20 hover:bg-white/5'
+                  : 'border-rule bg-black/20 hover:bg-white/5'
               }`}
             >
               <div className="flex items-center gap-2">
                 <span
                   className={`h-3.5 w-3.5 rounded-full border ${
-                    outcome === meta.key ? 'border-brand bg-brand' : 'border-white/30'
+                    outcome === meta.key ? 'border-brand bg-brand' : 'border-rule-strong'
                   }`}
                 />
                 <span className="text-sm font-semibold text-white">{meta.title}</span>
@@ -465,15 +465,15 @@ export function MigrateClient() {
                   placeholder="0x… token addresses to include"
                   spellCheck={false}
                   rows={3}
-                  className="mt-2 w-full rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                  className="mt-2 w-full rounded-control bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
                 />
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-rule bg-black/20 p-3">
                   <input
                     type="checkbox"
                     checked={installMailbox}
                     disabled={!contracts?.forwarder}
                     onChange={(event) => setInstallMailbox(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-[#7c6cff]"
+                    className="mt-0.5 h-4 w-4 accent-[#3f7fbf]"
                   />
                   <span className="text-sm text-zinc-300">
                     <span className="font-medium text-white">Keep my old address as a mailbox</span>
@@ -492,12 +492,12 @@ export function MigrateClient() {
                   transaction. Your ECDSA key still authorizes routine actions; sensitive ones need
                   your post-quantum key.
                 </p>
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-rule bg-black/20 p-3">
                   <input
                     type="checkbox"
                     checked={pqcOnly}
                     onChange={(event) => setPqcOnly(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-[#7c6cff]"
+                    className="mt-0.5 h-4 w-4 accent-[#3f7fbf]"
                   />
                   <span className="text-sm text-zinc-300">
                     <span className="font-medium text-white">
@@ -514,7 +514,7 @@ export function MigrateClient() {
             <button
               onClick={run}
               disabled={!seedSaved || migrating}
-              className="mt-4 rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
             >
               {migrating
                 ? 'Working…'

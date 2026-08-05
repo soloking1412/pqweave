@@ -95,7 +95,7 @@ export function PqcKeygen({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => downloadKeystore(keystore)}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
           >
             Download again
           </button>
@@ -104,7 +104,7 @@ export function PqcKeygen({
               type="checkbox"
               checked={seedSaved}
               onChange={(event) => toggleSaved(event.target.checked)}
-              className="h-4 w-4 accent-[#7c6cff]"
+              className="h-4 w-4 accent-[#3f7fbf]"
             />
             I have saved the file and will remember my password
           </label>
@@ -132,20 +132,20 @@ export function PqcKeygen({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Encryption password"
-          className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+          className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
         />
         <input
           type="password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder="Confirm password"
-          className="rounded-xl bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+          className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
         />
       </div>
       <button
         onClick={generateAndEncrypt}
         disabled={disabled || generating}
-        className="mt-4 rounded-xl bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+        className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
       >
         {generating ? 'Generating…' : 'Generate & download encrypted key'}
       </button>

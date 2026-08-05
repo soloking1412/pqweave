@@ -27,7 +27,7 @@ export function UtxoReportCard({ report }: { report: UtxoScanReport }) {
   const style = RISK_STYLES[report.level];
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b12] p-6 sm:p-7">
+    <div className="rounded-panel border border-rule bg-panel p-6 sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${style.badge}`}>
@@ -70,7 +70,7 @@ export function UtxoReportCard({ report }: { report: UtxoScanReport }) {
       {report.exposed && Number(report.balance) > 0 && (
         <Link
           href="/protect/bitcoin"
-          className="mt-4 inline-flex rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+          className="mt-4 inline-flex rounded-control border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
         >
           Reduce exposure (transitional) →
         </Link>
