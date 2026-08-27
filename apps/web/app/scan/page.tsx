@@ -4,7 +4,7 @@ import { ScanForm } from './scan-form';
 export const metadata: Metadata = {
   title: 'Wallet exposure scanner — PQWeave',
   description:
-    'Check whether an address on EVM, Bitcoin, Solana, and 13 more chains has revealed its public key, what value it guards, and score its quantum risk — across every EVM chain at once.',
+    'Check whether an address on Bitcoin, Ethereum, Solana, and 13 more chains has revealed its public key, what value it guards, and score its quantum risk.',
 };
 
 export default async function ScanPage({

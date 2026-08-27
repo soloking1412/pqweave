@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PQWeave — post-quantum migration for every EVM wallet';
+export const alt = 'PQWeave — post-quantum security for web3 wallets';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -14,8 +14,6 @@ export default function Image() {
         flexDirection: 'column',
         justifyContent: 'space-between',
         backgroundColor: '#0a0a0b',
-        backgroundImage:
-          'radial-gradient(900px 520px at 88% -10%, rgba(124,108,255,0.22), transparent), radial-gradient(720px 520px at -8% 110%, rgba(52,226,228,0.14), transparent)',
         padding: '72px',
       }}
     >
@@ -35,7 +33,7 @@ export default function Image() {
         >
           Q
         </div>
-        <div style={{ display: 'flex', color: '#e7e7ee', fontSize: '30px' }}>PQWeave</div>
+        <div style={{ display: 'flex', color: '#e9e7e2', fontSize: '30px' }}>PQWeave</div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -44,11 +42,11 @@ export default function Image() {
             display: 'flex',
             fontSize: '82px',
             lineHeight: 1.05,
-            color: '#e7e7ee',
+            color: '#e9e7e2',
             letterSpacing: '-3px',
           }}
         >
-          Quantum-proof any
+          Your public key is
         </div>
         <div
           style={{
@@ -59,7 +57,7 @@ export default function Image() {
             letterSpacing: '-3px',
           }}
         >
-          EVM wallet.
+          already exposed.
         </div>
         <div
           style={{
@@ -70,8 +68,8 @@ export default function Image() {
             maxWidth: '960px',
           }}
         >
-          Scan your quantum exposure, then migrate to a post-quantum account — one transaction, any
-          wallet, no custody.
+          Scan any address across 16 chains. Move an EVM wallet behind a post-quantum signature in
+          one transaction.
         </div>
       </div>
 

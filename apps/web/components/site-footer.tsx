@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LIVE_CHAIN_COUNT } from '@/lib/chains-directory';
 import { Logo } from './logo';
 
 export function SiteFooter() {
@@ -8,7 +9,9 @@ export function SiteFooter() {
         <div className="flex items-center gap-2.5">
           <Logo className="h-5 w-5" />
           <span>PQWeave</span>
-          <span className="text-zinc-600">— post-quantum migration for EVM wallets</span>
+          <span className="text-zinc-600">
+            — post-quantum security across {LIVE_CHAIN_COUNT} chains
+          </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <Link href="/scan" className="transition hover:text-white">

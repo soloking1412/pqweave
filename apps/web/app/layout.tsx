@@ -5,22 +5,22 @@ import { SiteHeader } from '@/components/site-header';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pqweave.com'),
-  title: 'PQWeave — Post-Quantum Migration for EVM Wallets',
+  title: 'PQWeave — Post-Quantum Security for Web3 Wallets',
   description:
-    'Scan, harden, and migrate any EVM wallet to post-quantum-safe security before Q-Day. Works with MetaMask, Ledger, Rabby, and every EVM wallet via account abstraction.',
+    'Scan any address for quantum exposure across 16 chains, including Bitcoin, Ethereum and Solana. Move an EVM wallet behind a post-quantum signature in one transaction, with an honest answer on every other chain.',
   openGraph: {
-    title: 'PQWeave — Post-Quantum Migration for EVM Wallets',
+    title: 'PQWeave — Post-Quantum Security for Web3 Wallets',
     description:
-      'Scan your quantum exposure, then migrate any EVM wallet to a post-quantum account — one transaction, no custody.',
+      'Scan your quantum exposure across 16 chains, then move an EVM wallet to a post-quantum account in one transaction. No custody.',
     url: 'https://pqweave.com',
     siteName: 'PQWeave',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PQWeave — Post-Quantum Migration for EVM Wallets',
+    title: 'PQWeave — Post-Quantum Security for Web3 Wallets',
     description:
-      'Scan your quantum exposure, then migrate any EVM wallet to a post-quantum account — one transaction, no custody.',
+      'Scan your quantum exposure across 16 chains, then move an EVM wallet to a post-quantum account in one transaction. No custody.',
   },
 };
 

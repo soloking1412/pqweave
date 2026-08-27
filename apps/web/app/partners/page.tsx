@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { LIVE_CHAIN_COUNT } from '@/lib/chains-directory';
 import { PartnerForm } from './partner-form';
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 const VALUE = [
   {
     title: 'Scanner SDK & API',
-    body: 'Drop quantum-exposure detection into your product across 11 chains. One call per address.',
+    body: `Drop quantum-exposure detection into your product across ${LIVE_CHAIN_COUNT} chains. One call per address.`,
   },
   {
     title: 'One-click migration',
