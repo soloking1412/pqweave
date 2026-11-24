@@ -60,6 +60,15 @@ contract WinternitzMerkleVerifierTest is Test {
         assertTrue(verifier.verify(message, abi.encodePacked(root), signature));
     }
 
+    function test_rejectsTruncatedTweakLeafAlias() public view {
+        bytes32 message = keccak256("alias-regression");
+        (bytes32 root, bytes memory signature) = _sign(keccak256("seed"), message, 0);
+        // The original tweak shifted leafIndex left 64 bits in uint256; the
+        // high 64 bits disappeared, while the empty Merkle proof ignored them.
+        assembly { mstore(add(signature, 32), shl(192, 1)) }
+        assertFalse(verifier.verify(message, abi.encodePacked(root), signature));
+    }
+
     function test_rejectsTamperedMessage() public view {
         (bytes32 root, bytes memory signature) = _sign(keccak256("seed"), keccak256("authorize"), 0);
         assertFalse(verifier.verify(keccak256("different"), abi.encodePacked(root), signature));

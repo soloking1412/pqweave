@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {IERC20} from "./interfaces/tokens.sol";
 import {IAccount, PackedUserOperation} from "./interfaces/IAccount.sol";
 import {IPQCVerifier} from "./interfaces/IPQCVerifier.sol";
 import {ECDSA} from "./libraries/ECDSA.sol";
@@ -15,7 +16,8 @@ import {QuantumPolicy} from "./libraries/QuantumPolicy.sol";
 ///         - pqcOnly: every operation also requires a post-quantum signature.
 ///         - Sole authority: with owner == address(0) the ECDSA key is removed
 ///           from the trust model entirely and the post-quantum key alone
-///           authorizes the account — fully quantum-safe, no ECDSA fallback.
+///           authorizes a factory-created account without an ECDSA fallback.
+///           Ethereum consensus and token administrators remain separate risks.
 /// @dev Designed to be used either as a fresh ERC-4337 account or as the
 ///      delegation target of an existing EOA under EIP-7702.
 contract PQWeaveAccount is IAccount {
@@ -52,7 +54,7 @@ contract PQWeaveAccount is IAccount {
     ///         regardless of the policy. Implied when there is no ECDSA owner.
     bool public pqcOnly;
     /// @notice Consumed post-quantum one-time keys, preventing signature reuse.
-    mapping(uint256 => bool) public pqcLeafUsed;
+    mapping(bytes32 => mapping(uint256 => bool)) private _pqcLeafUsed;
 
     bool private _initialized;
 
@@ -72,6 +74,7 @@ contract PQWeaveAccount is IAccount {
     error NotEntryPoint();
     error NotAuthorized();
     error CallReverted(bytes returnData);
+    error TokenTransferFailed();
 
     constructor(address entryPoint_) {
         entryPoint = entryPoint_;
@@ -97,13 +100,19 @@ contract PQWeaveAccount is IAccount {
         }
         if (_initialized) revert AlreadyInitialized();
         if (pqcPublicKey_.length != 32) revert InvalidPqcKey();
-        if (address(verifier_) == address(0)) revert InvalidVerifier();
+        if (address(verifier_).code.length == 0) revert InvalidVerifier();
         _initialized = true;
         owner = owner_;
         pqcPublicKey = pqcPublicKey_;
         pqcVerifier = verifier_;
         valueThreshold = valueThreshold_;
         emit Initialized(owner_, address(verifier_), valueThreshold_, pqcOnly);
+    }
+
+    /// @notice Consumed leaves for the current root. Old root history is retained
+    ///         so rotating back cannot reactivate a previously consumed key.
+    function pqcLeafUsed(uint256 leafIndex) public view returns (bool) {
+        return _pqcLeafUsed[keccak256(pqcPublicKey)][leafIndex];
     }
 
     // --- ERC-4337 validation ---
@@ -142,9 +151,9 @@ contract PQWeaveAccount is IAccount {
         if (currentOwner == address(0) || pqcOnly || _requiresPqc(userOp.callData)) {
             if (pqcSignature.length < 32) return SIG_FAILED;
             uint256 leafIndex = _leafIndex(pqcSignature);
-            if (pqcLeafUsed[leafIndex]) return SIG_FAILED;
+            if (pqcLeafUsed(leafIndex)) return SIG_FAILED;
             if (!pqcVerifier.verify(userOpHash, pqcPublicKey, pqcSignature)) return SIG_FAILED;
-            pqcLeafUsed[leafIndex] = true;
+            _pqcLeafUsed[keccak256(pqcPublicKey)][leafIndex] = true;
         }
 
         return SIG_OK;
@@ -162,12 +171,17 @@ contract PQWeaveAccount is IAccount {
 
         if (selector == this.executeBatch.selector) {
             Call[] memory calls = abi.decode(callData[4:], (Call[]));
+            uint256 totalValue;
             for (uint256 i = 0; i < calls.length; i++) {
                 if (QuantumPolicy.requiresPqc(
                         valueThreshold, address(this), calls[i].dest, calls[i].value, calls[i].data
                     )) {
                     return true;
                 }
+                // Each individual value is below the threshold here. Subtraction
+                // avoids overflow while checking the aggregate amount.
+                if (calls[i].value >= valueThreshold - totalValue) return true;
+                totalValue += calls[i].value;
             }
             return false;
         }
@@ -207,6 +221,7 @@ contract PQWeaveAccount is IAccount {
 
     function setVerifier(IPQCVerifier newVerifier) external {
         _requireSelf();
+        if (address(newVerifier).code.length == 0) revert InvalidVerifier();
         pqcVerifier = newVerifier;
         emit VerifierChanged(address(newVerifier));
     }
@@ -230,6 +245,14 @@ contract PQWeaveAccount is IAccount {
     function _call(address dest, uint256 value, bytes calldata data) internal {
         (bool ok, bytes memory ret) = dest.call{value: value}(data);
         if (!ok) revert CallReverted(ret);
+        if (data.length >= 4 && bytes4(data[:4]) == IERC20.transfer.selector) {
+            if (
+                dest.code.length == 0
+                    || (ret.length != 0 && (ret.length != 32 || !abi.decode(ret, (bool))))
+            ) {
+                revert TokenTransferFailed();
+            }
+        }
         emit Executed(dest, value, data);
     }
 

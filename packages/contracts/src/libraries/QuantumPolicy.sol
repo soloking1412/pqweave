@@ -6,32 +6,22 @@ pragma solidity ^0.8.28;
 /// @dev The rules are deliberately simple and auditable. An operation requires a
 ///      post-quantum signature when any of the following hold:
 ///        - it moves native value at or above the configured threshold;
-///        - it grants token spending power (`approve` / `setApprovalForAll`);
+///        - it includes any calldata, including token transfers and approvals;
 ///        - it targets the account itself (administrative changes such as
 ///          rotating the post-quantum key or swapping the verifier).
 library QuantumPolicy {
-    // ERC-20 approve(address,uint256)
-    bytes4 internal constant APPROVE = 0x095ea7b3;
-    // ERC-721/1155 setApprovalForAll(address,bool)
-    bytes4 internal constant SET_APPROVAL_FOR_ALL = 0xa22cb465;
-
     function requiresPqc(
         uint256 valueThreshold,
         address account,
         address dest,
         uint256 value,
         bytes memory data
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
         if (value >= valueThreshold) return true;
         if (dest == account) return true;
 
-        if (data.length >= 4) {
-            bytes4 selector;
-            assembly {
-                selector := mload(add(data, 0x20))
-            }
-            if (selector == APPROVE || selector == SET_APPROVAL_FOR_ALL) return true;
-        }
-        return false;
+        // Unknown selectors can transfer assets or grant authority indirectly.
+        // Empty-data calls to contracts can also execute receive/fallback code.
+        return data.length != 0 || dest.code.length != 0;
     }
 }

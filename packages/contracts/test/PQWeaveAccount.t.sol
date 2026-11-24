@@ -62,6 +62,100 @@ contract PQWeaveAccountTest is Test {
         return abi.encode(uint256(0), pk, sig, new bytes32[](0));
     }
 
+    function test_relabelingConsumedLeafCannotBypassReuseGuard() public {
+        bytes memory data = _executeCall(recipient, THRESHOLD, "");
+        bytes32 first = keccak256("first-leaf-use");
+        assertEq(
+            account.validateUserOp(
+                _op(data, abi.encode(_ecdsa(ownerPk, first), _pqcBlob(first))), first, 0
+            ),
+            0
+        );
+        bytes32 second = keccak256("second-leaf-use");
+        // Model a second exposed signature under the same one-time key.
+        bytes memory aliased = _pqcBlob(second);
+        assembly { mstore(add(aliased, 32), 1) }
+        assertEq(
+            account.validateUserOp(
+                _op(data, abi.encode(_ecdsa(ownerPk, second), aliased)), second, 0
+            ),
+            1
+        );
+        assertFalse(account.pqcLeafUsed(1));
+    }
+
+    function testFuzz_nonemptyCalldataRequiresPqc(bytes memory payload) public {
+        vm.assume(payload.length > 0);
+        bytes32 hash = keccak256(payload);
+        bytes memory signature = abi.encode(_ecdsa(ownerPk, hash), bytes(""));
+        assertEq(
+            account.validateUserOp(_op(_executeCall(recipient, 0, payload), signature), hash, 0), 1
+        );
+    }
+
+    function test_emptyCalldataToContractRequiresPqc() public {
+        vm.etch(recipient, hex"00");
+        bytes32 hash = keccak256("contract-fallback");
+        bytes memory signature = abi.encode(_ecdsa(ownerPk, hash), bytes(""));
+        assertEq(account.validateUserOp(_op(_executeCall(recipient, 0, ""), signature), hash, 0), 1);
+    }
+
+    function testFuzz_batchThresholdCannotBeSplit(uint96 firstValue) public {
+        uint256 value = bound(firstValue, 1, THRESHOLD - 1);
+        PQWeaveAccount.Call[] memory calls = new PQWeaveAccount.Call[](2);
+        calls[0] = PQWeaveAccount.Call(recipient, value, "");
+        calls[1] = PQWeaveAccount.Call(recipient, THRESHOLD - value, "");
+        bytes memory data = abi.encodeWithSelector(PQWeaveAccount.executeBatch.selector, calls);
+        bytes32 hash = keccak256(data);
+        bytes memory signature = abi.encode(_ecdsa(ownerPk, hash), bytes(""));
+        assertEq(account.validateUserOp(_op(data, signature), hash, 0), 1);
+        calls[1].value -= 1;
+        data = abi.encodeWithSelector(PQWeaveAccount.executeBatch.selector, calls);
+        hash = keccak256(data);
+        signature = abi.encode(_ecdsa(ownerPk, hash), bytes(""));
+        assertEq(account.validateUserOp(_op(data, signature), hash, 0), 0);
+    }
+
+    function test_rotationNamespacesLeavesAndPreservesOldHistory() public {
+        bytes32 hash = keccak256("consume-old-root");
+        bytes memory data = _executeCall(recipient, THRESHOLD, "");
+        bytes memory signature = abi.encode(_ecdsa(ownerPk, hash), _pqcBlob(hash));
+        assertEq(account.validateUserOp(_op(data, signature), hash, 0), 0);
+        bytes memory oldRoot = account.pqcPublicKey();
+        assertTrue(account.pqcLeafUsed(0));
+        vm.prank(address(account));
+        account.rotatePqcKey(abi.encodePacked(keccak256("new-root")));
+        assertFalse(account.pqcLeafUsed(0));
+        vm.prank(address(account));
+        account.rotatePqcKey(oldRoot);
+        assertTrue(account.pqcLeafUsed(0));
+        assertEq(account.validateUserOp(_op(data, signature), hash, 0), 1);
+    }
+
+    function test_rejectsVerifierWithoutCode() public {
+        PQWeaveAccount fresh = new PQWeaveAccount(address(this));
+        vm.expectRevert(PQWeaveAccount.InvalidVerifier.selector);
+        fresh.initialize(owner, abi.encodePacked(bytes32(uint256(1))), IPQCVerifier(recipient), 1);
+        vm.prank(address(account));
+        vm.expectRevert(PQWeaveAccount.InvalidVerifier.selector);
+        account.setVerifier(IPQCVerifier(recipient));
+    }
+
+    function test_erc20FalseReturnDoesNotReportExecutionSuccess() public {
+        bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", owner, 1);
+        vm.etch(recipient, hex"00");
+        vm.mockCall(recipient, data, abi.encode(false));
+        vm.expectRevert(PQWeaveAccount.TokenTransferFailed.selector);
+        account.execute(recipient, 0, data);
+    }
+
+    function test_erc20LegacyEmptyReturnIsAccepted() public {
+        bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", owner, 1);
+        vm.etch(recipient, hex"00");
+        vm.mockCall(recipient, data, bytes(""));
+        account.execute(recipient, 0, data);
+    }
+
     function test_routineOperationValidatesWithEcdsaOnly() public {
         bytes32 userOpHash = keccak256("routine");
         bytes memory callData = _executeCall(recipient, 0, "");
@@ -201,6 +295,12 @@ contract PQWeaveAccountTest is Test {
         PQWeaveAccount a = new PQWeaveAccount(address(this));
         vm.expectRevert(PQWeaveAccount.InvalidVerifier.selector);
         a.initialize(owner, abi.encodePacked(_pqcRoot()), IPQCVerifier(address(0)), THRESHOLD);
+    }
+
+    function test_setVerifierRejectsZeroVerifier() public {
+        vm.prank(address(account));
+        vm.expectRevert(PQWeaveAccount.InvalidVerifier.selector);
+        account.setVerifier(IPQCVerifier(address(0)));
     }
 
     function test_initializeRejectsThirdParties() public {

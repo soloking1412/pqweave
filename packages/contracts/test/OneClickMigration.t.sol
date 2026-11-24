@@ -5,6 +5,25 @@ import {Test} from "forge-std/Test.sol";
 import {BatchExecutor} from "../src/BatchExecutor.sol";
 import {MockERC20, MockERC721} from "./utils/Mocks.sol";
 
+contract FalseReturnToken {
+    function transfer(address, uint256) external pure returns (bool) {
+        return false;
+    }
+}
+
+contract NoReturnToken {
+    mapping(address => uint256) public balanceOf;
+
+    function mint(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+    }
+
+    function transfer(address to, uint256 amount) external {
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+    }
+}
+
 /// @notice Proves a full EVM wallet can be migrated in a single EIP-7702
 ///         transaction: the EOA delegates to BatchExecutor and sweeps native,
 ///         ERC-20, and NFT holdings to a quantum-safe account at once.
@@ -60,5 +79,64 @@ contract OneClickMigrationTest is Test {
         BatchExecutor.Call[] memory calls = new BatchExecutor.Call[](0);
         vm.expectRevert(BatchExecutor.NotSelf.selector);
         BatchExecutor(eoa).executeBatch(calls); // caller is the test contract, not the EOA
+    }
+
+    function test_falseReturnTokenRevertsWholeSweep() public {
+        FalseReturnToken badToken = new FalseReturnToken();
+        BatchExecutor.Call[] memory calls = new BatchExecutor.Call[](2);
+        calls[0] = BatchExecutor.Call({
+            target: address(badToken),
+            value: 0,
+            data: abi.encodeCall(FalseReturnToken.transfer, (safeAccount, 1))
+        });
+        calls[1] = BatchExecutor.Call({target: safeAccount, value: 9 ether, data: ""});
+
+        vm.signAndAttachDelegation(address(executor), eoaPk);
+        vm.prank(eoa);
+        vm.expectRevert(abi.encodeWithSelector(BatchExecutor.TokenTransferFailed.selector, 0));
+        BatchExecutor(eoa).executeBatch(calls);
+        assertEq(safeAccount.balance, 0);
+    }
+
+    function test_missingTokenCodeRevertsEarlierNativeTransfer() public {
+        BatchExecutor.Call[] memory calls = new BatchExecutor.Call[](2);
+        calls[0] = BatchExecutor.Call(safeAccount, 1 ether, "");
+        calls[1] = BatchExecutor.Call(
+            makeAddr("noTokenCode"), 0, abi.encodeCall(FalseReturnToken.transfer, (safeAccount, 1))
+        );
+        vm.signAndAttachDelegation(address(executor), eoaPk);
+        vm.prank(eoa);
+        vm.expectRevert(abi.encodeWithSelector(BatchExecutor.TokenTransferFailed.selector, 1));
+        BatchExecutor(eoa).executeBatch(calls);
+        assertEq(safeAccount.balance, 0);
+        assertEq(eoa.balance, 10 ether);
+    }
+
+    function testFuzz_unrelatedCallerCannotExecute(address caller) public {
+        vm.assume(caller != eoa);
+        vm.signAndAttachDelegation(address(executor), eoaPk);
+        BatchExecutor.Call[] memory calls = new BatchExecutor.Call[](1);
+        calls[0] = BatchExecutor.Call(safeAccount, 1 ether, "");
+        vm.prank(caller);
+        vm.expectRevert(BatchExecutor.NotSelf.selector);
+        BatchExecutor(eoa).executeBatch(calls);
+        assertEq(safeAccount.balance, 0);
+    }
+
+    function test_noReturnTokenCanSweep() public {
+        NoReturnToken noReturnToken = new NoReturnToken();
+        noReturnToken.mint(eoa, 50);
+        BatchExecutor.Call[] memory calls = new BatchExecutor.Call[](1);
+        calls[0] = BatchExecutor.Call({
+            target: address(noReturnToken),
+            value: 0,
+            data: abi.encodeCall(NoReturnToken.transfer, (safeAccount, 50))
+        });
+
+        vm.signAndAttachDelegation(address(executor), eoaPk);
+        vm.prank(eoa);
+        BatchExecutor(eoa).executeBatch(calls);
+        assertEq(noReturnToken.balanceOf(eoa), 0);
+        assertEq(noReturnToken.balanceOf(safeAccount), 50);
     }
 }

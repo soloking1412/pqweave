@@ -141,6 +141,14 @@ contract PQWeaveForwarderTest is Test {
 
     // --- initialize ---
 
+    function test_initializeRejectsVerifierWithoutCode() public {
+        vm.signAndAttachDelegation(address(forwarder), eoaPk);
+        vm.prank(eoa);
+        vm.expectRevert(PQWeaveForwarder.InvalidVerifier.selector);
+        PQWeaveForwarder(payable(eoa))
+            .initialize(destination, root, IPQCVerifier(makeAddr("noCode")));
+    }
+
     function test_initializeViaSelfCall() public {
         PQWeaveForwarder mailbox = _install();
         assertTrue(mailbox.initialized());

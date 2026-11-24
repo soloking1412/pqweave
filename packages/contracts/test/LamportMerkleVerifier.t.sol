@@ -35,6 +35,17 @@ contract LamportMerkleVerifierTest is Test {
         assertTrue(verifier.verify(message, abi.encodePacked(root), signature));
     }
 
+    function testFuzz_rejectsOutOfTreeLeafAlias(uint256 aliasIndex) public view {
+        aliasIndex = bound(aliasIndex, 1, type(uint256).max);
+        bytes32 message = keccak256("alias-regression");
+        bytes32[512] memory sk = LamportHarness.deriveSecrets(keccak256("seed"));
+        bytes32[512] memory pk = LamportHarness.publicFromSecret(sk);
+        bytes32 root = LamportHarness.leafCommit(pk);
+        bytes memory signature =
+            _encodeSig(aliasIndex, pk, LamportHarness.signOneTime(message, sk), new bytes32[](0));
+        assertFalse(verifier.verify(message, abi.encodePacked(root), signature));
+    }
+
     function test_rejectsTamperedMessage() public view {
         bytes32 message = keccak256("authorize-large-transfer");
         bytes32[512] memory sk = LamportHarness.deriveSecrets(keccak256("seed"));

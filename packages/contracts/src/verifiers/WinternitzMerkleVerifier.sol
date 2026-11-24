@@ -2,9 +2,10 @@
 pragma solidity ^0.8.28;
 
 import {IPQCVerifier} from "../interfaces/IPQCVerifier.sol";
+import {HashSigEncoding} from "../libraries/HashSigEncoding.sol";
 
-/// @notice Post-quantum signature verifier built on Winternitz (WOTS+) one-time
-///         signatures secured by a Merkle tree — a generalized XMSS construction.
+/// @notice Custom Winternitz-style one-time signatures secured by a Merkle tree.
+///         This is not a standardized WOTS+, XMSS, or NIST-approved implementation.
 /// @dev Same security assumption as LamportMerkleVerifier (keccak256 preimage and
 ///      collision resistance only, unaffected by Shor's algorithm), but roughly
 ///      11x cheaper in calldata.
@@ -44,7 +45,7 @@ contract WinternitzMerkleVerifier is IPQCVerifier {
         pure
         returns (bool)
     {
-        if (publicKey.length != 32) return false;
+        if (publicKey.length != 32 || !HashSigEncoding.valid(signature, 69)) return false;
         bytes32 root = bytes32(publicKey[0:32]);
 
         (uint256 leafIndex, bytes32[67] memory chains, bytes32[] memory merkleProof) =

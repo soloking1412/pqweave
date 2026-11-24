@@ -71,7 +71,7 @@ contract PQWeaveForwarder {
             revert InvalidDestination();
         }
         if (pqcRoot_ == bytes32(0)) revert InvalidPqcKey();
-        if (address(verifier_) == address(0)) revert InvalidVerifier();
+        if (address(verifier_).code.length == 0) revert InvalidVerifier();
         $.initialized = true;
         $.destination = destination_;
         $.pqcRoot = pqcRoot_;

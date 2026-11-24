@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {IPQCVerifier} from "../interfaces/IPQCVerifier.sol";
+import {HashSigEncoding} from "../libraries/HashSigEncoding.sol";
 
 /// @notice Post-quantum signature verifier built on Lamport one-time signatures
 ///         secured by a Merkle tree (an XMSS-style construction).
@@ -31,7 +32,7 @@ contract LamportMerkleVerifier is IPQCVerifier {
         pure
         returns (bool)
     {
-        if (publicKey.length != 32) return false;
+        if (publicKey.length != 32 || !HashSigEncoding.valid(signature, 770)) return false;
         bytes32 root = bytes32(publicKey[0:32]);
 
         (
