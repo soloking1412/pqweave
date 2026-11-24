@@ -1,31 +1,51 @@
 # PQWeave
 
-PQWeave is a Bitcoin preparation layer for existing wallets and signers. Inspect
-public-key exposure, prepare bounded unsigned PSBTs, restore and recheck plans,
-and verify the transaction before signing in your own wallet.
+[![CI](https://github.com/soloking1412/pqweave/actions/workflows/ci.yml/badge.svg)](https://github.com/soloking1412/pqweave/actions/workflows/ci.yml)
 
-**Release sequence: Bitcoin, then Ethereum.** The site starts with the Bitcoin kit and dated research.
-The default route reduces key exposure using standard Bitcoin outputs; it does
-not add post-quantum signatures. Experimental QSB is a separate research route.
+Open-source tooling for the post-quantum transition. Read a wallet's exposure on
+16 chains, then get the migration route that chain actually supports.
 
-- [Bitcoin-only release: build and run](releases/bitcoin/README.md)
-- [Bitcoin research and architecture](docs/BITCOIN_RESEARCH_2026.md)
-- [Supported release scope, testing and operations](docs/BITCOIN_PRODUCTION.md)
-- [Validation results](docs/BITCOIN_VALIDATION.md)
+A large enough quantum computer can turn a public key into the private key. Most
+wallets published theirs the first time they sent a transaction. What can be done
+about it differs by chain, so PQWeave names the outcome plainly: protected,
+transitional, custody change, prepared or unsupported.
+
+Live at [pqweave.com](https://www.pqweave.com). MIT licensed. **Not audited.**
+
+## What works today
+
+- **Scan.** Paste a public address. No wallet connection, no signature, no account.
+- **Bitcoin kit.** Watch-only: inventory a wallet from an xpub, prepare unsigned
+  PSBTs to a fresh address, and check the signed result against the plan before
+  broadcast. Verified against Bitcoin Core 29.1 on regtest. This reduces exposure.
+  It does not add a post-quantum signature to Bitcoin, and no application can.
+- **Ethereum.** Move assets to a smart account where a hash-based post-quantum key
+  is the only authority. Exercised against the real EntryPoint 0.7 on a local
+  Prague node. Testnet only.
+- **Kit API.** `POST /api/kit` plans up to 50 public account records per request
+  for wallets and custodians. The same selector ships as `@pqweave/sdk/kit`.
+
+## Evidence
+
+| Gate                   | Result                | Reproduce                                      |
+| ---------------------- | --------------------- | ---------------------------------------------- |
+| SDK suite              | 492 tests             | `pnpm --filter @pqweave/sdk test`              |
+| Contracts              | 94 tests, fuzzed      | `forge test --root packages/contracts`         |
+| Bitcoin Core lifecycle | 113 assertions        | `pnpm --filter @pqweave/sdk test:bitcoin-core` |
+| Ethereum lifecycle     | 122 assertions        | `pnpm ethereum:test`                           |
+| Winternitz vs Lamport  | 2,304 B vs 24,736 B   | `forge test --match-contract VerifierGas -vv`  |
+| Dependency audit       | zero known advisories | `pnpm audit --audit-level low`                 |
+
+The [self-audit](docs/SELF_AUDIT_2026-09-25.md) lists two high-severity bugs we
+found in our own verifiers, the fixes, and what is still open. It is not an
+independent review. The plan from here is in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Reading
+
 - [Security boundaries](SECURITY.md)
-- [BTC/ETH self-audit, fixes and expanded tests](docs/SELF_AUDIT_2026-09-25.md)
-
-The web Bitcoin API is read-only. The SDK exports `buildBitcoinReadinessPlan`,
-`createBitcoinPlanBundle`, `restoreBitcoinPlanBundle` and `revalidateBitcoinPlan`
-from `@pqweave/sdk/bitcoin`. Signing and broadcasting remain in the user's wallet.
-
-Ethereum now has a verified transfer planner, durable Node signing reservations,
-key-rotation fixes and a real local ERC-4337/EIP-7702 lifecycle test. The `/ethereum`
-site offers readiness scans and report exports. Mainnet execution remains disabled.
-See [Ethereum research](docs/ETHEREUM_RESEARCH_2026.md), [validation](docs/ETHEREUM_VALIDATION.md)
-and [deployment](DEPLOYMENT.md). Run `pnpm ethereum:test` for the local lifecycle.
-
-Other chain modules remain research prototypes, outside these release targets.
+- [Bitcoin research](docs/BITCOIN_RESEARCH_2026.md), [release scope](docs/BITCOIN_PRODUCTION.md), [validation](docs/BITCOIN_VALIDATION.md)
+- [Ethereum research](docs/ETHEREUM_RESEARCH_2026.md), [validation](docs/ETHEREUM_VALIDATION.md), [deployment](DEPLOYMENT.md)
+- [Bitcoin-only release: build and run](releases/bitcoin/README.md)
 
 ## Repository capability inventory
 
