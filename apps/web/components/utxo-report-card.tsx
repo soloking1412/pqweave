@@ -16,9 +16,9 @@ const TYPE_LABELS: Record<UtxoScanReport['type'], string> = {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-      <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
-      <div className="mt-1 text-sm font-medium text-zinc-100">{children}</div>
+    <div className="rounded-lg border border-rule bg-well p-3">
+      <div className="text-xs uppercase tracking-wide text-ink-dim">{label}</div>
+      <div className="mt-1 text-sm font-medium text-ink">{children}</div>
     </div>
   );
 }
@@ -33,15 +33,15 @@ export function UtxoReportCard({ report }: { report: UtxoScanReport }) {
           <span className={`rounded-full px-3 py-1 text-sm font-medium ring-1 ${style.badge}`}>
             {style.label}
           </span>
-          <span className="font-mono text-sm text-zinc-400">{shortenAddress(report.address)}</span>
+          <span className="font-mono text-sm text-ink-dim">{shortenAddress(report.address)}</span>
         </div>
         <div className="text-right">
-          <span className="text-2xl font-semibold text-white">{report.score}</span>
-          <span className="text-sm text-zinc-500"> / 100 risk</span>
+          <span className="text-2xl font-semibold text-ink">{report.score}</span>
+          <span className="text-sm text-ink-dim"> / 100 risk</span>
         </div>
       </div>
 
-      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/5">
+      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-ink/5">
         <div className={`h-full rounded-full ${style.bar}`} style={{ width: `${report.score}%` }} />
       </div>
 
@@ -58,7 +58,7 @@ export function UtxoReportCard({ report }: { report: UtxoScanReport }) {
 
       <ul className="mt-6 space-y-2">
         {report.reasons.map((reason) => (
-          <li key={reason} className="flex items-start gap-2.5 text-sm text-zinc-300">
+          <li key={reason} className="flex items-start gap-2.5 text-sm text-ink-2">
             <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${style.bar}`} />
             {reason}
           </li>
@@ -70,7 +70,7 @@ export function UtxoReportCard({ report }: { report: UtxoScanReport }) {
       {report.exposed && Number(report.balance) > 0 && (
         <Link
           href="/protect/bitcoin"
-          className="mt-4 inline-flex rounded-control border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+          className="mt-4 inline-flex rounded-control border border-caution/30 bg-caution/10 px-5 py-3 text-sm font-medium text-caution transition hover:bg-caution/20"
         >
           Reduce exposure (transitional) →
         </Link>

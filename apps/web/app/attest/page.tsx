@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 export default function AttestPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
-      <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-white/5 px-3 py-1 text-xs text-zinc-300">
+      <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-ink/5 px-3 py-1 text-xs text-ink-2">
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
         Cross-chain attestation
       </span>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
         Bind a post-quantum key to your Bitcoin address
       </h1>
-      <p className="mt-3 text-zinc-400">
+      <p className="mt-3 text-ink-dim">
         Generate a post-quantum key, sign a binding message with your Bitcoin wallet, and anchor the
         pair on-chain. It is a public, timestamped, verifiable record that both are yours — an open
         registry, not a company&apos;s private one. The same key already secures a PQWeave EVM

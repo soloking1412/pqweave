@@ -109,25 +109,25 @@ export function AttestClient() {
       >
         <h2 className="text-lg font-semibold tracking-tight">2 · Sign with your Bitcoin wallet</h2>
         {!pqcRoot ? (
-          <p className="mt-3 text-sm text-zinc-500">Save your post-quantum key above first.</p>
+          <p className="mt-3 text-sm text-ink-dim">Save your post-quantum key above first.</p>
         ) : binding ? (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-emerald-300">Bitcoin address signed the binding.</p>
-            <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-              <div className="text-xs uppercase tracking-wide text-zinc-500">Bound address</div>
+            <p className="text-sm text-ok">Bitcoin address signed the binding.</p>
+            <div className="rounded-lg border border-rule bg-well p-3">
+              <div className="text-xs uppercase tracking-wide text-ink-dim">Bound address</div>
               <div className="mt-1 break-all font-mono text-xs text-accent">{binding.address}</div>
             </div>
           </div>
         ) : (
           <div className="mt-3">
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-ink-dim">
               Your Bitcoin wallet signs a message binding its address to your post-quantum key. This
               is a signature only — no transaction, no coins moved.
             </p>
             <button
               onClick={connectAndSignBtc}
               disabled={busy === 'btc'}
-              className="mt-4 rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              className="mt-4 rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
             >
               {busy === 'btc' ? 'Waiting for wallet…' : 'Connect Bitcoin wallet & sign'}
             </button>
@@ -140,13 +140,13 @@ export function AttestClient() {
       >
         <h2 className="text-lg font-semibold tracking-tight">3 · Anchor it on-chain</h2>
         {!attestation ? (
-          <p className="mt-3 text-sm text-zinc-400">
+          <p className="mt-3 text-sm text-ink-dim">
             The attestation registry is not deployed in this environment yet. Your key and signature
             are valid — anchoring will be available once the contract is live.
           </p>
         ) : txHash ? (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-emerald-300">
+            <p className="text-sm text-ok">
               Anchored. The binding is now a permanent, public on-chain record.
             </p>
             {explorer && (
@@ -154,7 +154,7 @@ export function AttestClient() {
                 href={explorer}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex text-sm font-medium text-brand-bright hover:underline"
+                className="inline-flex text-sm font-medium text-brand hover:underline"
               >
                 View transaction →
               </a>
@@ -162,7 +162,7 @@ export function AttestClient() {
           </div>
         ) : (
           <div className="mt-3 space-y-3">
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-ink-dim">
               Record the binding as an immutable event on an EVM chain. Anyone can later read it and
               verify your Bitcoin signature off-chain.
             </p>
@@ -170,7 +170,7 @@ export function AttestClient() {
               <button
                 onClick={() => connect({ connector: connectors[0]! })}
                 disabled={connecting || !binding}
-                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:opacity-60"
+                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-ink/5 disabled:opacity-60"
               >
                 {connecting ? 'Connecting…' : 'Connect an EVM wallet to anchor'}
               </button>
@@ -178,7 +178,7 @@ export function AttestClient() {
               <button
                 onClick={anchor}
                 disabled={!binding || busy === 'anchor' || !status.live}
-                className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+                className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
               >
                 {busy === 'anchor' ? 'Anchoring…' : 'Anchor attestation'}
               </button>
@@ -188,16 +188,16 @@ export function AttestClient() {
       </section>
 
       {error && (
-        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+        <div className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
 
-      <p className="text-xs leading-relaxed text-zinc-600">
+      <p className="text-xs leading-relaxed text-ink-faint">
         Honest scope: this binds and timestamps your key and address. It does not make Bitcoin
         quantum-safe — only a protocol upgrade can. It prepares you for a future migration path and
         proves ownership today.{' '}
-        <Link href="/exposure/bitcoin" className="text-brand-bright hover:underline">
+        <Link href="/exposure/bitcoin" className="text-brand hover:underline">
           See the Bitcoin exposure breakdown
         </Link>
         .

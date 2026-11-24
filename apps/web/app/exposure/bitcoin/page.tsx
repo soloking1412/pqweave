@@ -32,7 +32,7 @@ export default function BitcoinExposurePage() {
       <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">
         See what your Bitcoin address reveals.
       </h1>
-      <p className="mt-5 max-w-3xl leading-relaxed text-zinc-300">
+      <p className="mt-5 max-w-3xl leading-relaxed text-ink-2">
         Quantum risk depends on the output type and whether a public key has appeared on chain.
         BIP-361 cites more than 34% of bitcoin with a revealed public key as of March 2026. That is
         a dated estimate from a draft proposal, not a live network measurement.
@@ -40,13 +40,13 @@ export default function BitcoinExposurePage() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           href="/protect/bitcoin"
-          className="inline-flex min-h-11 items-center rounded-control bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand-bright"
+          className="inline-flex min-h-11 items-center rounded-control bg-brand px-5 py-3 text-sm font-semibold text-paper hover:bg-brand-strong"
         >
           Build a Bitcoin plan →
         </Link>
         <Link
           href="/protect/bitcoin"
-          className="inline-flex min-h-11 items-center rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-100 hover:bg-white/5"
+          className="inline-flex min-h-11 items-center rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-ink hover:bg-ink/5"
         >
           Watch-only tools
         </Link>
@@ -60,7 +60,7 @@ export default function BitcoinExposurePage() {
             <article key={item.name} className="bg-panel p-6">
               <h3 className="font-semibold">{item.name}</h3>
               <p className="mt-1 text-xs text-accent">{item.example}</p>
-              <p className="mt-4 text-sm leading-relaxed text-zinc-300">{item.note}</p>
+              <p className="mt-4 text-sm leading-relaxed text-ink-2">{item.note}</p>
             </article>
           ))}
         </div>
@@ -74,7 +74,7 @@ export default function BitcoinExposurePage() {
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <article className="rounded-panel border border-rule bg-panel p-6">
             <h3 className="font-semibold">BIP-360 · P2MR</h3>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+            <p className="mt-3 text-sm leading-relaxed text-ink-2">
               Proposes an output type without a key-path commitment. It does not itself activate a
               post-quantum signature. Do not send mainnet funds to a proposed output before
               activation.
@@ -83,14 +83,14 @@ export default function BitcoinExposurePage() {
               href="https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-block text-sm text-brand-bright underline underline-offset-2"
+              className="mt-4 inline-block text-sm text-brand underline underline-offset-2"
             >
               Read draft →
             </a>
           </article>
           <article className="rounded-panel border border-rule bg-panel p-6">
             <h3 className="font-semibold">BIP-361 · signature sunset</h3>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+            <p className="mt-3 text-sm leading-relaxed text-ink-2">
               Proposes restricting new classical outputs after Phase A. Phase B would add a
               quantum-safe rescue condition to classical spends. The rescue protocol is not yet
               specified, so eligibility for an existing wallet cannot be determined.
@@ -99,13 +99,13 @@ export default function BitcoinExposurePage() {
               href="https://github.com/bitcoin/bips/blob/master/bip-0361.mediawiki"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-block text-sm text-brand-bright underline underline-offset-2"
+              className="mt-4 inline-block text-sm text-brand underline underline-offset-2"
             >
               Read draft →
             </a>
           </article>
         </div>
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-5 text-sm leading-relaxed text-ink-dim">
           The current kit provides watch-only inventory and transitional fresh-address preparation.
           A complete Bitcoin post-quantum migration requires activated network rules and wallet
           support.

@@ -107,11 +107,7 @@ function Step({
       <div className="flex items-center gap-3">
         <span
           className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold ${
-            done
-              ? 'bg-emerald-500/20 text-emerald-300'
-              : active
-                ? 'bg-brand text-white'
-                : 'bg-white/10 text-zinc-400'
+            done ? 'bg-ok/20 text-ok' : active ? 'bg-brand text-paper' : 'bg-ink/10 text-ink-dim'
           }`}
         >
           {done ? '✓' : index}
@@ -492,39 +488,39 @@ export function MigrateClient() {
         {isConnected && address ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm text-zinc-200">{shortenAddress(address)}</span>
+              <span className="font-mono text-sm text-ink">{shortenAddress(address)}</span>
               {network ? (
-                <span className="rounded-full border border-rule px-2 py-0.5 text-xs text-zinc-400">
+                <span className="rounded-full border border-rule px-2 py-0.5 text-xs text-ink-dim">
                   {network}
                 </span>
               ) : (
-                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+                <span className="rounded-full border border-caution/30 bg-caution/10 px-2 py-0.5 text-xs text-caution">
                   Unsupported network
                 </span>
               )}
             </div>
             <button
               onClick={() => disconnect()}
-              className="rounded-lg border border-rule px-3 py-1.5 text-sm text-zinc-300 transition hover:bg-white/5"
+              className="rounded-lg border border-rule px-3 py-1.5 text-sm text-ink-2 transition hover:bg-ink/5"
             >
               Disconnect
             </button>
           </div>
         ) : (
           <div>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-ink-dim">
               Works with MetaMask, Rabby, and any injected EVM wallet. PQWeave never takes custody
               of your keys.
             </p>
             <button
               onClick={() => connect({ connector: connectors[0]! })}
               disabled={connecting}
-              className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
             >
               {connecting ? 'Connecting…' : 'Connect wallet'}
             </button>
             {connectError && (
-              <p className="mt-3 text-sm text-rose-300">
+              <p className="mt-3 text-sm text-danger">
                 No injected wallet found. Install MetaMask or Rabby to continue.
               </p>
             )}
@@ -539,13 +535,13 @@ export function MigrateClient() {
         done={Boolean(report)}
       >
         {!isConnected ? (
-          <p className="text-sm text-zinc-500">Connect a wallet to scan it.</p>
+          <p className="text-sm text-ink-dim">Connect a wallet to scan it.</p>
         ) : scanning ? (
-          <p className="text-sm text-zinc-400">Scanning {shortenAddress(address ?? '')}…</p>
+          <p className="text-sm text-ink-dim">Scanning {shortenAddress(address ?? '')}…</p>
         ) : report ? (
           <ScanReportCard report={report} />
         ) : (
-          <p className="text-sm text-zinc-500">No scan result yet.</p>
+          <p className="text-sm text-ink-dim">No scan result yet.</p>
         )}
       </Step>
 
@@ -558,7 +554,7 @@ export function MigrateClient() {
               className={`rounded-control border p-4 text-left transition ${
                 outcome === meta.key
                   ? 'border-brand/50 bg-brand/5'
-                  : 'border-rule bg-black/20 hover:bg-white/5'
+                  : 'border-rule bg-well hover:bg-ink/5'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -567,14 +563,14 @@ export function MigrateClient() {
                     outcome === meta.key ? 'border-brand bg-brand' : 'border-rule-strong'
                   }`}
                 />
-                <span className="text-sm font-semibold text-white">{meta.title}</span>
+                <span className="text-sm font-semibold text-ink">{meta.title}</span>
               </div>
-              <p className="mt-1.5 pl-5 text-xs leading-relaxed text-zinc-400">{meta.blurb}</p>
+              <p className="mt-1.5 pl-5 text-xs leading-relaxed text-ink-dim">{meta.blurb}</p>
             </button>
           ))}
         </div>
         {outcome === 'harden' && (
-          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+          <div className="mt-3 rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
             Transitional, not quantum-safe. Delegating keeps your original ECDSA key&apos;s
             protocol-level authority — a quantum attacker who recovers it could sign a new
             authorization and remove this guard. A separate account removes that ECDSA fallback;
@@ -598,33 +594,33 @@ export function MigrateClient() {
 
       <Step index={5} title="Execute" active={seedSaved && !txConfirmed} done={txConfirmed}>
         {!executionLive ? (
-          <div className="space-y-3 rounded-lg border border-white/5 bg-black/20 p-4">
-            <p className="text-sm leading-relaxed text-zinc-300">
+          <div className="space-y-3 rounded-lg border border-rule bg-well p-4">
+            <p className="text-sm leading-relaxed text-ink-2">
               {status.live
                 ? 'This wallet is on a different network from the configured deployment. Switch to the supported testnet before executing, and use test funds only.'
                 : 'The post-quantum key was generated locally. On-chain execution is unavailable until a configured deployment is ready; contracts must pass an independent audit before real funds are used.'}
             </p>
             <Link
               href="/security"
-              className="inline-flex text-sm font-medium text-brand-bright hover:underline"
+              className="inline-flex text-sm font-medium text-brand hover:underline"
             >
               Read the security model →
             </Link>
           </div>
         ) : txHash ? (
           <div className="space-y-3">
-            <p className={txConfirmed ? 'text-sm text-emerald-300' : 'text-sm text-amber-200'}>
+            <p className={txConfirmed ? 'text-sm text-ok' : 'text-sm text-caution'}>
               {txConfirmed
                 ? outcome === 'harden'
                   ? 'Delegation confirmed. The original ECDSA key can still revoke it.'
                   : 'Sweep confirmed. Verify every asset at the destination before relying on it.'
                 : (phase ?? 'Transaction submitted; confirmation is pending.')}
             </p>
-            {migrateError && <p className="text-sm text-rose-300">{migrateError}</p>}
-            {reconciliation && <p className="text-sm text-zinc-300">{reconciliation}</p>}
+            {migrateError && <p className="text-sm text-danger">{migrateError}</p>}
+            {reconciliation && <p className="text-sm text-ink-2">{reconciliation}</p>}
             {safeAddress && (
-              <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-                <div className="text-xs uppercase tracking-wide text-zinc-500">
+              <div className="rounded-lg border border-rule bg-well p-3">
+                <div className="text-xs uppercase tracking-wide text-ink-dim">
                   {outcome === 'harden'
                     ? `Revocable delegation · ${pqcOnly ? 'PQ check on account operations' : 'hybrid'}`
                     : 'Destination account · verify sole authority'}
@@ -633,7 +629,7 @@ export function MigrateClient() {
               </div>
             )}
             {isSweep && installMailbox && contracts?.forwarder && (
-              <p className="text-xs leading-relaxed text-zinc-400">
+              <p className="text-xs leading-relaxed text-ink-dim">
                 Your old address now forwards to the new account. Future deposits (exchange
                 withdrawals, refunds) land there and anyone can push them on with a flush. This is
                 transitional — see the security model for the re-delegation caveat.
@@ -644,7 +640,7 @@ export function MigrateClient() {
                 href={explorer}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex text-sm font-medium text-brand-bright hover:underline"
+                className="inline-flex text-sm font-medium text-brand hover:underline"
               >
                 View transaction →
               </a>
@@ -654,11 +650,11 @@ export function MigrateClient() {
           <div>
             {isSweep ? (
               <>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-ink-dim">
                   Deploy a fresh post-quantum account, then sweep your native balance and listed
                   tokens to it. This takes up to two transactions.
                 </p>
-                <label className="mt-4 block text-xs uppercase tracking-wide text-zinc-500">
+                <label className="mt-4 block text-xs uppercase tracking-wide text-ink-dim">
                   ERC-20 token addresses (pre-filled from your scan; edit freely)
                 </label>
                 <textarea
@@ -667,19 +663,19 @@ export function MigrateClient() {
                   placeholder="0x… token addresses to include"
                   spellCheck={false}
                   rows={3}
-                  className="mt-2 w-full rounded-control bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                  className="mt-2 w-full rounded-control bg-well px-3 py-2 font-mono text-xs text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
                 />
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-rule bg-black/20 p-3">
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-rule bg-well p-3">
                   <input
                     type="checkbox"
                     checked={installMailbox}
                     disabled={!contracts?.forwarder}
                     onChange={(event) => setInstallMailbox(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-[#3f7fbf]"
+                    className="mt-0.5 h-4 w-4 accent-brand"
                   />
-                  <span className="text-sm text-zinc-300">
-                    <span className="font-medium text-white">Keep my old address as a mailbox</span>
-                    <span className="mt-0.5 block text-xs text-zinc-400">
+                  <span className="text-sm text-ink-2">
+                    <span className="font-medium text-ink">Keep my old address as a mailbox</span>
+                    <span className="mt-0.5 block text-xs text-ink-dim">
                       Exchange whitelists and anyone paying your old address keep working. Receipts
                       need a separate flush from the old address. The old ECDSA key can still
                       replace this mailbox.
@@ -690,23 +686,23 @@ export function MigrateClient() {
               </>
             ) : (
               <>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-ink-dim">
                   Delegate your address to the PQWeave account implementation in a single
                   transaction. Your ECDSA key still authorizes routine actions; sensitive ones need
                   your post-quantum key.
                 </p>
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-rule bg-black/20 p-3">
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-control border border-rule bg-well p-3">
                   <input
                     type="checkbox"
                     checked={pqcOnly}
                     onChange={(event) => setPqcOnly(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-[#3f7fbf]"
+                    className="mt-0.5 h-4 w-4 accent-brand"
                   />
-                  <span className="text-sm text-zinc-300">
-                    <span className="font-medium text-white">
+                  <span className="text-sm text-ink-2">
+                    <span className="font-medium text-ink">
                       Require post-quantum for every operation
                     </span>
-                    <span className="mt-0.5 block text-xs text-zinc-400">
+                    <span className="mt-0.5 block text-xs text-ink-dim">
                       Stronger, but every transaction then needs your post-quantum key, and each one
                       consumes a one-time key from your tree.
                     </span>
@@ -717,7 +713,7 @@ export function MigrateClient() {
             <button
               onClick={run}
               disabled={!seedSaved || migrating || !executionLive}
-              className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+              className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
             >
               {migrating
                 ? 'Working…'
@@ -726,15 +722,15 @@ export function MigrateClient() {
                   : 'Deploy and migrate my wallet'}
             </button>
             {deploymentHash && (
-              <p className="mt-3 text-xs text-zinc-400">
+              <p className="mt-3 text-xs text-ink-dim">
                 Destination deployment submitted: {deploymentHash.slice(0, 12)}…
               </p>
             )}
-            {phase && <p className="mt-3 text-xs text-amber-200">{phase}</p>}
+            {phase && <p className="mt-3 text-xs text-caution">{phase}</p>}
             {!seedSaved && (
-              <p className="mt-3 text-xs text-zinc-500">Save your recovery key in step 4 first.</p>
+              <p className="mt-3 text-xs text-ink-dim">Save your recovery key in step 4 first.</p>
             )}
-            {migrateError && <p className="mt-3 text-sm text-rose-300">{migrateError}</p>}
+            {migrateError && <p className="mt-3 text-sm text-danger">{migrateError}</p>}
           </div>
         )}
       </Step>

@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { planMigration, type MigrationKitPlan } from '@pqweave/sdk/kit';
 import { SCAN_OPTIONS, type ScanChain } from '@/lib/chains';
@@ -85,8 +85,21 @@ export function KitClient({
   const [report, setReport] = useState<AnyScanReport | null>(null);
   const [plan, setPlan] = useState<MigrationKitPlan | null>(null);
 
-  async function submit(event: FormEvent) {
+  // A link from the home page carries the chain and address, so the reading
+  // starts without a second click.
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !initialAddress?.trim()) return;
+    started.current = true;
+    void run();
+  }, []);
+
+  function submit(event: FormEvent) {
     event.preventDefault();
+    void run();
+  }
+
+  async function run() {
     setError(null);
     setReport(null);
     setPlan(null);
@@ -138,7 +151,7 @@ export function KitClient({
         className="panel grid gap-4 p-5 sm:grid-cols-[minmax(0,1fr)_12rem_auto] sm:items-end sm:p-6"
       >
         <div>
-          <label htmlFor="kit-address" className="mb-2 block text-sm font-medium text-zinc-200">
+          <label htmlFor="kit-address" className="mb-2 block text-sm font-medium text-ink">
             Public address
           </label>
           <input
@@ -148,18 +161,18 @@ export function KitClient({
             autoComplete="off"
             spellCheck={false}
             placeholder="Paste a wallet address"
-            className="min-h-11 w-full rounded-control border border-rule-strong bg-panel-raised px-4 py-3 font-mono text-sm text-ink placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright"
+            className="min-h-11 w-full rounded-control border border-rule-strong bg-panel-raised px-4 py-3 font-mono text-sm text-ink placeholder:text-ink-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           />
         </div>
         <div>
-          <label htmlFor="kit-chain" className="mb-2 block text-sm font-medium text-zinc-200">
+          <label htmlFor="kit-chain" className="mb-2 block text-sm font-medium text-ink">
             Network
           </label>
           <select
             id="kit-chain"
             value={chain}
             onChange={(event) => setChain(event.target.value as ScanChain)}
-            className="min-h-11 w-full rounded-control border border-rule-strong bg-panel-raised px-3 py-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright"
+            className="min-h-11 w-full rounded-control border border-rule-strong bg-panel-raised px-3 py-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             {OPTIONS.map((option) => (
               <option key={option.key} value={option.key}>
@@ -172,11 +185,11 @@ export function KitClient({
           type="submit"
           disabled={loading}
           aria-busy={loading}
-          className="min-h-11 rounded-control bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:opacity-60"
+          className="min-h-11 rounded-control bg-brand px-6 py-3 text-sm font-semibold text-paper hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:opacity-60"
         >
           {loading ? 'Checking…' : 'Build plan'}
         </button>
-        <p className="text-xs text-zinc-400 sm:col-span-3">
+        <p className="text-xs text-ink-dim sm:col-span-3">
           Read-only. No connection, signing, seed phrase, or private key.
         </p>
       </form>
@@ -191,14 +204,14 @@ export function KitClient({
       )}
       {error && (
         <div
-          className="rounded-control border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200"
+          className="rounded-control border border-danger/40 bg-danger/10 p-4 text-sm text-danger"
           role="alert"
         >
           {error}{' '}
           <button
             type="button"
             onClick={() => setError(null)}
-            className="ml-2 underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-brand-bright"
+            className="ml-2 underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-brand"
           >
             Dismiss
           </button>
@@ -230,7 +243,7 @@ export function KitClient({
             <div key={number} className="bg-panel p-6">
               <div className="tabular text-xs text-accent">{number}</div>
               <h2 className="mt-3 font-semibold">{title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-300">{body}</p>
+              <p className="mt-2 text-sm leading-relaxed text-ink-2">{body}</p>
             </div>
           ))}
         </section>
@@ -243,24 +256,24 @@ export function KitClient({
               <span className="rounded-full border border-brand/40 px-3 py-1 text-xs font-medium text-accent">
                 {OUTCOME[plan.outcome]} · {plan.availability}
               </span>
-              <span className="tabular text-xs text-zinc-400">{chain.toUpperCase()}</span>
+              <span className="tabular text-xs text-ink-dim">{chain.toUpperCase()}</span>
             </div>
             <h2 className="mt-5 text-2xl font-semibold tracking-tight sm:text-3xl">{plan.route}</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-300">{plan.summary}</p>
-            <p className="mt-4 break-all font-mono text-xs text-zinc-400">{plan.address}</p>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">{plan.summary}</p>
+            <p className="mt-4 break-all font-mono text-xs text-ink-dim">{plan.address}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href={route.href}
                 target={route.href.startsWith('https://') ? '_blank' : undefined}
                 rel={route.href.startsWith('https://') ? 'noopener noreferrer' : undefined}
-                className="inline-flex min-h-11 items-center rounded-control bg-brand px-5 py-3 text-sm font-medium text-white hover:bg-brand-bright focus-visible:ring-2 focus-visible:ring-brand-bright"
+                className="inline-flex min-h-11 items-center rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper hover:bg-brand-strong focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {route.label} →
               </Link>
               <button
                 type="button"
                 onClick={download}
-                className="min-h-11 rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-100 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-brand-bright"
+                className="min-h-11 rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-ink hover:bg-ink/5 focus-visible:ring-2 focus-visible:ring-brand"
               >
                 Download report
               </button>
@@ -272,14 +285,14 @@ export function KitClient({
             <PlanList title="Checks before signing" items={plan.checks} />
           </div>
           <PlanList title="Limits to understand" items={plan.limitations} caution />
-          <p className="text-xs leading-relaxed text-zinc-400">
+          <p className="text-xs leading-relaxed text-ink-dim">
             This is an address-level readiness plan. It does not prove complete asset inventory,
             signer access, or the security of a destination contract.{' '}
             <a
               href={plan.source}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-bright underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-brand-bright"
+              className="text-brand underline underline-offset-2 focus-visible:ring-2 focus-visible:ring-brand"
             >
               Chain source
             </a>
@@ -302,12 +315,12 @@ function PlanList({
   caution?: boolean;
 }) {
   return (
-    <section className={`panel p-6 ${caution ? 'border-amber-500/30' : ''}`}>
+    <section className={`panel p-6 ${caution ? 'border-caution/30' : ''}`}>
       <h3 className="text-[1rem] font-semibold">{title}</h3>
       <ol className="mt-4 space-y-3">
         {items.map((item, index) => (
-          <li key={item} className="flex gap-3 text-sm leading-relaxed text-zinc-300">
-            <span className={`tabular shrink-0 ${caution ? 'text-amber-300' : 'text-accent'}`}>
+          <li key={item} className="flex gap-3 text-sm leading-relaxed text-ink-2">
+            <span className={`tabular shrink-0 ${caution ? 'text-caution' : 'text-accent'}`}>
               {numbered ? String(index + 1).padStart(2, '0') : '—'}
             </span>
             <span>{item}</span>

@@ -27,14 +27,14 @@ export default function PartnersPage() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-16 sm:py-20">
       <div className="max-w-2xl">
-        <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-white/5 px-3 py-1 text-xs text-zinc-300">
+        <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-ink/5 px-3 py-1 text-xs text-ink-2">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           Read-only partner pilots
         </span>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
           Give every wallet a migration plan.
         </h1>
-        <p className="mt-3 text-zinc-400">
+        <p className="mt-3 text-ink-dim">
           Add one planning workflow to your wallet or custody system. PQWeave maps chain
           capabilities and prepares evidence; your team retains keys, policy, and signing. Start
           with a read-only cohort and a testnet integration.
@@ -45,8 +45,8 @@ export default function PartnersPage() {
         <ul className="space-y-5">
           {VALUE.map((item) => (
             <li key={item.title} className="rounded-panel border border-rule bg-panel p-5">
-              <h2 className="text-[1rem] font-semibold text-white">{item.title}</h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.body}</p>
+              <h2 className="text-[1rem] font-semibold text-ink">{item.title}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-dim">{item.body}</p>
             </li>
           ))}
         </ul>
@@ -60,14 +60,14 @@ export default function PartnersPage() {
           Integration surface
         </div>
         <h2 className="mt-3 text-xl font-semibold">Plan a wallet fleet without sending keys</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-300">
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-2">
           The stateless <code className="text-accent">POST /api/kit</code> endpoint accepts up to 50
           public account records per request and returns route, checks, limitations, and source
           links. It plans from the facts you provide; your system must verify balances, signer
           policy, and destination control. The same route selector is exported as
           <code className="text-accent"> @pqweave/sdk/kit</code>.
         </p>
-        <pre className="mt-5 overflow-x-auto rounded-control border border-rule bg-base p-4 text-xs leading-relaxed text-zinc-200">
+        <pre className="mt-5 overflow-x-auto rounded-control border border-rule bg-base p-4 text-xs leading-relaxed text-ink">
           {JSON.stringify(
             {
               chain: 'algorand',

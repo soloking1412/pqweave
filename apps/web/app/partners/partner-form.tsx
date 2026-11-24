@@ -14,7 +14,7 @@ interface FieldErrors {
 }
 
 const inputClass =
-  'w-full rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-brand/60 aria-[invalid=true]:ring-rose-500/60';
+  'w-full rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus-visible:ring-2 focus-visible:ring-brand/60 aria-[invalid=true]:ring-danger/60';
 
 export function PartnerForm() {
   const [form, setForm] = useState({
@@ -69,12 +69,12 @@ export function PartnerForm() {
 
   if (status === 'sent') {
     return (
-      <div className="rounded-panel border border-emerald-500/30 bg-emerald-500/10 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-2xl text-emerald-300">
+      <div className="rounded-panel border border-ok/30 bg-ok/10 p-8 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ok/20 text-2xl text-ok">
           ✓
         </div>
-        <h2 className="mt-4 text-xl font-semibold text-white">Thanks — we&apos;ll be in touch</h2>
-        <p className="mt-2 text-sm text-zinc-300">
+        <h2 className="mt-4 text-xl font-semibold text-ink">Thanks — we&apos;ll be in touch</h2>
+        <p className="mt-2 text-sm text-ink-2">
           We read every partnership note and reply within a couple of business days.
         </p>
       </div>
@@ -162,7 +162,7 @@ export function PartnerForm() {
       </Field>
 
       {serverError && (
-        <p className="rounded-control border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+        <p className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
           {serverError}
         </p>
       )}
@@ -171,7 +171,7 @@ export function PartnerForm() {
         type="submit"
         disabled={status === 'sending'}
         aria-busy={status === 'sending'}
-        className="rounded-control bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:opacity-60"
+        className="rounded-control bg-brand px-6 py-3 font-medium text-paper transition hover:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-base disabled:opacity-60"
       >
         {status === 'sending' ? 'Sending…' : 'Request partnership'}
       </button>
@@ -194,12 +194,12 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-zinc-200">
+      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-ink">
         {label}
-        {optional && <span className="ml-1.5 text-xs font-normal text-zinc-500">optional</span>}
+        {optional && <span className="ml-1.5 text-xs font-normal text-ink-dim">optional</span>}
       </label>
       {children}
-      {error && <p className="mt-1.5 text-xs text-rose-300">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-danger">{error}</p>}
     </div>
   );
 }

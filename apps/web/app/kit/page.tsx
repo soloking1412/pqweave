@@ -20,9 +20,9 @@ export default async function KitPage({
       </div>
       <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
         One place to plan the move.
-        <span className="block text-zinc-400">The right route for each chain.</span>
+        <span className="block text-ink-dim">The right route for each chain.</span>
       </h1>
-      <p className="mt-5 max-w-2xl text-[1rem] leading-relaxed text-zinc-300">
+      <p className="mt-5 max-w-2xl text-[1rem] leading-relaxed text-ink-2">
         Start with a public address. We check what is visible, choose the current chain-supported
         route, and show the checks required before signing. Your wallet keeps the keys.
       </p>

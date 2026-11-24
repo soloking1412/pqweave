@@ -107,41 +107,41 @@ export function StartClient() {
       >
         <h2 className="text-lg font-semibold tracking-tight">2 · Testnet destination address</h2>
         {!key?.seedSaved ? (
-          <p className="mt-3 text-sm text-zinc-500">
+          <p className="mt-3 text-sm text-ink-dim">
             Save your recovery key above first — the address is derived from it.
           </p>
         ) : !contracts ? (
-          <p className="mt-3 text-sm text-zinc-400">
+          <p className="mt-3 text-sm text-ink-dim">
             Connect to a configured testnet to derive a destination address. Do not send real funds
             to this unaudited account.
           </p>
         ) : predictError ? (
-          <p className="mt-3 text-sm text-rose-300">{predictError}</p>
+          <p className="mt-3 text-sm text-danger">{predictError}</p>
         ) : !predicted ? (
-          <p className="mt-3 text-sm text-zinc-400">Deriving your address…</p>
+          <p className="mt-3 text-sm text-ink-dim">Deriving your address…</p>
         ) : (
           <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-start">
             <div className="rounded-control bg-white p-3">
               <QRCodeSVG value={predicted} size={132} marginSize={0} />
             </div>
             <div className="min-w-0 flex-1 space-y-3">
-              <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-                <div className="text-xs uppercase tracking-wide text-zinc-500">
+              <div className="rounded-lg border border-rule bg-well p-3">
+                <div className="text-xs uppercase tracking-wide text-ink-dim">
                   Predicted testnet account · verify owner policy
                 </div>
                 <div className="mt-1 break-all font-mono text-xs text-accent">{predicted}</div>
               </div>
               <button
                 onClick={copyAddress}
-                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-ink/5"
               >
                 {copied ? 'Copied ✓' : 'Copy address'}
               </button>
-              <p className="text-xs leading-relaxed text-zinc-500">
+              <p className="text-xs leading-relaxed text-ink-dim">
                 This is a predicted address from the configured factory and key. Verify the factory
                 code and destination policy independently. Use test funds only.
               </p>
-              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+              <p className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
                 Exchange caveat: some exchanges refuse withdrawals to smart-contract addresses.
                 Always test with a small amount first.
               </p>
@@ -156,7 +156,7 @@ export function StartClient() {
         <h2 className="text-lg font-semibold tracking-tight">3 · Activate on-chain (optional)</h2>
         {txHash ? (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-emerald-300">
+            <p className="text-sm text-ok">
               Deployment submitted. Verify the code and owner policy on chain before relying on it.
             </p>
             {explorer && (
@@ -164,7 +164,7 @@ export function StartClient() {
                 href={explorer}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex text-sm font-medium text-brand-bright hover:underline"
+                className="inline-flex text-sm font-medium text-brand hover:underline"
               >
                 View transaction →
               </a>
@@ -172,7 +172,7 @@ export function StartClient() {
           </div>
         ) : (
           <div className="mt-3 space-y-3">
-            <p className="text-sm leading-relaxed text-zinc-400">
+            <p className="text-sm leading-relaxed text-ink-dim">
               Deploy the account on a configured testnet with a gas wallet. Confirm that the
               predicted address matches the deployment and test an outgoing transfer
               {chainName(chainId) ? ` on ${chainName(chainId)}` : ''}.
@@ -181,7 +181,7 @@ export function StartClient() {
               <button
                 onClick={() => connect({ connector: connectors[0]! })}
                 disabled={connecting || !predicted}
-                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:opacity-60"
+                className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-ink/5 disabled:opacity-60"
               >
                 {connecting ? 'Connecting…' : 'Connect a gas wallet'}
               </button>
@@ -189,19 +189,19 @@ export function StartClient() {
               <button
                 onClick={activate}
                 disabled={!predicted || activating || !executionLive}
-                className="rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+                className="rounded-control bg-brand px-5 py-3 font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
               >
                 {activating ? 'Deploying…' : 'Deploy my account'}
               </button>
             )}
-            {activateError && <p className="text-sm text-rose-300">{activateError}</p>}
+            {activateError && <p className="text-sm text-danger">{activateError}</p>}
           </div>
         )}
       </section>
 
-      <p className="text-xs leading-relaxed text-zinc-600">
+      <p className="text-xs leading-relaxed text-ink-faint">
         Already have a wallet with history? That address has different needs —{' '}
-        <Link href="/migrate" className="text-brand-bright hover:underline">
+        <Link href="/migrate" className="text-brand hover:underline">
           use the migration flow
         </Link>{' '}
         instead.

@@ -250,10 +250,10 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
     return (
       <div className="rounded-panel border border-rule bg-panel p-5">
         <h2 className="text-xl font-semibold tracking-tight">Try the vault</h2>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-ink-dim">
           The vault is not wired to a network in this build. Deploy the wasm with{' '}
-          <span className="font-mono text-zinc-300">packages/stellar-vault/deploy.sh</span> and set{' '}
-          <span className="font-mono text-zinc-300">NEXT_PUBLIC_STELLAR_VAULT_WASM_HASH</span> to
+          <span className="font-mono text-ink-2">packages/stellar-vault/deploy.sh</span> and set{' '}
+          <span className="font-mono text-ink-2">NEXT_PUBLIC_STELLAR_VAULT_WASM_HASH</span> to
           enable the interactive flow.
         </p>
       </div>
@@ -263,7 +263,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
   return (
     <div className="rounded-panel border border-rule bg-panel p-5">
       <h2 className="text-xl font-semibold tracking-tight">Try the vault on {vault.network}</h2>
-      <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+      <div className="mt-2 rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
         Testnet only, unaudited. This creates a new post-quantum account; it does not protect your
         existing Stellar wallet. Only funds you sweep in are protected, and your old key stays
         exposed. Use throwaway testnet XLM.
@@ -271,7 +271,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
 
       {/* Step 1 — key */}
       <div className="mt-5">
-        <div className="text-xs uppercase tracking-wide text-zinc-500">
+        <div className="text-xs uppercase tracking-wide text-ink-dim">
           Step 1 — post-quantum key
         </div>
         <div className="mt-2">
@@ -280,28 +280,28 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
       </div>
 
       {/* Step 2 — wallet */}
-      <div className="mt-6 border-t border-white/5 pt-5">
-        <div className="text-xs uppercase tracking-wide text-zinc-500">
+      <div className="mt-6 border-t border-rule pt-5">
+        <div className="text-xs uppercase tracking-wide text-ink-dim">
           Step 2 — connect Stellar wallet
         </div>
         {wallet ? (
-          <p className="mt-2 break-all font-mono text-xs text-emerald-300">{wallet}</p>
+          <p className="mt-2 break-all font-mono text-xs text-ok">{wallet}</p>
         ) : (
           <button
             onClick={connectWallet}
             disabled={!keyState}
-            className="mt-2 rounded-control bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
+            className="mt-2 rounded-control bg-brand px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-brand-strong disabled:opacity-50"
           >
             Connect Freighter
           </button>
         )}
-        {walletError && <p className="mt-2 text-sm text-rose-300">{walletError}</p>}
+        {walletError && <p className="mt-2 text-sm text-danger">{walletError}</p>}
       </div>
 
       {/* Step 3 — vault address + deploy */}
       {vaultId && (
-        <div className="mt-6 border-t border-white/5 pt-5">
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+        <div className="mt-6 border-t border-rule pt-5">
+          <div className="text-xs uppercase tracking-wide text-ink-dim">
             Step 3 — your vault address
           </div>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -317,7 +317,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
               >
                 {vaultId}
               </a>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+              <p className="mt-2 text-xs leading-relaxed text-ink-dim">
                 Deploy this vault, then send testnet XLM to the address above from any Stellar
                 wallet to sweep funds in. The address is fixed by your key, so it is the same every
                 time.
@@ -326,12 +326,12 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
                 <button
                   onClick={deployVault}
                   disabled={busy !== null}
-                  className="mt-3 rounded-control bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
+                  className="mt-3 rounded-control bg-brand px-4 py-2.5 text-sm font-medium text-paper transition hover:bg-brand-strong disabled:opacity-50"
                 >
                   {busy === 'deploy' ? 'Deploying…' : 'Deploy my vault'}
                 </button>
               ) : (
-                <p className="mt-3 text-sm text-emerald-300">Vault deployed.</p>
+                <p className="mt-3 text-sm text-ok">Vault deployed.</p>
               )}
             </div>
           </div>
@@ -340,8 +340,8 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
 
       {/* Step 4 — withdraw */}
       {vaultId && (
-        <div className="mt-6 border-t border-white/5 pt-5">
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+        <div className="mt-6 border-t border-rule pt-5">
+          <div className="text-xs uppercase tracking-wide text-ink-dim">
             Step 4 — withdraw with your post-quantum key
           </div>
           <div className="mt-3 grid gap-3">
@@ -349,7 +349,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="Destination address (G…)"
-              className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+              className="rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
             />
             <div className="grid gap-3 sm:grid-cols-2">
               <input
@@ -357,24 +357,24 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Amount (XLM)"
                 inputMode="decimal"
-                className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                className="rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
               />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Keystore password"
-                className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                className="rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
               />
             </div>
             <button
               onClick={withdraw}
               disabled={busy !== null}
-              className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-50"
+              className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong disabled:opacity-50"
             >
               {busy === 'withdraw' ? 'Signing & submitting…' : 'Withdraw'}
             </button>
-            <p className="text-xs leading-relaxed text-zinc-500">
+            <p className="text-xs leading-relaxed text-ink-dim">
               Each withdrawal consumes one one-time key. The signature is produced in your browser
               and verified on-chain by the vault; the contract rejects any reused key.
             </p>
@@ -382,13 +382,13 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
+      {error && <p className="mt-4 text-sm text-danger">{error}</p>}
       {txHash && (
         <a
           href={`${explorer}/tx/${txHash}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 block break-all text-sm text-emerald-300 hover:underline"
+          className="mt-4 block break-all text-sm text-ok hover:underline"
         >
           Confirmed — view transaction ↗
         </a>

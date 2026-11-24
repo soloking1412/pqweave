@@ -38,31 +38,31 @@ export default function SolanaProtectPage() {
   const solanaProgramId = process.env.NEXT_PUBLIC_SOLANA_VAULT_PROGRAM_ID ?? null;
   return (
     <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
-      <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs text-violet-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+      <span className="inline-flex items-center gap-2 rounded-full border border-note/30 bg-note/10 px-3 py-1 text-xs text-note">
+        <span className="h-1.5 w-1.5 rounded-full bg-note" />
         Vault custody — not a wallet fix
       </span>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
         Your Solana wallet can&apos;t be made quantum-safe. Here&apos;s what can.
       </h1>
-      <p className="mt-3 text-zinc-400">
-        We&apos;ll be straight with you: a Solana address <span className="text-zinc-200">is</span>{' '}
-        the Ed25519 public key — exposed from the moment the account exists. There is no first-spend
+      <p className="mt-3 text-ink-dim">
+        We&apos;ll be straight with you: a Solana address <span className="text-ink">is</span> the
+        Ed25519 public key — exposed from the moment the account exists. There is no first-spend
         grace period to preserve, and no account abstraction to swap in a post-quantum signature. No
         app can change that; it would take a protocol upgrade. What{' '}
-        <span className="text-zinc-200">can</span> exist is a vault: a program-controlled account
-        that only releases funds against a post-quantum signature.
+        <span className="text-ink">can</span> exist is a vault: a program-controlled account that
+        only releases funds against a post-quantum signature.
       </p>
 
       <Reveal className="mt-10">
         <h2 className="text-xl font-semibold tracking-tight">Why Solana is different</h2>
-        <p className="mt-3 leading-relaxed text-zinc-400">
+        <p className="mt-3 leading-relaxed text-ink-dim">
           On EVM chains, PQWeave migrates your account in place: EIP-7702 delegation lets contract
           code enforce a hash-based signature on the address you already have. Bitcoin at least
           hides the key behind a hash until you spend. Solana has neither property — validators
           verify Ed25519 at the protocol level, and the address itself broadcasts the key. That is
           why our scanner reports Solana migration capability as{' '}
-          <span className="font-mono text-zinc-300">none</span>, and why anyone selling a
+          <span className="font-mono text-ink-2">none</span>, and why anyone selling a
           &ldquo;quantum-safe Solana wallet&rdquo; today is overclaiming.
         </p>
       </Reveal>
@@ -72,12 +72,12 @@ export default function SolanaProtectPage() {
         <ol className="mt-4 space-y-3">
           {STEPS.map((step) => (
             <li key={step.n} className="flex gap-4 rounded-panel border border-rule bg-panel p-5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-paper">
                 {step.n}
               </span>
               <div>
-                <h3 className="text-[1rem] font-semibold text-white">{step.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{step.body}</p>
+                <h3 className="text-[1rem] font-semibold text-ink">{step.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink-dim">{step.body}</p>
               </div>
             </li>
           ))}
@@ -86,19 +86,18 @@ export default function SolanaProtectPage() {
 
       <Reveal className="mt-10">
         <h2 className="text-xl font-semibold tracking-tight">Where this stands today</h2>
-        <p className="mt-3 leading-relaxed text-zinc-400">
+        <p className="mt-3 leading-relaxed text-ink-dim">
           The vault program and its client SDK are built and cross-verified: instruction encoding,
           vault derivation, the withdrawal digest, and signature staging match byte-for-byte between
           the TypeScript SDK and the on-chain Rust, the one-time-leaf guard is enforced on-chain,
           and the full initialize → deposit → withdraw → replay-rejected lifecycle passes through
-          the real Solana VM. It is now <span className="text-zinc-200">deployed to devnet</span>{' '}
-          for testing. It has <span className="text-zinc-200">not</span> been deployed to mainnet,
-          and it has <span className="text-zinc-200">not</span> been audited. Do not put real funds
-          in it.
+          the real Solana VM. It is now <span className="text-ink">deployed to devnet</span> for
+          testing. It has <span className="text-ink">not</span> been deployed to mainnet, and it has{' '}
+          <span className="text-ink">not</span> been audited. Do not put real funds in it.
         </p>
         {solanaProgramId && (
-          <div className="mt-4 rounded-lg border border-white/5 bg-black/20 p-3">
-            <div className="text-xs uppercase tracking-wide text-zinc-500">Devnet program id</div>
+          <div className="mt-4 rounded-lg border border-rule bg-well p-3">
+            <div className="text-xs uppercase tracking-wide text-ink-dim">Devnet program id</div>
             <a
               href={`https://explorer.solana.com/address/${solanaProgramId}?cluster=devnet`}
               target="_blank"
@@ -115,11 +114,8 @@ export default function SolanaProtectPage() {
         <h2 className="text-xl font-semibold tracking-tight">What this does not do</h2>
         <ul className="mt-4 space-y-2.5">
           {LIMITS.map((limit) => (
-            <li
-              key={limit}
-              className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-300"
-            >
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
+            <li key={limit} className="flex items-start gap-2.5 text-sm leading-relaxed text-ink-2">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-note" />
               {limit}
             </li>
           ))}
@@ -129,13 +125,13 @@ export default function SolanaProtectPage() {
       <Reveal className="mt-10 flex flex-wrap gap-3">
         <Link
           href="/scan"
-          className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
+          className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong"
         >
           Scan another address
         </Link>
         <Link
           href="/migrate"
-          className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+          className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-ink transition hover:bg-ink/5"
         >
           Quantum-safe migration (EVM)
         </Link>

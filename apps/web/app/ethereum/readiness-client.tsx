@@ -88,12 +88,12 @@ export function EthereumReadinessClient() {
       <h2 id="ethereum-review-title" className="text-xl font-semibold">
         Review an Ethereum address
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+      <p className="mt-2 text-sm leading-relaxed text-ink-dim">
         Public data only. The address is sent to the site&apos;s Ethereum data provider. No wallet
         connection or signature is needed.
       </p>
       <form onSubmit={scan} className="mt-5 space-y-3">
-        <label htmlFor="ethereum-address" className="block text-sm text-zinc-300">
+        <label htmlFor="ethereum-address" className="block text-sm text-ink-2">
           Public address
         </label>
         <input
@@ -109,18 +109,18 @@ export function EthereumReadinessClient() {
           placeholder="0x…"
           autoComplete="off"
           spellCheck={false}
-          className="w-full rounded-control border border-rule-strong bg-base px-4 py-3 font-mono text-sm outline-none focus:border-brand-bright"
+          className="w-full rounded-control border border-rule-strong bg-base px-4 py-3 font-mono text-sm outline-none focus:border-brand"
         />
         <button
           type="submit"
           disabled={busy}
-          className="min-h-11 rounded-control bg-[#285f96] px-5 py-3 text-sm font-semibold text-white hover:bg-[#326fa9] disabled:opacity-50"
+          className="min-h-11 rounded-control bg-brand px-5 py-3 text-sm font-semibold text-paper hover:bg-brand-strong disabled:opacity-50"
         >
           {busy ? 'Reviewing…' : 'Review address'}
         </button>
       </form>
       {error && (
-        <p role="alert" className="mt-4 text-sm text-rose-300">
+        <p role="alert" className="mt-4 text-sm text-danger">
           {error}
         </p>
       )}
@@ -129,17 +129,17 @@ export function EthereumReadinessClient() {
           <h3 className="text-lg font-semibold">Readiness snapshot</h3>
           <dl className="grid gap-4 sm:grid-cols-3">
             <div>
-              <dt className="text-xs text-zinc-400">Native balance</dt>
+              <dt className="text-xs text-ink-dim">Native balance</dt>
               <dd className="mt-1 break-all font-mono text-sm">
                 {report.nativeBalanceFormatted} ETH
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-zinc-400">Known tokens with balances</dt>
+              <dt className="text-xs text-ink-dim">Known tokens with balances</dt>
               <dd className="mt-1 text-sm">{report.tokenHoldings.length} · partial inventory</dd>
             </div>
             <div>
-              <dt className="text-xs text-zinc-400">Address authority</dt>
+              <dt className="text-xs text-ink-dim">Address authority</dt>
               <dd className="mt-1 text-sm">
                 {report.delegatedTo
                   ? 'Revocable EIP-7702 delegation'
@@ -151,13 +151,13 @@ export function EthereumReadinessClient() {
               </dd>
             </div>
           </dl>
-          <p className="text-sm leading-relaxed text-zinc-400">
+          <p className="text-sm leading-relaxed text-ink-dim">
             A scan cannot certify post-quantum protection. Confirm unlisted assets, positions and
             account permissions before deciding what to move.
           </p>
           <button
             onClick={download}
-            className="min-h-11 rounded-control border border-rule-strong px-4 py-2 text-sm font-medium hover:bg-white/5"
+            className="min-h-11 rounded-control border border-rule-strong px-4 py-2 text-sm font-medium hover:bg-ink/5"
           >
             Download readiness report
           </button>

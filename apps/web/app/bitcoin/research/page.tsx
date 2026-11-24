@@ -71,16 +71,16 @@ const ROUTES = [
 ];
 
 const sourceClass =
-  'inline-flex min-h-11 items-center text-sm text-brand-bright underline underline-offset-4 hover:text-accent focus-visible:ring-2 focus-visible:ring-brand-bright';
+  'inline-flex min-h-11 items-center text-sm text-brand underline underline-offset-4 hover:text-accent focus-visible:ring-2 focus-visible:ring-brand';
 
 export default function BitcoinResearchPage() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-5">
-        <span className="tabular text-xs uppercase tracking-widest text-amber-300">
+        <span className="tabular text-xs uppercase tracking-widest text-caution">
           Bitcoin / Research desk
         </span>
-        <time dateTime="2026-09-25" className="tabular text-xs text-zinc-400">
+        <time dateTime="2026-09-25" className="tabular text-xs text-ink-dim">
           Reviewed 25 Sep 2026
         </time>
       </div>
@@ -89,7 +89,7 @@ export default function BitcoinResearchPage() {
           <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             The best route depends on what Bitcoin can enforce.
           </h1>
-          <p className="mt-6 max-w-2xl leading-relaxed text-zinc-300">
+          <p className="mt-6 max-w-2xl leading-relaxed text-ink-2">
             Our recommendation is a signer-neutral, noncustodial readiness kit: validate existing
             outputs, prepare a reviewed unsigned transaction, and keep signing in the user’s wallet.
             Continue evaluating PQ destinations as their security and operation mature.
@@ -100,7 +100,7 @@ export default function BitcoinResearchPage() {
             Product decision
           </div>
           <h2 className="mt-3 text-xl font-semibold">Ship inspectable preparation.</h2>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+          <p className="mt-3 text-sm leading-relaxed text-ink-2">
             The kit’s standard Bitcoin route reduces exposure; it is not a post-quantum custody
             product. Experimental routes require a separate review before they can protect customer
             funds.
@@ -111,7 +111,7 @@ export default function BitcoinResearchPage() {
         <h2 id="comparison-title" className="text-2xl font-semibold tracking-tight">
           Routes, evidence, and tradeoffs
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-dim">
           Availability alone does not establish suitability for custody. The table records our
           current interpretation of the linked specifications and research.
         </p>
@@ -122,7 +122,7 @@ export default function BitcoinResearchPage() {
           <span aria-hidden>↔</span> Scroll sideways to compare all routes and kit decisions.
         </p>
         <div
-          className="mt-3 overflow-x-auto border border-rule focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-bright lg:mt-6"
+          className="mt-3 overflow-x-auto border border-rule focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand lg:mt-6"
           aria-describedby="comparison-scroll-hint"
           role="region"
           aria-label="Bitcoin route comparison, scroll horizontally on smaller screens"
@@ -132,7 +132,7 @@ export default function BitcoinResearchPage() {
             <caption className="sr-only">
               Bitcoin post-quantum route comparison as of September 25, 2026
             </caption>
-            <thead className="bg-panel-raised text-xs uppercase tracking-wider text-zinc-300">
+            <thead className="bg-panel-raised text-xs uppercase tracking-wider text-ink-2">
               <tr>
                 <th scope="col" className="w-[25%] p-5 font-medium">
                   Route / status
@@ -149,14 +149,14 @@ export default function BitcoinResearchPage() {
               {ROUTES.map((route) => (
                 <tr key={route.route} className="border-t border-rule bg-panel align-top">
                   <th scope="row" className="p-5 font-normal">
-                    <span className="block font-semibold text-zinc-100">{route.route}</span>
-                    <span className="mt-2 block text-xs text-amber-200">{route.status}</span>
+                    <span className="block font-semibold text-ink">{route.route}</span>
+                    <span className="mt-2 block text-xs text-caution">{route.status}</span>
                     <a href={route.source} className={sourceClass}>
                       {route.sourceLabel} ↗
                     </a>
                   </th>
-                  <td className="p-5 leading-relaxed text-zinc-300">{route.protection}</td>
-                  <td className="p-5 leading-relaxed text-zinc-300">{route.decision}</td>
+                  <td className="p-5 leading-relaxed text-ink-2">{route.protection}</td>
+                  <td className="p-5 leading-relaxed text-ink-2">{route.decision}</td>
                 </tr>
               ))}
             </tbody>
@@ -171,14 +171,14 @@ export default function BitcoinResearchPage() {
           </h2>
         </div>
         <div>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed text-ink-2">
             StarkWare reported a QSB transaction mined on Bitcoin mainnet on 26 August 2026 without
             changing consensus rules. Its specialized bare-script approach is not a standard wallet
             migration. It needs substantial computation and a direct miner path. The kit does not
             implement it, and the demonstration does not establish broad wallet compatibility or
             production custody readiness.
           </p>
-          <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+          <p className="mt-4 text-sm leading-relaxed text-ink-2">
             A 23 September update reports an estimated $67 GPU computation cost after optimization.
             This modeled compute figure is not a service quote, a Bitcoin fee, or a complete
             production benchmark covering preparation, signing, recovery, and miner submission.
@@ -205,7 +205,7 @@ export default function BitcoinResearchPage() {
             Protection must include a way to spend.
           </h2>
         </div>
-        <div className="space-y-5 text-sm leading-relaxed text-zinc-300">
+        <div className="space-y-5 text-sm leading-relaxed text-ink-2">
           <p>
             Review every spending and recovery path, not just the receiving address. Standard
             Bitcoin signatures remain vulnerable to a sufficiently capable quantum attacker. Hiding
@@ -235,13 +235,13 @@ export default function BitcoinResearchPage() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-6 border border-rule bg-panel p-6 sm:p-8">
         <div>
           <h2 className="text-xl font-semibold">Start with a reviewed inventory.</h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-ink-dim">
             Prepare a plan and inspect the tradeoffs before signing.
           </p>
         </div>
         <Link
           href="/protect/bitcoin"
-          className="inline-flex min-h-11 items-center rounded-control bg-[#285f96] px-5 py-3 text-sm font-semibold text-white hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+          className="inline-flex min-h-11 items-center rounded-control bg-brand px-5 py-3 text-sm font-semibold text-paper hover:bg-brand-strong active:bg-brand-strong focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-base"
         >
           Prepare a Bitcoin plan →
         </Link>

@@ -11,17 +11,17 @@ export const metadata: Metadata = {
 export default function EthereumPage() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-16 sm:py-20">
-      <p className="tabular text-xs uppercase tracking-widest text-amber-300">
+      <p className="tabular text-xs uppercase tracking-widest text-caution">
         Ethereum / research & testnet
       </p>
       <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
         A new authority for your next account.
       </h1>
-      <p className="mt-6 max-w-2xl leading-relaxed text-zinc-300">
+      <p className="mt-6 max-w-2xl leading-relaxed text-ink-2">
         Start with your public address. Review exposure and the assets we can see, then prepare a
         move to a separate smart account whose owner policy requires a post-quantum signature.
       </p>
-      <div className="mt-8 border-l-2 border-amber-400 bg-amber-500/5 p-5 text-sm leading-relaxed text-amber-100">
+      <div className="mt-8 border-l-2 border-caution bg-caution/5 p-5 text-sm leading-relaxed text-caution">
         Mainnet transfers are disabled. The local test suite covers migration, spending and key
         rotation. Independent cryptographic review and a complete user recovery workflow are still
         required before real funds can use this account.
@@ -53,7 +53,7 @@ export default function EthereumPage() {
           <div key={label}>
             <p className="tabular text-xs text-accent">{label}</p>
             <h2 className="mt-3 text-xl font-semibold">{title}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">{body}</p>
+            <p className="mt-3 text-sm leading-relaxed text-ink-dim">{body}</p>
           </div>
         ))}
       </section>
@@ -61,7 +61,7 @@ export default function EthereumPage() {
         <h2 className="text-2xl font-semibold">
           Account protection is one part of the transition.
         </h2>
-        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400">
+        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink-dim">
           Ethereum&apos;s consensus, bridges and token administrators have separate cryptographic
           dependencies. The custom Lamport and Winternitz verifiers here are experimental, not
           NIST-approved implementations. New protocol proposals are tracked as research until

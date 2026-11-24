@@ -1,38 +1,6 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="7" fill="#0a0a12" />
-  <path
-    d="M16 4 6 8.2v7.2c0 6.4 4.3 10.8 10 12.6 5.7-1.8 10-6.2 10-12.6V8.2L16 4Z"
-    fill="url(#qg)"
-    fill-opacity="0.16"
-    stroke="url(#qg)"
-    stroke-width="1.8"
-  />
-  <circle cx="16" cy="15.5" r="2.6" fill="url(#qg)" />
-  <ellipse cx="16" cy="15.5" rx="7" ry="2.9" stroke="url(#qg)" stroke-width="1.3" opacity="0.85" />
-  <ellipse
-    cx="16"
-    cy="15.5"
-    rx="7"
-    ry="2.9"
-    stroke="url(#qg)"
-    stroke-width="1.3"
-    opacity="0.85"
-    transform="rotate(60 16 15.5)"
-  />
-  <ellipse
-    cx="16"
-    cy="15.5"
-    rx="7"
-    ry="2.9"
-    stroke="url(#qg)"
-    stroke-width="1.3"
-    opacity="0.85"
-    transform="rotate(120 16 15.5)"
-  />
-  <defs>
-    <linearGradient id="qg" x1="6" y1="4" x2="26" y2="28" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6aa6dd" />
-      <stop offset="1" stop-color="#93c5e0" />
-    </linearGradient>
-  </defs>
+  <rect width="32" height="32" fill="#f3f0e8" />
+  <rect x="3.75" y="3.75" width="24.5" height="24.5" stroke="#14202e" stroke-width="2" />
+  <path d="M11 3.75v8.5m0 7.5v8.5M21 3.75v8.5m0 7.5v8.5" stroke="#14202e" stroke-width="2" />
+  <path d="M3.75 11h3.5m7.5 0h2.5m7.5 0h3.5M3.75 21h3.5m7.5 0h2.5m7.5 0h3.5" stroke="#14202e" stroke-width="2" />
 </svg>

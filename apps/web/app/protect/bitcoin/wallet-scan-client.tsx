@@ -162,29 +162,29 @@ export function WalletScanClient() {
     <div className="rounded-panel border border-rule bg-panel p-6">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-xl font-semibold tracking-tight">Wallet account exposure scan</h2>
-        <span className="rounded-full border border-rule px-2 py-0.5 text-[11px] text-zinc-400">
+        <span className="rounded-full border border-rule px-2 py-0.5 text-[11px] text-ink-dim">
           watch-only · public keys
         </span>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+      <p className="mt-2 text-sm leading-relaxed text-ink-dim">
         Build an exposure report for the accounts you provide through their extended public keys.
         Receive and change addresses are checked up to the configured gap and scan limits; other
         accounts or addresses beyond those limits remain unknown. An extended{' '}
-        <span className="text-zinc-200">public</span> key can read balances and history but cannot
-        spend, and it never leaves your browser — only the addresses derived from it are looked up.
+        <span className="text-ink">public</span> key can read balances and history but cannot spend,
+        and it never leaves your browser — only the addresses derived from it are looked up.
       </p>
 
       <div className="mt-5 space-y-4">
         {accounts.map((account, index) => (
-          <div key={account.id} className="rounded-control border border-rule bg-black/20 p-4">
+          <div key={account.id} className="rounded-control border border-rule bg-well p-4">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs uppercase tracking-wide text-zinc-500">
+              <span className="text-xs uppercase tracking-wide text-ink-dim">
                 Account {index + 1}
               </span>
               {accounts.length > 1 && (
                 <button
                   onClick={() => setAccounts((l) => l.filter((a) => a.id !== account.id))}
-                  className="text-xs text-zinc-500 transition hover:text-rose-300"
+                  className="text-xs text-ink-dim transition hover:text-danger"
                 >
                   Remove
                 </button>
@@ -195,30 +195,30 @@ export function WalletScanClient() {
                 value={account.label}
                 onChange={(e) => update(account.id, { label: e.target.value })}
                 placeholder="Label (e.g. Cold storage)"
-                className="rounded-control bg-black/30 px-4 py-2.5 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                className="rounded-control bg-well px-4 py-2.5 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
               />
               <textarea
                 value={account.extendedKey}
                 onChange={(e) => update(account.id, { extendedKey: e.target.value })}
                 placeholder="xpub / ypub / zpub"
                 rows={2}
-                className="rounded-control bg-black/30 px-4 py-2.5 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                className="rounded-control bg-well px-4 py-2.5 font-mono text-xs text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <input
                   value={account.masterFingerprint}
                   onChange={(e) => update(account.id, { masterFingerprint: e.target.value })}
                   placeholder="Master fingerprint (optional)"
-                  className="rounded-control bg-black/30 px-4 py-2.5 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                  className="rounded-control bg-well px-4 py-2.5 font-mono text-xs text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
                 />
                 <input
                   value={account.accountPath}
                   onChange={(e) => update(account.id, { accountPath: e.target.value })}
                   placeholder="m/84'/0'/0'"
-                  className="rounded-control bg-black/30 px-4 py-2.5 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+                  className="rounded-control bg-well px-4 py-2.5 font-mono text-xs text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
                 />
               </div>
-              <p className="text-[11px] leading-relaxed text-zinc-500">
+              <p className="text-[11px] leading-relaxed text-ink-dim">
                 The fingerprint and account path are optional for scanning, but supplying them lets
                 a later sweep be signed on a hardware wallet. Your wallet shows both when it exports
                 an extended key.
@@ -231,11 +231,11 @@ export function WalletScanClient() {
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
           onClick={() => setAccounts((l) => [...l, blankAccount()])}
-          className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5"
+          className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-ink transition hover:bg-ink/5"
         >
           Add another account
         </button>
-        <label className="flex items-center gap-2 text-xs text-zinc-400">
+        <label className="flex items-center gap-2 text-xs text-ink-dim">
           Gap limit
           <input
             type="number"
@@ -243,7 +243,7 @@ export function WalletScanClient() {
             max={100}
             value={gapLimit}
             onChange={(e) => setGapLimit(Math.max(5, Math.min(100, Number(e.target.value) || 20)))}
-            className="w-16 rounded-lg bg-black/30 px-2 py-1.5 text-center text-xs text-zinc-100 outline-none ring-1 ring-white/10"
+            className="w-16 rounded-lg bg-well px-2 py-1.5 text-center text-xs text-ink outline-none ring-1 ring-rule"
           />
         </label>
       </div>
@@ -252,14 +252,14 @@ export function WalletScanClient() {
         <button
           onClick={() => run()}
           disabled={scanning}
-          className="rounded-control bg-[#285f96] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
+          className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong active:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
         >
           {scanning ? 'Scanning…' : 'Scan wallet accounts'}
         </button>
         {scanning && (
           <button
             onClick={() => abortRef.current?.abort()}
-            className="rounded-control border border-rule-strong px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule-strong px-4 py-3 text-sm font-medium text-ink transition hover:bg-ink/5"
           >
             Stop
           </button>
@@ -267,16 +267,16 @@ export function WalletScanClient() {
         {incomplete && !scanning && (
           <button
             onClick={() => run(result!.cursor)}
-            className="rounded-control border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-200 transition hover:bg-amber-500/20"
+            className="rounded-control border border-caution/30 bg-caution/10 px-4 py-3 text-sm font-medium text-caution transition hover:bg-caution/20"
           >
             Resume where it stopped
           </button>
         )}
-        {progress && <span className="text-xs text-zinc-400">{progress}</span>}
+        {progress && <span className="text-xs text-ink-dim">{progress}</span>}
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+        <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -284,7 +284,7 @@ export function WalletScanClient() {
       {report && result && (
         <div className="mt-6 space-y-4">
           {incomplete && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+            <div className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
               This scan stopped early, so the totals below are a floor, not the whole wallet. Resume
               to finish it.
             </div>
@@ -312,17 +312,17 @@ export function WalletScanClient() {
           </div>
 
           {report.accounts.map((account) => (
-            <div key={account.label} className="rounded-control border border-rule bg-black/20 p-4">
+            <div key={account.label} className="rounded-control border border-rule bg-well p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-sm font-semibold text-white">{account.label}</h3>
-                <span className="text-xs text-zinc-400">
+                <h3 className="text-sm font-semibold text-ink">{account.label}</h3>
+                <span className="text-xs text-ink-dim">
                   {account.exposedCount} of {account.addressCount} exposed ·{' '}
                   {fmtBtc(account.exposedSats)} BTC at risk
                 </span>
               </div>
               {account.topExposed.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <div className="text-[11px] uppercase tracking-wide text-ink-dim">
                     Largest exposed balances — review before deciding to move
                   </div>
                   <ul className="mt-1.5 space-y-1">
@@ -331,8 +331,8 @@ export function WalletScanClient() {
                         key={entry.address}
                         className="flex flex-wrap items-baseline justify-between gap-2 text-xs"
                       >
-                        <span className="break-all font-mono text-zinc-300">{entry.address}</span>
-                        <span className="text-zinc-400">
+                        <span className="break-all font-mono text-ink-2">{entry.address}</span>
+                        <span className="text-ink-dim">
                           {entry.path} · {entry.type} · {fmtBtc(entry.sats)} BTC
                         </span>
                       </li>
@@ -348,7 +348,7 @@ export function WalletScanClient() {
               onClick={() =>
                 download('pqweave-bitcoin-exposure.csv', toCsv(result), 'text/csv;charset=utf-8')
               }
-              className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5"
+              className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-ink transition hover:bg-ink/5"
             >
               Download CSV
             </button>
@@ -356,7 +356,7 @@ export function WalletScanClient() {
               onClick={() =>
                 download('pqweave-bitcoin-exposure.json', toJson(report), 'application/json')
               }
-              className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5"
+              className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-ink transition hover:bg-ink/5"
             >
               Download JSON
             </button>
@@ -369,13 +369,13 @@ export function WalletScanClient() {
           </div>
 
           {showMethodology && (
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-white/5 bg-black/30 p-3 text-[11px] leading-relaxed text-zinc-400">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-rule bg-well p-3 text-[11px] leading-relaxed text-ink-dim">
               {METHODOLOGY}
             </pre>
           )}
 
           {report.errors.length > 0 && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+            <div className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
               {report.errors.length} address{report.errors.length === 1 ? '' : 'es'} could not be
               checked and {report.errors.length === 1 ? 'is' : 'are'} excluded from the totals, so
               the real exposure may be higher. Re-run to retry them.
@@ -396,11 +396,10 @@ function Stat({
   value: string;
   tone?: 'plain' | 'warn' | 'ok';
 }) {
-  const color =
-    tone === 'warn' ? 'text-amber-200' : tone === 'ok' ? 'text-emerald-200' : 'text-zinc-100';
+  const color = tone === 'warn' ? 'text-caution' : tone === 'ok' ? 'text-ok' : 'text-ink';
   return (
-    <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-      <div className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</div>
+    <div className="rounded-lg border border-rule bg-well p-3">
+      <div className="text-[11px] uppercase tracking-wide text-ink-dim">{label}</div>
       <div className={`mt-1 text-sm font-medium ${color}`}>{value}</div>
     </div>
   );

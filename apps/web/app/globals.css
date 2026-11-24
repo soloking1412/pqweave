@@ -1,124 +1,86 @@
 @import 'tailwindcss';
 
 /**
- * Palette: cyanotype.
+ * Palette: blueprint paper.
  *
- * Named for the blueprint process — iron-blue lines on warm paper. Two rules
- * hold the whole system together:
+ * The site reports measurements, so it is drawn like a technical sheet: dark
+ * blue ink on warm paper, hairline rules, a graph-paper ground. Two rules hold
+ * the system together:
  *
- * 1. **The chrome is one cool hue family. Risk is the only warm.** Nothing in
- *    the interface competes with a risk reading, so when something turns warm it
- *    means something. An instrument that is colourful when idle cannot signal.
- * 2. **The base is warm-neutral graphite, not blue-black.** Blue-black under a
- *    violet glow is the single most recognisable generated-UI signature; a
- *    neutral base with warm bone text reads like printed technical paper.
+ * 1. **Ink is one cool hue family. Risk is the only warm.** Nothing in the
+ *    interface competes with a risk reading, so when something turns warm it
+ *    means something.
+ * 2. **Colour names say what a thing means, not what it looks like.** Pages use
+ *    `caution`, `danger`, `ok`, never a raw palette step, so the whole sheet
+ *    can be re-inked from this file.
  */
 
 @theme {
-  /* Cool chrome — actions, links, measured values. One hue, three values. */
-  --color-brand: #3f7fbf;
-  --color-brand-bright: #6aa6dd;
-  --color-accent: #93c5e0;
+  /* Paper. The page is a sheet, panels are lighter sheets laid on it. */
+  --color-base: #f3f0e8;
+  --color-panel: #faf8f3;
+  --color-panel-raised: #ece8dc;
+  --color-well: #e9e4d7;
+  --color-paper: #faf8f3;
 
-  /* Structure. The page is a panel, not a canvas. */
-  --color-base: #0a0a0b;
-  --color-panel: #111113;
-  --color-panel-raised: #17181b;
-  --color-rule: rgba(233, 231, 226, 0.1);
-  --color-rule-strong: rgba(233, 231, 226, 0.18);
+  /* Ink, four weights. All pass 4.5:1 on paper except `faint`, which is for
+     captions and separators only. */
+  --color-ink: #14202e;
+  --color-ink-2: #36424f;
+  --color-ink-dim: #586371;
+  --color-ink-faint: #6d7680;
 
-  /* Warm bone rather than cold white — the paper half of the blueprint. */
-  --color-ink: #e9e7e2;
-  --color-ink-dim: #9d9a94;
+  --color-rule: rgba(20, 32, 46, 0.14);
+  --color-rule-strong: rgba(20, 32, 46, 0.3);
 
-  /**
-   * Risk ramp. Monotonic and warm-going: neutral → steel → sodium → ember →
-   * vermilion. The old scale ran emerald → sky → amber → orange → rose, which
-   * is not perceptually ordered: sky reads calmer than emerald, so "low risk"
-   * looked safer than "safe".
-   */
-  --color-risk-safe: #8d918c;
-  --color-risk-low: #b9c3cc;
-  --color-risk-medium: #d9a441;
-  --color-risk-high: #e8763c;
-  --color-risk-critical: #e0484f;
+  /* Prussian blue for actions, a lighter steel for measured values. */
+  --color-brand: #1d4b7d;
+  --color-brand-strong: #153a62;
+  --color-accent: #1f6788;
 
-  /**
-   * Warm the neutral ramp at the source.
-   *
-   * `zinc` is used ~290 times for text and borders. Tailwind's zinc is cool
-   * blue-grey, which fights warm bone ink and pulls the whole page back toward
-   * the blue-black look this palette exists to leave behind. Redefining the
-   * scale here warms every one of those call sites without touching them.
-   */
-  --color-zinc-100: #f0eeea;
-  --color-zinc-200: #ddd9d3;
-  --color-zinc-300: #c2beb7;
-  --color-zinc-400: #9d9a94;
-  --color-zinc-500: #7c7974;
-  --color-zinc-600: #5c5a56;
-  --color-zinc-700: #403f3c;
+  /* Meaning. */
+  --color-ok: #2c6a49;
+  --color-caution: #8a5a0a;
+  --color-danger: #a8281f;
+  --color-note: #56468a;
 
   /**
-   * Re-tune the semantic hues to the same warmth, so a warning sits in the same
-   * world as the risk ramp instead of shouting from Tailwind's default palette.
-   * Meaning is unchanged: emerald = ok/live, amber = caution, rose = error.
+   * Risk ramp. Monotonic and warm-going: graphite → steel → ochre → rust →
+   * vermilion. `safe` is deliberately colourless so "nothing to report" never
+   * competes with "something to report".
    */
-  --color-emerald-100: #dcebe2;
-  --color-emerald-200: #b9d8c6;
-  --color-emerald-300: #8fbfa3;
-  --color-emerald-400: #6da588;
-  --color-emerald-500: #4f8a6c;
-
-  --color-amber-100: #f6e8cd;
-  --color-amber-200: #ecd3a3;
-  --color-amber-300: #e0b96f;
-  --color-amber-400: #d9a441;
-  --color-amber-500: #bd8a2c;
-
-  --color-orange-300: #f0a077;
-  --color-orange-400: #e8763c;
-  --color-orange-500: #cf5f28;
-
-  --color-rose-200: #f3c4c6;
-  --color-rose-300: #eb999d;
-  --color-rose-400: #e0484f;
-  --color-rose-500: #c8353c;
-
-  --color-sky-100: #dbe9f4;
-  --color-sky-400: #6aa6dd;
-  --color-sky-500: #3f7fbf;
+  --color-risk-safe: #6d7680;
+  --color-risk-low: #3f6f8f;
+  --color-risk-medium: #a06c0c;
+  --color-risk-high: #bd5417;
+  --color-risk-critical: #b3261e;
 
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+    var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial,
+    sans-serif;
+  --font-display: var(--font-plex-serif), 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-mono:
+    var(--font-plex-mono), ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 
-  /* Radius carries meaning: instrument panels are near-sharp, controls are
-     softer, and only status chips are pills. Uniform radius everywhere is what
-     makes an interface read as generated rather than designed. */
-  --radius-panel: 3px;
-  --radius-control: 7px;
+  /* Radius carries role: sheets are near-sharp, controls are softer, and only
+     status chips are pills. */
+  --radius-panel: 2px;
+  --radius-control: 5px;
 
   /* Entry decelerates; measurements settle rather than bounce. */
   --ease-settle: cubic-bezier(0.16, 0.84, 0.44, 1);
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  /* A point lattice, not a blur blob. Lattices are the other half of
-     post-quantum cryptography, and a regular grid reads as measurement —
-     which is what the scanner actually does. */
+  /* Graph paper. Lattices are also the other half of post-quantum
+     cryptography, and a regular grid reads as measurement. */
   background-color: var(--color-base);
-  background-image:
-    radial-gradient(circle at center, rgba(233, 231, 226, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(63, 127, 191, 0.07), transparent 42rem);
-  background-size:
-    28px 28px,
-    100% 100%;
-  background-attachment: fixed, scroll;
+  background-image: radial-gradient(circle at center, rgba(20, 32, 46, 0.11) 1px, transparent 1px);
+  background-size: 24px 24px;
   color: var(--color-ink);
 }
 
@@ -126,25 +88,33 @@ body {
   a {
     color: inherit;
   }
+
+  /* Headlines are set like a printed report; everything else is the sans. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
 }
 
 ::selection {
-  background: rgba(63, 127, 191, 0.35);
+  background: rgba(29, 75, 125, 0.22);
 }
 
-/* Every measured value on this site is monospaced with aligned digits, so
-   columns of numbers line up and a changing value never reflows its row. */
+/* Every measured value is monospaced with aligned digits, so columns of numbers
+   line up and a changing value never reflows its row. */
 .tabular {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
-/* Instrument panel: hairline border with corner ticks, in place of a soft card.
-   The ticks are what make a rectangle read as a measurement frame. */
+/* Sheet: hairline border with corner ticks, in place of a soft card. The ticks
+   are what make a rectangle read as a drawing frame. */
 .panel {
   position: relative;
-  border: 1px solid var(--color-rule);
+  border: 1px solid var(--color-rule-strong);
   border-radius: var(--radius-panel);
   background-color: var(--color-panel);
 }
@@ -153,9 +123,9 @@ body {
 .panel::after {
   content: '';
   position: absolute;
-  width: 6px;
-  height: 6px;
-  border-color: rgba(147, 197, 224, 0.5);
+  width: 7px;
+  height: 7px;
+  border-color: var(--color-ink);
   border-style: solid;
   pointer-events: none;
 }
@@ -163,13 +133,22 @@ body {
 .panel::before {
   top: -1px;
   left: -1px;
-  border-width: 1px 0 0 1px;
+  border-width: 1.5px 0 0 1.5px;
 }
 
 .panel::after {
   right: -1px;
   bottom: -1px;
-  border-width: 0 1px 1px 0;
+  border-width: 0 1.5px 1.5px 0;
+}
+
+/* Small capitals label that sits above a section or a reading. */
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-dim);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -179,5 +158,17 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  header,
+  footer,
+  .no-print {
+    display: none !important;
   }
 }

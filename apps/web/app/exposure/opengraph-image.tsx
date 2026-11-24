@@ -10,11 +10,11 @@ function Chip({ children }: { children: string }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        border: '1px solid rgba(255,255,255,0.14)',
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(20,32,46,0.25)',
+        backgroundColor: 'rgba(20,32,46,0.04)',
         borderRadius: '999px',
         padding: '12px 22px',
-        color: '#d4d4d8',
+        color: '#36424f',
         fontSize: '26px',
       }}
     >
@@ -32,9 +32,7 @@ export default function Image() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        backgroundColor: '#0a0a0b',
-        backgroundImage:
-          'radial-gradient(900px 520px at 88% -10%, rgba(124,108,255,0.22), transparent), radial-gradient(720px 520px at -8% 110%, rgba(52,226,228,0.14), transparent)',
+        backgroundColor: '#f3f0e8',
         padding: '72px',
       }}
     >
@@ -46,26 +44,26 @@ export default function Image() {
               width: '44px',
               height: '44px',
               borderRadius: '13px',
-              backgroundColor: '#3f7fbf',
+              backgroundColor: '#1d4b7d',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
+              color: '#14202e',
               fontSize: '26px',
             }}
           >
             Q
           </div>
-          <div style={{ display: 'flex', color: '#e7e7ee', fontSize: '30px' }}>PQWeave</div>
+          <div style={{ display: 'flex', color: '#14202e', fontSize: '30px' }}>PQWeave</div>
         </div>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            border: '1px solid rgba(255,255,255,0.15)',
+            border: '1px solid rgba(20,32,46,0.25)',
             borderRadius: '999px',
             padding: '11px 20px',
-            color: '#a1a1aa',
+            color: '#586371',
             fontSize: '22px',
           }}
         >
@@ -75,7 +73,7 @@ export default function Image() {
               width: '9px',
               height: '9px',
               borderRadius: '999px',
-              backgroundColor: '#93c5e0',
+              backgroundColor: '#1d4b7d',
             }}
           />
           Quantum Exposure Index
@@ -88,7 +86,7 @@ export default function Image() {
             display: 'flex',
             fontSize: '88px',
             lineHeight: 1.04,
-            color: '#e7e7ee',
+            color: '#14202e',
             letterSpacing: '-3px',
           }}
         >
@@ -99,7 +97,7 @@ export default function Image() {
             display: 'flex',
             fontSize: '88px',
             lineHeight: 1.04,
-            color: '#93c5e0',
+            color: '#1d4b7d',
             letterSpacing: '-3px',
           }}
         >
@@ -110,7 +108,7 @@ export default function Image() {
             display: 'flex',
             marginTop: '30px',
             fontSize: '30px',
-            color: '#a1a1aa',
+            color: '#586371',
             maxWidth: '960px',
           }}
         >
@@ -124,7 +122,7 @@ export default function Image() {
           <Chip>~25% of BTC</Chip>
           <Chip>16 chains live</Chip>
         </div>
-        <div style={{ display: 'flex', color: '#71717a', fontSize: '26px' }}>pqweave.com</div>
+        <div style={{ display: 'flex', color: '#6d7680', fontSize: '26px' }}>pqweave.com</div>
       </div>
     </div>,
     { ...size },

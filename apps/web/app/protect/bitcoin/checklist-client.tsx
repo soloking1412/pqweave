@@ -191,7 +191,7 @@ export function BitcoinChecklistClient() {
   return (
     <div className="rounded-panel border border-rule bg-panel p-6">
       <h2 className="text-xl font-semibold tracking-tight">Check address exposure</h2>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+      <p className="mt-2 text-sm leading-relaxed text-ink-dim">
         Get an address exposure report and a readiness checklist. Paste your Bitcoin addresses (up
         to 20), or one extended public key (xpub / ypub / zpub) to scan a limited range of receive
         and change addresses. Extended public keys are processed in your browser; derived addresses
@@ -205,18 +205,18 @@ export function BitcoinChecklistClient() {
         placeholder="bc1q… addresses (comma/newline separated), or an xpub/zpub…"
         spellCheck={false}
         rows={3}
-        className="mt-4 w-full rounded-control bg-black/30 px-3 py-2 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+        className="mt-4 w-full rounded-control bg-well px-3 py-2 font-mono text-xs text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
       />
       <button
         onClick={scan}
         disabled={scanning || input.trim() === ''}
-        className="mt-3 rounded-control bg-[#285f96] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
+        className="mt-3 rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong active:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
       >
         {scanning ? 'Checking…' : 'Check my addresses'}
       </button>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+        <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
         </div>
       )}
@@ -224,7 +224,7 @@ export function BitcoinChecklistClient() {
       {rows && (
         <div className="mt-6 space-y-4">
           {mode === 'wallet' && (
-            <div className="text-xs text-zinc-500">
+            <div className="text-xs text-ink-dim">
               Derived {rows.length} addresses from your extended key (receive + change, trimmed to
               the used range).
             </div>
@@ -233,11 +233,11 @@ export function BitcoinChecklistClient() {
             {rows.map((row) => (
               <div
                 key={`${row.path ?? ''}${row.address}`}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/5 bg-black/20 px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rule bg-well px-3 py-2"
               >
-                <span className="flex items-center gap-2 font-mono text-xs text-zinc-300">
+                <span className="flex items-center gap-2 font-mono text-xs text-ink-2">
                   {row.path && (
-                    <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                    <span className="rounded bg-ink/5 px-1.5 py-0.5 text-[10px] text-ink-dim">
                       {row.path}
                     </span>
                   )}
@@ -248,10 +248,10 @@ export function BitcoinChecklistClient() {
                 <span
                   className={`text-xs ${
                     row.status === 'exposed'
-                      ? 'text-orange-300'
+                      ? 'text-risk-high'
                       : row.status === 'safe'
-                        ? 'text-emerald-300'
-                        : 'text-zinc-500'
+                        ? 'text-ok'
+                        : 'text-ink-dim'
                   }`}
                 >
                   {row.status === 'exposed'
@@ -264,14 +264,14 @@ export function BitcoinChecklistClient() {
             ))}
           </div>
 
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+          <div className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-sm text-caution">
             {exposedCount > 0
               ? `${exposedCount} of ${rows.length} addresses have revealed their public key. Follow the checklist to reduce their exposure.`
               : 'No exposure detected in successful checks. Failed checks and unscanned addresses remain unknown.'}
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-white">Your checklist</h3>
+            <h3 className="text-sm font-semibold text-ink">Your checklist</h3>
             <ul className="mt-3 space-y-2">
               {CHECKLIST.map((item, index) => (
                 <li key={item} className="flex items-start gap-2.5">
@@ -279,11 +279,11 @@ export function BitcoinChecklistClient() {
                     type="checkbox"
                     checked={checked[index] ?? false}
                     onChange={() => toggle(index)}
-                    className="mt-1 h-4 w-4 shrink-0 accent-[#3f7fbf]"
+                    className="mt-1 h-4 w-4 shrink-0 accent-brand"
                   />
                   <span
                     className={`text-sm leading-relaxed ${
-                      checked[index] ? 'text-zinc-500 line-through' : 'text-zinc-300'
+                      checked[index] ? 'text-ink-dim line-through' : 'text-ink-2'
                     }`}
                   >
                     {item}
@@ -295,7 +295,7 @@ export function BitcoinChecklistClient() {
 
           <button
             onClick={downloadPlan}
-            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-ink/5"
           >
             Download plan (.txt)
           </button>

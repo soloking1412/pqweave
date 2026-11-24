@@ -83,11 +83,11 @@ export function PqcKeygen({
   if (keystore && pqcRoot) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-emerald-300">
+        <p className="text-sm text-ok">
           Encrypted recovery file downloaded (pqweave-keystore.json). Your secret key was encrypted
           with your password and never shown on screen.
         </p>
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+        <div className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
           Keep both the file <span className="font-medium">and</span> your password safe. The file
           is useless without the password, and together they are the only way to control your
           account. After signing begins, keep a complete, current signing journal too: this seed
@@ -96,22 +96,22 @@ export function PqcKeygen({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => downloadKeystore(keystore)}
-            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-ink/5"
           >
             Download again
           </button>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
+          <label className="flex items-center gap-2 text-sm text-ink-2">
             <input
               type="checkbox"
               checked={seedSaved}
               onChange={(event) => toggleSaved(event.target.checked)}
-              className="h-4 w-4 accent-[#3f7fbf]"
+              className="h-4 w-4 accent-brand"
             />
             I have saved the file and will remember my password
           </label>
         </div>
-        <div className="rounded-lg border border-white/5 bg-black/20 p-3">
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+        <div className="rounded-lg border border-rule bg-well p-3">
+          <div className="text-xs uppercase tracking-wide text-ink-dim">
             Post-quantum public key (root)
           </div>
           <div className="mt-1 break-all font-mono text-xs text-accent">{pqcRoot}</div>
@@ -122,7 +122,7 @@ export function PqcKeygen({
 
   return (
     <div>
-      <p className="text-sm text-zinc-400">
+      <p className="text-sm text-ink-dim">
         Choose a password, then generate a hash-based (Lamport + Merkle) post-quantum key in your
         browser. The key is created from fresh randomness, encrypted with your password
         (AES-256-GCM), and downloaded as a file. The raw secret is never displayed.
@@ -133,24 +133,24 @@ export function PqcKeygen({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="Encryption password"
-          className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+          className="rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
         />
         <input
           type="password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           placeholder="Confirm password"
-          className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+          className="rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
         />
       </div>
       <button
         onClick={generateAndEncrypt}
         disabled={disabled || generating}
-        className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+        className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
       >
         {generating ? 'Generating…' : 'Generate & download encrypted key'}
       </button>
-      {keyError && <p className="mt-3 text-sm text-rose-300">{keyError}</p>}
+      {keyError && <p className="mt-3 text-sm text-danger">{keyError}</p>}
     </div>
   );
 }

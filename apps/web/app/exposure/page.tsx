@@ -30,24 +30,24 @@ const STATS = [
 const FAMILIES = [
   {
     tag: 'Recoverable from signature',
-    tone: 'border-rose-500/30 bg-rose-500/5',
-    dot: 'bg-rose-400',
+    tone: 'border-danger/30 bg-danger/5',
+    dot: 'bg-danger',
     chains: 'Ethereum & all EVM chains',
     body: 'The public key can be recovered from any signature the account has produced. Exposure begins with the first outgoing transaction and is permanent.',
     fix: 'Quantum-safe migration available — sweep into a post-quantum account.',
   },
   {
     tag: 'Revealed on first spend',
-    tone: 'border-amber-500/30 bg-amber-500/5',
-    dot: 'bg-amber-400',
+    tone: 'border-caution/30 bg-caution/5',
+    dot: 'bg-caution',
     chains: 'Bitcoin, Litecoin, Dogecoin, Cosmos, XRP, Cardano, Aptos, Tron, Sui, TON',
     body: 'The address is a hash of the public key, so the key stays hidden until the first spend reveals it. Unspent, never-reused addresses are still safe.',
     fix: 'Transitional only — move funds to a fresh address; a permanent fix needs a protocol upgrade.',
   },
   {
     tag: 'Address is the key',
-    tone: 'border-zinc-500/30 bg-white/5',
-    dot: 'bg-zinc-400',
+    tone: 'border-rule-strong/30 bg-ink/5',
+    dot: 'bg-ink-faint',
     chains: 'Solana, Stellar, NEAR, Polkadot; legacy Algorand accounts',
     body: 'On these classical account types the address reveals a public key. Algorand is an exception: native Falcon accounts and rekeying are now supported.',
     fix: 'Migration depends on chain rules. Algorand can rekey; other routes may require a vault or future protocol support.',
@@ -57,14 +57,14 @@ const FAMILIES = [
 export default function ExposurePage() {
   return (
     <div className="mx-auto max-w-4xl px-5 py-16 sm:py-20">
-      <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-white/5 px-3 py-1 text-xs text-zinc-300">
+      <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-ink/5 px-3 py-1 text-xs text-ink-2">
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
         Quantum Exposure Index
       </span>
       <h1 className="mt-5 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
         Most crypto is already quantum-exposed.
       </h1>
-      <p className="mt-3 max-w-2xl text-zinc-400">
+      <p className="mt-3 max-w-2xl text-ink-dim">
         Exposure is not a future event — public keys leak the moment accounts transact, and they can
         be harvested today to be broken once a sufficient quantum computer exists. Here is the shape
         of the problem, and a live scanner to check any address yourself.
@@ -73,15 +73,15 @@ export default function ExposurePage() {
       <StaggerGroup className="mt-12 grid gap-4 sm:grid-cols-3">
         {STATS.map((stat) => (
           <StaggerItem key={stat.value} className="rounded-panel border border-rule bg-panel p-5">
-            <div className="text-2xl font-semibold tracking-tight text-white">{stat.value}</div>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">{stat.label}</p>
+            <div className="text-2xl font-semibold tracking-tight text-ink">{stat.value}</div>
+            <p className="mt-2 text-sm leading-relaxed text-ink-dim">{stat.label}</p>
           </StaggerItem>
         ))}
       </StaggerGroup>
 
       <Reveal className="mt-16">
         <h2 className="text-xl font-semibold tracking-tight">Three ways a key gets exposed</h2>
-        <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+        <p className="mt-2 max-w-2xl text-sm text-ink-dim">
           The exposure model determines what can be done about it. PQWeave classifies every chain
           into one of three families.
         </p>
@@ -90,13 +90,13 @@ export default function ExposurePage() {
             <div key={family.tag} className={`rounded-panel border p-5 ${family.tone}`}>
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${family.dot}`} />
-                <span className="text-sm font-semibold text-white">{family.tag}</span>
+                <span className="text-sm font-semibold text-ink">{family.tag}</span>
               </div>
-              <div className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+              <div className="mt-1 text-xs uppercase tracking-wide text-ink-dim">
                 {family.chains}
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-300">{family.body}</p>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{family.fix}</p>
+              <p className="mt-3 text-sm leading-relaxed text-ink-2">{family.body}</p>
+              <p className="mt-2 text-sm leading-relaxed text-ink-dim">{family.fix}</p>
             </div>
           ))}
         </div>
@@ -104,7 +104,7 @@ export default function ExposurePage() {
 
       <Reveal className="mt-12">
         <h2 className="text-xl font-semibold tracking-tight">Methodology</h2>
-        <p className="mt-3 max-w-2xl leading-relaxed text-zinc-400">
+        <p className="mt-3 max-w-2xl leading-relaxed text-ink-dim">
           For each address, PQWeave looks at the chain&apos;s key model and the address&apos;s
           on-chain history: whether a public key has been revealed (an outgoing transaction on EVM,
           a spend on UTXO and account chains, or simply the address itself where the key is the
@@ -116,27 +116,27 @@ export default function ExposurePage() {
 
       <Reveal className="mt-12">
         <div className="rounded-panel border border-rule bg-gradient-to-br from-brand/15 to-accent/10 p-6 sm:p-8">
-          <h2 className="text-xl font-semibold tracking-tight text-white">Check any address</h2>
-          <p className="mt-2 max-w-xl text-sm text-zinc-300">
+          <h2 className="text-xl font-semibold tracking-tight text-ink">Check any address</h2>
+          <p className="mt-2 max-w-xl text-sm text-ink-2">
             Paste an address from any of the {LIVE_CHAIN_COUNT} live chains and see its exposure
             score — no wallet connection, no custody.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/scan"
-              className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
+              className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong"
             >
               Scan a wallet
             </Link>
             <Link
               href="/exposure/bitcoin"
-              className="rounded-control border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+              className="rounded-control border border-caution/30 bg-caution/10 px-5 py-3 text-sm font-medium text-caution transition hover:bg-caution/20"
             >
               Bitcoin breakdown
             </Link>
             <Link
               href="/partners"
-              className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+              className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-ink transition hover:bg-ink/5"
             >
               Scan at scale (partners)
             </Link>

@@ -33,30 +33,30 @@ export default function BitcoinProtectPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-5">
-        <span className="tabular text-xs uppercase tracking-widest text-amber-300">
+        <span className="tabular text-xs uppercase tracking-widest text-caution">
           BTC / Readiness kit
         </span>
-        <span className="text-xs text-zinc-300">Watch-only preparation · External signing</span>
+        <span className="text-xs text-ink-2">Watch-only preparation · External signing</span>
       </div>
       <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:text-4xl">
         Prepare your next Bitcoin move.
       </h1>
-      <p className="mt-4 leading-relaxed text-zinc-300">
+      <p className="mt-4 leading-relaxed text-ink-2">
         Inspect public-key exposure and prepare a transaction for your own wallet to sign. The
         standard route moves selected coins to a fresh native SegWit address when the benefits
         justify the fees and privacy cost.
       </p>
-      <div className="mt-6 border-l-2 border-amber-400 bg-amber-500/5 px-5 py-4">
-        <p className="text-sm font-medium text-amber-200">
+      <div className="mt-6 border-l-2 border-caution bg-caution/5 px-5 py-4">
+        <p className="text-sm font-medium text-caution">
           Exposure reduction, not post-quantum protection
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+        <p className="mt-2 text-sm leading-relaxed text-ink-2">
           A fresh public-key-hash output can keep a key hidden until spending. Taproot output keys
           are already visible. Moving does not prevent a sufficiently capable attacker from racing a
           spend after the key is revealed.
         </p>
       </div>
-      <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+      <p className="mt-5 text-sm leading-relaxed text-ink-dim">
         No seed phrase or private key is requested. Public address and xpub scans reveal queried or
         derived addresses to the indexer. Scans may miss assets or wallet history outside their
         scope.
@@ -81,8 +81,8 @@ export default function BitcoinProtectPage() {
                 {String(index + 1).padStart(2, '0')}
               </span>
               <div>
-                <h3 className="text-[1rem] font-semibold text-zinc-100">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{body}</p>
+                <h3 className="text-[1rem] font-semibold text-ink">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-dim">{body}</p>
               </div>
             </li>
           ))}
@@ -95,19 +95,19 @@ export default function BitcoinProtectPage() {
         <h2 id="scope-title" className="text-lg font-semibold">
           Check what these coins represent.
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+        <p className="mt-3 text-sm leading-relaxed text-ink-2">
           Inscriptions, runes, multisig, timelocks, and custom scripts need specialized tools. A
           basic UTXO inventory cannot prove that these are absent. Do not use an ordinary sweep for
           coins whose additional assets or spending conditions have not been reviewed.
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-3 text-sm leading-relaxed text-ink-dim">
           Experimental PQ constructions are excluded from this kit. BIP-360 P2MR is a draft and does
           not itself add post-quantum signatures. Do not send funds to draft P2MR addresses on
           current public networks.
         </p>
         <Link
           href="/bitcoin/research"
-          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-brand-bright underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-brand-bright"
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-brand underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-brand"
         >
           Compare current Bitcoin research →
         </Link>

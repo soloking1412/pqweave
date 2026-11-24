@@ -14,7 +14,7 @@ export default function StartPage() {
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Test a post-quantum account
       </h1>
-      <p className="mt-3 text-zinc-400">
+      <p className="mt-3 text-ink-dim">
         Generate a post-quantum key and derive a destination address on a configured testnet. The
         contract is unaudited. Use test funds only and verify the deployment and signer policy.
       </p>

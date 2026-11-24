@@ -14,7 +14,7 @@ export default function MigratePage() {
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         Ethereum testnet migration
       </h1>
-      <p className="mt-3 text-zinc-400">
+      <p className="mt-3 text-ink-dim">
         On the configured Sepolia deployment, test a sweep to a separate post-quantum smart account,
         or examine transitional in-place hardening. The contracts are unaudited; use test funds
         while the money path is reviewed.

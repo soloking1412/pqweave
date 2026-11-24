@@ -71,44 +71,42 @@ function DryRun({ psbtBase64, testnet }: { psbtBase64: string; testnet: boolean 
   }
   const out = summary.outputs[0];
   return (
-    <details className="mt-3 rounded-lg border border-white/5 bg-black/30 p-2.5 text-xs text-zinc-400">
-      <summary className="cursor-pointer text-zinc-300">Verify before signing</summary>
+    <details className="mt-3 rounded-lg border border-rule bg-well p-2.5 text-xs text-ink-dim">
+      <summary className="cursor-pointer text-ink-2">Verify before signing</summary>
       <dl className="mt-2 space-y-1">
         <div className="flex justify-between gap-3">
           <dt>Spends</dt>
-          <dd className="text-zinc-200">
+          <dd className="text-ink">
             {summary.inputCount} input{summary.inputCount === 1 ? '' : 's'}
             {summary.totalInputSats !== undefined && ` · ${fmtBtc(summary.totalInputSats)}`}
           </dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>Pays</dt>
-          <dd className="break-all text-right font-mono text-zinc-200">
-            {out?.address ?? 'unknown'}
-          </dd>
+          <dd className="break-all text-right font-mono text-ink">{out?.address ?? 'unknown'}</dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>Amount</dt>
-          <dd className="text-zinc-200">{out ? fmtBtc(out.amountSats) : '—'}</dd>
+          <dd className="text-ink">{out ? fmtBtc(out.amountSats) : '—'}</dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>Fee</dt>
-          <dd className="text-zinc-200">
+          <dd className="text-ink">
             {summary.feeSats !== undefined ? fmtBtc(summary.feeSats) : '—'}
             {summary.feeRate !== undefined && ` (~${summary.feeRate} sat/vB)`}
           </dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>Change</dt>
-          <dd className="text-zinc-200">{summary.isSweep ? 'none — full sweep' : 'present'}</dd>
+          <dd className="text-ink">{summary.isSweep ? 'none — full sweep' : 'present'}</dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>Fee-bumpable (RBF)</dt>
-          <dd className="text-zinc-200">{summary.replaceable ? 'yes' : 'no'}</dd>
+          <dd className="text-ink">{summary.replaceable ? 'yes' : 'no'}</dd>
         </div>
       </dl>
       {summary.notes.map((note) => (
-        <p key={note} className="mt-1.5 text-amber-200">
+        <p key={note} className="mt-1.5 text-caution">
           {note}
         </p>
       ))}
@@ -437,23 +435,23 @@ export function EvacuationClient() {
     <div className="rounded-panel border border-rule bg-panel p-6">
       <div className="flex items-center gap-2">
         <h2 className="text-xl font-semibold tracking-tight">Bitcoin preparation kit</h2>
-        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-200">
+        <span className="rounded-full border border-caution/30 bg-caution/10 px-2 py-0.5 text-[11px] text-caution">
           watch-only · you sign
         </span>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+      <p className="mt-2 text-sm leading-relaxed text-ink-dim">
         Create an unsigned transaction plan for a reviewed sweep from one address you control to a
         fresh native SegWit address. We build the transactions from public data only —{' '}
-        <span className="text-zinc-200">no private key is ever requested</span>; you sign in your
-        own wallet or an air-gapped device. Signing adds nothing to the chain until broadcast.
-        Taproot source keys are already visible on-chain.
+        <span className="text-ink">no private key is ever requested</span>; you sign in your own
+        wallet or an air-gapped device. Signing adds nothing to the chain until broadcast. Taproot
+        source keys are already visible on-chain.
       </p>
-      <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+      <div className="mt-3 rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
         This route reduces exposure and does not add a post-quantum signature. Plans expire after 24
         hours and are rechecked before signing or exporting. Your wallet validates signatures and
         broadcasts; this website does not relay transactions.
       </div>
-      <label className="mt-4 block text-sm text-zinc-300">
+      <label className="mt-4 block text-sm text-ink-2">
         Restore an unsigned plan
         <input
           type="file"
@@ -463,13 +461,13 @@ export function EvacuationClient() {
           className="mt-2 block w-full text-xs"
         />
       </label>
-      <p className="mt-2 text-xs text-zinc-400">
+      <p className="mt-2 text-xs text-ink-dim">
         A file checksum detects edits, not its author. Independently check the destination and
         amounts on your signing device.
       </p>
 
       <div className="mt-5 grid gap-3">
-        <label className="text-xs uppercase tracking-wide text-zinc-500">
+        <label className="text-xs uppercase tracking-wide text-ink-dim">
           Source address (one you control)
         </label>
         <input
@@ -482,9 +480,9 @@ export function EvacuationClient() {
           aria-label="Source Bitcoin address"
           placeholder="bc1q… address holding the coins"
           spellCheck={false}
-          className="rounded-control bg-black/30 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 focus:ring-brand/60"
+          className="rounded-control bg-well px-4 py-3 font-mono text-xs text-ink outline-none ring-1 ring-rule focus:ring-brand/60"
         />
-        <label className="text-xs uppercase tracking-wide text-zinc-500">
+        <label className="text-xs uppercase tracking-wide text-ink-dim">
           Fresh destination address (never used)
         </label>
         <input
@@ -497,15 +495,15 @@ export function EvacuationClient() {
           aria-label="Destination Bitcoin address"
           placeholder="bc1q… brand-new address from your wallet"
           spellCheck={false}
-          className="rounded-control bg-black/30 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-1 ring-white/10 focus:ring-brand/60"
+          className="rounded-control bg-well px-4 py-3 font-mono text-xs text-ink outline-none ring-1 ring-rule focus:ring-brand/60"
         />
         {destType === 'p2tr' && (
-          <p className="text-xs text-amber-300">
+          <p className="text-xs text-caution">
             Taproot exposes its output key immediately. This kit accepts only a native SegWit P2WPKH
             destination.
           </p>
         )}
-        <details className="rounded-control border border-rule p-3 text-xs text-zinc-300">
+        <details className="rounded-control border border-rule p-3 text-xs text-ink-2">
           <summary className="cursor-pointer">
             Public signer details (for hardware, wrapped SegWit, or Taproot inputs)
           </summary>
@@ -526,7 +524,7 @@ export function EvacuationClient() {
                   reset();
                   (setter as (v: string) => void)(e.target.value.trim());
                 }}
-                className="mt-1 block w-full rounded-control bg-black/30 p-2 font-mono ring-1 ring-white/10"
+                className="mt-1 block w-full rounded-control bg-well p-2 font-mono ring-1 ring-rule"
               />
             </label>
           ))}
@@ -534,27 +532,27 @@ export function EvacuationClient() {
         <button
           onClick={loadAndBuild}
           disabled={Boolean(busy) || !source || !destination}
-          className="mt-1 w-fit rounded-control bg-[#285f96] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
+          className="mt-1 w-fit rounded-control bg-brand px-5 py-3 text-sm font-medium text-paper transition hover:bg-brand-strong active:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
         >
           {busy === 'build' ? 'Preparing…' : 'Prepare Bitcoin plan'}
         </button>
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+        <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
         </div>
       )}
 
       {plan && utxos && (
         <div className="mt-6 space-y-4">
-          <div className="rounded-lg border border-white/5 bg-black/20 p-3 text-xs text-zinc-400">
+          <div className="rounded-lg border border-rule bg-well p-3 text-xs text-ink-dim">
             {utxos.length} UTXO{utxos.length === 1 ? '' : 's'} · {fmtBtc(plan.totalInputSats)}{' '}
             {plan.network === 'testnet' ? 'tBTC' : 'BTC'} to sweep · est. {plan.vsize} vB
           </div>
 
           {destCheck && destCheck.warnings.length > 0 && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+            <div className="rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
               {destCheck.warnings.map((w) => (
                 <p key={w}>{w}</p>
               ))}
@@ -566,8 +564,8 @@ export function EvacuationClient() {
           <div
             className={`rounded-lg border p-3 text-xs leading-relaxed ${
               plan.signability.ready
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
-                : 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+                ? 'border-ok/30 bg-ok/10 text-ok'
+                : 'border-caution/30 bg-caution/10 text-caution'
             }`}
           >
             <div className="font-medium">
@@ -597,21 +595,20 @@ export function EvacuationClient() {
           {/* A sweep sends the entire balance with no change output. If the
               destination is not actually yours, the coins are gone for good, so
               this is confirmed explicitly rather than assumed. */}
-          <label className="flex items-start gap-2.5 rounded-lg border border-rule bg-black/20 p-3 text-xs leading-relaxed text-zinc-300">
+          <label className="flex items-start gap-2.5 rounded-lg border border-rule bg-well p-3 text-xs leading-relaxed text-ink-2">
             <input
               type="checkbox"
               checked={ownsDestination}
               onChange={(e) => setOwnsDestination(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[#3f7fbf]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
             />
             <span>
-              I control{' '}
-              <span className="break-all font-mono text-zinc-200">{plan.destination}</span> and can
-              still spend from it. This sweep moves the whole balance with no change output — if
+              I control <span className="break-all font-mono text-ink">{plan.destination}</span> and
+              can still spend from it. This sweep moves the whole balance with no change output — if
               this address is not mine, the coins cannot be recovered.
             </span>
           </label>
-          <label className="flex items-start gap-2.5 rounded-lg border border-rule p-3 text-xs text-zinc-300">
+          <label className="flex items-start gap-2.5 rounded-lg border border-rule p-3 text-xs text-ink-2">
             <input
               type="checkbox"
               checked={plainCoins}
@@ -626,16 +623,16 @@ export function EvacuationClient() {
           {plan.tiers.map((tier) => (
             <div
               key={tier.label}
-              className={`rounded-control border border-rule bg-black/20 p-4 transition ${
+              className={`rounded-control border border-rule bg-well p-4 transition ${
                 ownsDestination && plainCoins ? '' : 'opacity-40'
               }`}
               aria-disabled={!ownsDestination || !plainCoins}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-sm font-semibold capitalize text-white">
+                <div className="text-sm font-semibold capitalize text-ink">
                   {tier.label} · {tier.feeRate} sat/vB
                 </div>
-                <div className="text-xs text-zinc-400">
+                <div className="text-xs text-ink-dim">
                   fee {fmtBtc(tier.feeSats)} → sweeps {fmtBtc(tier.outputSats)}
                 </div>
               </div>
@@ -644,18 +641,18 @@ export function EvacuationClient() {
                 <button
                   onClick={() => signWithWallet(tier)}
                   disabled={!ownsDestination || !plainCoins || Boolean(busy)}
-                  className="rounded-lg bg-[#285f96] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
+                  className="rounded-lg bg-brand px-3 py-2 text-xs font-medium text-paper transition hover:bg-brand-strong active:bg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
                 >
                   {busy === `sign-${tier.label}` ? 'Signing…' : 'Sign in browser wallet'}
                 </button>
                 <button
                   onClick={() => downloadPsbt(tier)}
                   disabled={!ownsDestination || !plainCoins || Boolean(busy)}
-                  className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5"
+                  className="rounded-lg border border-rule px-3 py-2 text-xs font-medium text-ink transition hover:bg-ink/5"
                 >
                   Download PSBT
                 </button>
-                <label className="cursor-pointer rounded-lg border border-rule px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-white/5">
+                <label className="cursor-pointer rounded-lg border border-rule px-3 py-2 text-xs font-medium text-ink transition hover:bg-ink/5">
                   Upload signed
                   <input
                     type="file"
@@ -669,13 +666,13 @@ export function EvacuationClient() {
                   <button
                     onClick={() => exportCheckedTier(tier)}
                     disabled={!ownsDestination || !plainCoins || Boolean(busy)}
-                    className="rounded-lg bg-rose-500/90 px-3 py-2 text-xs font-medium text-white transition hover:bg-rose-500 disabled:opacity-60"
+                    className="rounded-lg bg-danger px-3 py-2 text-xs font-medium text-ink transition hover:bg-danger disabled:opacity-60"
                   >
                     {busy === `cast-${tier.label}` ? 'Rechecking…' : 'Export checked PSBT'}
                   </button>
                 )}
                 {signed[tier.label] && (
-                  <span className="text-xs text-emerald-300">
+                  <span className="text-xs text-ok">
                     Transaction matches plan · wallet must verify signatures
                   </span>
                 )}
@@ -684,18 +681,18 @@ export function EvacuationClient() {
           ))}
 
           {plan.skipped.map((s) => (
-            <div key={s.label} className="text-xs text-zinc-500">
+            <div key={s.label} className="text-xs text-ink-dim">
               {s.label} tier skipped — {s.reason}.
             </div>
           ))}
 
           <button
             onClick={saveBundle}
-            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
+            className="rounded-control border border-rule px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-ink/5"
           >
             Save unsigned plan (.json)
           </button>
-          <p className="text-xs leading-relaxed text-zinc-500">
+          <p className="text-xs leading-relaxed text-ink-dim">
             Save the plan for review; restore it here within 24 hours or rebuild from current coins.
             Signed PSBTs are spend authorizations: keep them offline and use your wallet to validate
             and broadcast one selected fee tier.

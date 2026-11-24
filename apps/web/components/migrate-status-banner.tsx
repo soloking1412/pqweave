@@ -8,20 +8,20 @@ const COPY: Record<
   preview: {
     label: 'Preview',
     text: 'Migration is not live on a network yet. You can walk every step and generate your post-quantum key now. Sepolia execution requires a reviewed deployment manifest. Mainnet remains disabled until cryptographic review and the signing-state recovery workflow are complete.',
-    className: 'border-amber-500/30 bg-amber-500/10 text-amber-100',
-    dot: 'bg-amber-400',
+    className: 'border-caution/30 bg-caution/10 text-caution',
+    dot: 'bg-caution',
   },
   testnet: {
     label: 'Testnet beta',
     text: 'Configured for Ethereum Sepolia. Deploy a destination account, then migrate test funds. Destination spending and keystore recovery are not yet available in this interface. Do not use real value while the contracts finish their audit.',
-    className: 'border-sky-500/30 bg-sky-500/10 text-sky-100',
-    dot: 'bg-sky-400',
+    className: 'border-accent/30 bg-accent/10 text-accent',
+    dot: 'bg-accent',
   },
   mainnet: {
     label: 'Live',
     text: 'A deployment is configured for mainnet. Confirm the independent audit and contract addresses before securing real funds.',
-    className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100',
-    dot: 'bg-emerald-400',
+    className: 'border-ok/30 bg-ok/10 text-ok',
+    dot: 'bg-ok',
   },
 };
 

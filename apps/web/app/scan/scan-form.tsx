@@ -116,12 +116,12 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
           onChange={(event) => setAddress(event.target.value.trim())}
           placeholder={placeholderFor(chain)}
           spellCheck={false}
-          className="flex-1 rounded-control bg-black/30 px-4 py-3 font-mono text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition placeholder:text-zinc-600 focus:ring-brand/60"
+          className="flex-1 rounded-control bg-well px-4 py-3 font-mono text-sm text-ink outline-none ring-1 ring-rule transition placeholder:text-ink-faint focus:ring-brand/60"
         />
         <select
           value={chain}
           onChange={(event) => setChain(event.target.value as ScanChain)}
-          className="rounded-control bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none ring-1 ring-white/10 transition focus:ring-brand/60"
+          className="rounded-control bg-well px-4 py-3 text-sm text-ink outline-none ring-1 ring-rule transition focus:ring-brand/60"
         >
           {SCAN_OPTIONS.map((option) => (
             <option key={option.key} value={option.key}>
@@ -132,14 +132,14 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-control bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+          className="rounded-control bg-brand px-6 py-3 font-medium text-paper transition hover:bg-brand-strong disabled:opacity-60"
         >
           {loading ? 'Scanning…' : 'Scan'}
         </button>
       </form>
 
       {error && (
-        <div className="rounded-control border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+        <div className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
