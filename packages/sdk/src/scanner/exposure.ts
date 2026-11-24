@@ -26,35 +26,6 @@ function isKnownImplementation(target: Address, known: Address[] | undefined): b
   return Boolean(known?.some((impl) => isAddressEqual(impl, target)));
 }
 
-const PQWEAVE_ACCOUNT_ABI = [
-  {
-    type: 'function',
-    name: 'pqcVerifier',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'address' }],
-  },
-] as const;
-
-/**
- * A PQWeave account exposes `pqcVerifier()`. If it returns one of the known
- * verifier addresses, the contract is a genuine PQWeave post-quantum account.
- * Any non-PQWeave contract reverts or returns something else, so this is a
- * precise, non-spoofable signal. Best-effort: failure means "not recognized".
- */
-async function isPqweaveAccount(
-  client: ScannerClient,
-  address: Address,
-  knownVerifiers: Address[],
-): Promise<boolean> {
-  const verifier = (await client.readContract({
-    address,
-    abi: PQWEAVE_ACCOUNT_ABI,
-    functionName: 'pqcVerifier',
-  })) as Address;
-  return knownVerifiers.some((known) => isAddressEqual(known, verifier));
-}
-
 /**
  * Inspect an address for quantum exposure. The authoritative signal is the
  * transaction count: any account that has sent a transaction has revealed the
@@ -79,10 +50,9 @@ export async function getExposure(
     delegatedTo !== null && isKnownImplementation(delegatedTo, options.knownImplementations);
   const exposed = nonce > 0;
 
-  const pqweaveProtected =
-    isContract && Boolean(options.knownVerifiers?.length)
-      ? await isPqweaveAccount(client, address, options.knownVerifiers!).catch(() => false)
-      : false;
+  // A contract can spoof pqcVerifier(). Without authenticated deployment
+  // provenance and an owner-policy check, protection cannot be established.
+  const pqweaveProtected = false;
 
   let publicKey: Hex | null = null;
   if (exposed && options.recoverFromTx) {

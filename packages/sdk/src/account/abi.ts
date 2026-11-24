@@ -1,6 +1,7 @@
 import { parseAbi } from 'viem';
 
 export const pqWeaveAccountAbi = parseAbi([
+  'function entryPoint() view returns (address)',
   'function initialize(address owner, bytes pqcPublicKey, address verifier, uint256 valueThreshold)',
   'function execute(address dest, uint256 value, bytes data)',
   'struct Call { address dest; uint256 value; bytes data; }',

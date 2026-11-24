@@ -102,4 +102,24 @@ describe('discoverErc20Balances', () => {
     const holdings = await discoverErc20Balances(client, FROM, [TOKEN_A, TOKEN_B]);
     expect(holdings).toEqual([{ token: TOKEN_A, amount: 500n }]);
   });
+
+  it('fails closed when a listed token balance cannot be read in strict mode', async () => {
+    const client = {
+      multicall: async () => [{ status: 'failure', error: new Error('RPC failed') }],
+    } as unknown as PublicClient;
+    await expect(discoverErc20Balances(client, FROM, [TOKEN_A], true)).rejects.toThrow(TOKEN_A);
+  });
+});
+
+describe('strict token response completeness', () => {
+  it('rejects truncated and malformed balance responses', async () => {
+    for (const results of [
+      [],
+      [{ status: 'success', result: -1n }],
+      [{ status: 'success', result: 12 }],
+    ]) {
+      const client = { multicall: async () => results } as unknown as PublicClient;
+      await expect(discoverErc20Balances(client, FROM, [TOKEN_A], true)).rejects.toThrow();
+    }
+  });
 });

@@ -50,26 +50,18 @@ export function assessRisk(
   const held = tokenHoldings.filter((h) => h.amount > 0n && !isDust(h));
   const holdsValue = nativeBalanceWei > 0n || held.length > 0;
 
-  if (exposure.pqweaveProtected) {
+  if (exposure.isContract) {
     reasons.push(
-      'This is a PQWeave post-quantum account: spending is gated by a hash-based signature no quantum computer can forge.',
-    );
-    score = 5;
-  } else if (exposure.hardened) {
-    reasons.push(
-      'Delegated to a PQWeave account; high-value operations require a post-quantum signature.',
-    );
-    score = 10;
-  } else if (exposure.isContract) {
-    reasons.push(
-      'Smart-contract account; quantum risk depends on the signing scheme its code enforces.',
+      'Smart-contract account; signing policy and deployment provenance have not been verified.',
     );
     score = 20;
   } else if (!exposure.exposed) {
     reasons.push('Public key not yet revealed; the address has never sent a transaction.');
     score = holdsValue ? 12 : 5;
     if (holdsValue) {
-      reasons.push('Funds are safe until the first outgoing transaction exposes the public key.');
+      reasons.push(
+        'The first outgoing transaction can reveal the public key; review the signing route before spending.',
+      );
     }
   } else {
     reasons.push(
@@ -94,9 +86,13 @@ export function assessRisk(
     if (held.length > 0) {
       reasons.push(`Token balances at risk: ${held.map(formatHolding).join(', ')}.`);
     }
-    if (exposure.delegatedTo) {
-      reasons.push('Delegated via EIP-7702, but not to a recognized PQWeave account.');
-    }
+  }
+  if (exposure.delegatedTo) {
+    reasons.push(
+      exposure.hardened
+        ? 'Delegated to a known implementation, but the ECDSA key can revoke EIP-7702 delegation.'
+        : 'EIP-7702 delegation is present; the ECDSA key can replace or revoke it.',
+    );
   }
 
   return {

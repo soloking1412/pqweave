@@ -79,7 +79,7 @@ export interface BatchCall {
 }
 
 /**
- * Build the calls that move every asset out of an EOA in a single EIP-7702
+ * Build the calls that move the listed assets out of an EOA in a single EIP-7702
  * transaction. The EOA delegates to BatchExecutor and runs these as itself, so
  * ERC-20s and NFTs move by direct transfer — no prior approvals needed.
  */
@@ -131,7 +131,7 @@ export interface OneClickMigration {
 /**
  * Assemble a one-click EIP-7702 migration: the wallet signs an authorization to
  * `executor`, then sends a single transaction to itself with `data` to sweep
- * everything into the quantum-safe account.
+ * the listed assets into the destination account. The caller must verify its authority.
  */
 export function buildOneClickMigration(executor: Address, plan: SelfSweepPlan): OneClickMigration {
   return { delegate: executor, data: encodeBatchExecute(buildOneClickSweep(plan)) };
@@ -171,6 +171,7 @@ export async function discoverErc20Balances(
   client: PublicClient,
   owner: Address,
   tokens: Address[],
+  strict = false,
 ): Promise<Erc20Holding[]> {
   const results = await client.multicall({
     allowFailure: true,
@@ -182,9 +183,17 @@ export async function discoverErc20Balances(
     })),
   });
 
+  if (strict && results.length !== tokens.length)
+    throw new Error('Incomplete token balance response');
   const holdings: Erc20Holding[] = [];
   results.forEach((result, index) => {
-    if (result.status === 'success' && (result.result as bigint) > 0n) {
+    if (
+      strict &&
+      (result.status !== 'success' || typeof result.result !== 'bigint' || result.result < 0n)
+    ) {
+      throw new Error(`Could not read the balance of token ${tokens[index]}`);
+    }
+    if (result.status === 'success' && typeof result.result === 'bigint' && result.result > 0n) {
       holdings.push({ token: tokens[index]!, amount: result.result as bigint });
     }
   });
@@ -212,16 +221,19 @@ export function mergeTokenCandidates(...lists: (Address | string)[][]): Address[
 }
 
 /**
- * Recover the next safe one-time-leaf index from on-chain state: reads the
+ * Read a LOWER BOUND on the next one-time-leaf index from on-chain state: reads the
  * account's consumed-leaf bitmap and returns one past the highest used leaf.
- * Used to reconcile a restored keystore whose local counter may be stale —
- * signing below this index would reuse a one-time key.
+ * This cannot recover off-chain reservations, rejected or pending signatures.
+ * Never restore a signer from this value alone; require a complete durable journal.
  */
 export async function recoverLeafIndex(
   client: PublicClient,
   account: Address,
   treeSize: number,
 ): Promise<number> {
+  if (!Number.isInteger(treeSize) || treeSize < 1 || treeSize > 4096 || treeSize & (treeSize - 1)) {
+    throw new Error('invalid treeSize');
+  }
   const results = await client.multicall({
     allowFailure: false,
     contracts: Array.from({ length: treeSize }, (_, leafIndex) => ({
@@ -231,6 +243,9 @@ export async function recoverLeafIndex(
       args: [BigInt(leafIndex)] as const,
     })),
   });
+  if (results.length !== treeSize || results.some((value) => typeof value !== 'boolean')) {
+    throw new Error('incomplete leaf history');
+  }
   let next = 0;
   results.forEach((used, leafIndex) => {
     if (used) next = leafIndex + 1;
@@ -242,7 +257,7 @@ export async function recoverLeafIndex(
 export type MigrationLevel = 'quantum-safe' | 'transitional' | 'none';
 
 /** How public keys become exposed on a chain, which determines the fix. */
-export type ExposureModel = 'evm' | 'utxo' | 'account-first-spend' | 'address-is-key';
+export type ExposureModel = 'evm' | 'algorand' | 'utxo' | 'account-first-spend' | 'address-is-key';
 
 export interface MigrationCapability {
   level: MigrationLevel;
@@ -250,16 +265,22 @@ export interface MigrationCapability {
 }
 
 /**
- * The canonical, honest migration capability per exposure model. Only EVM
- * supports a true quantum-safe migration today, because only EVM has the
- * smart-contract layer required to enforce a post-quantum signature.
+ * The generic capability by exposure model, with Algorand's native Falcon
+ * rekeying path handled explicitly rather than inferred from its address type.
  */
 export function migrationCapability(model: ExposureModel): MigrationCapability {
   switch (model) {
     case 'evm':
       return {
         level: 'quantum-safe',
-        summary: 'One-click EIP-7702 sweep into a post-quantum account.',
+        summary:
+          'An EIP-7702-assisted sweep can move supported assets to a separate post-quantum account. Verify the complete inventory and sole-authority policy.',
+      };
+    case 'algorand':
+      return {
+        level: 'quantum-safe',
+        summary:
+          'Native Falcon-1024 accounts and in-place rekeying are available. Check your wallet and app support before rekeying.',
       };
     case 'utxo':
     case 'account-first-spend':
@@ -276,3 +297,14 @@ export function migrationCapability(model: ExposureModel): MigrationCapability {
       };
   }
 }
+
+export {
+  buildEthereumTransferPlan,
+  revalidateEthereumTransferPlan,
+  verifyEthereumDestination,
+} from './ethereum.js';
+export type {
+  EthereumDestination,
+  EthereumTransferRequest,
+  EthereumTransferPlan,
+} from './ethereum.js';

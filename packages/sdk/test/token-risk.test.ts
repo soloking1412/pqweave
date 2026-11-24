@@ -101,7 +101,7 @@ describe('assessRisk with token holdings', () => {
   it('keeps a never-used address safe-tier but flags value awaiting first spend', () => {
     const result = assessRisk(exposure({ exposed: false }), 0n, 'ethereum', [usdc(5_000_000n)]);
     expect(result.score).toBe(12);
-    expect(result.reasons.join(' ')).toContain('safe until the first outgoing transaction');
+    expect(result.reasons.join(' ')).toContain('first outgoing transaction can reveal');
   });
 
   it('drops zero-amount holdings from the assessment', () => {

@@ -48,7 +48,9 @@ export function assessTronRisk(address: string, exposed: boolean, sun: bigint): 
     reasons.push('Public key not yet revealed; the account has not signed a transaction.');
     score = sun > 0n ? 12 : 5;
     if (sun > 0n) {
-      reasons.push('Funds are safe until the first outgoing transaction reveals the public key.');
+      reasons.push(
+        'A first outgoing transaction can reveal the public key; review short-range exposure before signing.',
+      );
     }
   } else {
     reasons.push(

@@ -1,3 +1,4 @@
+import { isChainKey } from '../src/chains/index.js';
 import { describe, expect, it } from 'vitest';
 import {
   assessCosmosRisk,
@@ -94,4 +95,14 @@ describe('XRP scanner', () => {
     expect(result.exposed).toBe(false);
     expect(result.balance).toBe('0');
   });
+});
+
+describe('chain allowlist rejects inherited object properties', () => {
+  it.each(['toString', 'constructor', '__proto__', 'hasOwnProperty', 'valueOf', 'prototype', ''])(
+    'rejects %s',
+    (key) => {
+      expect(isChainKey(key)).toBe(false);
+    },
+  );
+  it('accepts the supported Ethereum chain', () => expect(isChainKey('ethereum')).toBe(true));
 });

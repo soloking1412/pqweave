@@ -13,7 +13,7 @@ describe('hashsig (Lamport + Merkle)', () => {
         const signature = signHashSig(key, message, leaf);
         expect(verifyHashSig(key.root, message, signature)).toBe(true);
       }
-    });
+    }, 20_000); // CPU-heavy complete-tree signing also runs on slower CI hosts.
   }
 
   it('rejects a signature for a different message', () => {

@@ -1,3 +1,4 @@
+import { canonicalHashSignature, isDigest, validTreeSize } from './encoding.js';
 import {
   concatHex,
   decodeAbiParameters,
@@ -110,19 +111,23 @@ function signOneTime(message: Hex, secrets: Hex[]): Hex[] {
 }
 
 function isPowerOfTwo(n: number): boolean {
-  return n > 0 && (n & (n - 1)) === 0;
+  return validTreeSize(n);
 }
 
 /** Create a hash-based key from a master seed. */
 export function createHashSigKey(masterSeed: Hex, treeSize = 16): HashSigKey {
-  if (!isPowerOfTwo(treeSize)) throw new Error('treeSize must be a power of two');
+  if (!isPowerOfTwo(treeSize))
+    throw new Error('treeSize must be a power of two between 1 and 4096');
   if (hexToBytes(masterSeed).length < 16) throw new Error('master seed must be at least 16 bytes');
   return { masterSeed, treeSize, root: merkleRoot(allLeaves(masterSeed, treeSize)) };
 }
 
 /** Sign a 32-byte message digest with the one-time key at `leafIndex`. */
 export function signHashSig(key: HashSigKey, message: Hex, leafIndex: number): Hex {
-  if (leafIndex < 0 || leafIndex >= key.treeSize) throw new Error('leafIndex out of range');
+  if (!isDigest(message)) throw new Error('message must be a 32-byte digest');
+  if (!validTreeSize(key.treeSize)) throw new Error('invalid treeSize');
+  if (!Number.isInteger(leafIndex) || leafIndex < 0 || leafIndex >= key.treeSize)
+    throw new Error('leafIndex out of range');
   const secrets = deriveSecrets(leafSeed(key.masterSeed, leafIndex));
   const publicKey = publicFromSecrets(secrets);
   const signature = signOneTime(message, secrets);
@@ -137,6 +142,8 @@ export function signHashSig(key: HashSigKey, message: Hex, leafIndex: number): H
 
 /** Verify a hash-based signature against a Merkle root. Mirrors the contract. */
 export function verifyHashSig(root: Hex, message: Hex, signature: Hex): boolean {
+  if (!isDigest(root) || !isDigest(message) || !canonicalHashSignature(signature, 770))
+    return false;
   const [leafIndex, publicKey, sig, proof] = decodeAbiParameters(SIGNATURE_ABI, signature) as [
     bigint,
     readonly Hex[],
@@ -158,7 +165,7 @@ export function verifyHashSig(root: Hex, message: Hex, signature: Hex): boolean 
         : keccak256(concatHex([sibling, node]));
     idx >>= 1;
   }
-  return node === root;
+  return node.toLowerCase() === root.toLowerCase();
 }
 
 /** The components of a hash signature. */
@@ -178,6 +185,7 @@ export interface HashSigParts {
  * flat `publicKey || signature || proof` layout rather than ABI encoding.
  */
 export function decodeHashSig(signature: Hex): HashSigParts {
+  if (!canonicalHashSignature(signature, 770)) throw new Error('invalid hash signature encoding');
   const [leafIndex, publicKey, sig, proof] = decodeAbiParameters(SIGNATURE_ABI, signature) as [
     bigint,
     readonly Hex[],
@@ -210,9 +218,10 @@ export class KeyExhaustedError extends Error {
 }
 
 /**
- * Stateful signer that makes Lamport one-time-key reuse impossible: it hands out
+ * In-memory signer that hands out
  * a strictly increasing leaf index and never repeats one, even across different
- * messages. Reusing a one-time key would break the scheme, so the index must be
+ * messages within one instance. Old snapshots or concurrent instances can reuse
+ * leaves. Prefer DurablePqcSigner. Reuse breaks the scheme, so the index must be
  * durably persisted — call {@link serialize} and store the result after every
  * signature, before the signature is used.
  */

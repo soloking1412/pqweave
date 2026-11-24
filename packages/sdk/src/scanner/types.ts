@@ -13,11 +13,7 @@ export interface ExposureOptions {
    * one of these is reported as hardened.
    */
   knownImplementations?: Address[];
-  /**
-   * Known PQWeave PQC verifier addresses. A contract account whose
-   * `pqcVerifier()` returns one of these is recognized as a PQWeave
-   * post-quantum account (the migration destination).
-   */
+  /** Reserved for authenticated contract verification; a self-reported verifier is insufficient. */
   knownVerifiers?: Address[];
   /**
    * Hash of an outgoing transaction. When provided, the scanner recovers and
@@ -38,7 +34,7 @@ export interface ExposureResult {
   delegatedTo: Address | null;
   /** Delegated to a known PQWeave implementation. */
   hardened: boolean;
-  /** Contract account recognized as a PQWeave post-quantum account. */
+  /** Authenticated PQ account. Currently always false until provenance and owner policy can be verified. */
   pqweaveProtected: boolean;
   /** Recovered uncompressed public key, when available. */
   publicKey: Hex | null;

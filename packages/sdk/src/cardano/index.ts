@@ -53,7 +53,9 @@ export function assessCardanoRisk(
     reasons.push('Public key not yet revealed; the address has not been spent from.');
     score = lovelace > 0n ? 12 : 5;
     if (lovelace > 0n) {
-      reasons.push('Funds are safe until the first spend reveals the payment public key.');
+      reasons.push(
+        'A first spend can reveal the payment public key; review short-range exposure before spending.',
+      );
     }
   } else {
     reasons.push('Public key is exposed: the address has signed (been an input to) a transaction.');

@@ -80,7 +80,7 @@ export const CHAIN_KEYS = Object.keys(CHAINS) as ChainKey[];
 export const MAINNET_CHAIN_KEYS = CHAIN_KEYS.filter((key) => !CHAINS[key].testnet);
 
 export function isChainKey(value: string): value is ChainKey {
-  return value in CHAINS;
+  return Object.hasOwn(CHAINS, value);
 }
 
 export function chainConfig(key: ChainKey): ChainConfig {

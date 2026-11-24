@@ -72,7 +72,9 @@ export function assessCosmosRisk(
     reasons.push('Public key not yet revealed; the account has not signed a transaction.');
     score = baseUnits > 0n ? 12 : 5;
     if (baseUnits > 0n) {
-      reasons.push('Funds are safe until the first outgoing transaction reveals the public key.');
+      reasons.push(
+        'A first outgoing transaction can reveal the public key; review short-range exposure before signing.',
+      );
     }
   } else {
     reasons.push('Public key is exposed: the account has signed at least one transaction.');

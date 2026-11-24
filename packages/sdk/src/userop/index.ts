@@ -1,6 +1,7 @@
 import {
   type Address,
   concatHex,
+  decodeEventLog,
   encodeFunctionData,
   type Hex,
   numberToHex,
@@ -12,6 +13,7 @@ import {
 export const ENTRYPOINT_V07: Address = '0x0000000071727De22E5E9d8BAf0edAc6f37da032';
 
 export const entryPointAbi = parseAbi([
+  'event UserOperationEvent(bytes32 indexed userOpHash, address indexed sender, address indexed paymaster, uint256 nonce, bool success, uint256 actualGasCost, uint256 actualGasUsed)',
   'struct PackedUserOperation { address sender; uint256 nonce; bytes initCode; bytes callData; bytes32 accountGasLimits; uint256 preVerificationGas; bytes32 gasFees; bytes paymasterAndData; bytes signature; }',
   'function handleOps(PackedUserOperation[] ops, address beneficiary)',
   'function getNonce(address sender, uint192 key) view returns (uint256)',
@@ -40,7 +42,38 @@ export function packAccountGasLimits(verificationGasLimit: bigint, callGasLimit:
 }
 
 export function packGasFees(maxPriorityFeePerGas: bigint, maxFeePerGas: bigint): Hex {
+  if (maxPriorityFeePerGas > maxFeePerGas) throw new Error('Priority fee exceeds maximum fee');
   return packUint128Pair(maxPriorityFeePerGas, maxFeePerGas);
+}
+
+/** A successful handleOps transaction can contain failed account executions. */
+export function readUserOperationOutcome(
+  logs: readonly { address: Address; data: Hex; topics: readonly Hex[] }[],
+  userOpHash: Hex,
+  entryPoint: Address = ENTRYPOINT_V07,
+): { success: boolean; actualGasCost: bigint; actualGasUsed: bigint } {
+  for (const log of logs) {
+    if (log.address.toLowerCase() !== entryPoint.toLowerCase()) continue;
+    try {
+      const event = decodeEventLog({
+        abi: entryPointAbi,
+        eventName: 'UserOperationEvent',
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+        strict: true,
+      });
+      if (event.args.userOpHash.toLowerCase() === userOpHash.toLowerCase()) {
+        return {
+          success: event.args.success,
+          actualGasCost: event.args.actualGasCost,
+          actualGasUsed: event.args.actualGasUsed,
+        };
+      }
+    } catch {
+      /* unrelated or malformed log */
+    }
+  }
+  throw new Error('Matching EntryPoint operation receipt is missing');
 }
 
 export interface UserOpGas {

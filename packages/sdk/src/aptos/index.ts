@@ -48,7 +48,9 @@ export function assessAptosRisk(address: string, exposed: boolean, octas: bigint
     reasons.push('Public key not yet revealed; the account has not signed a transaction.');
     score = octas > 0n ? 12 : 5;
     if (octas > 0n) {
-      reasons.push('Funds are safe until the first transaction reveals the public key.');
+      reasons.push(
+        'A first transaction can reveal the public key; review short-range exposure before signing.',
+      );
     }
   } else {
     reasons.push('Public key is exposed: the account has signed at least one transaction.');

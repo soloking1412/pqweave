@@ -48,7 +48,9 @@ export function assessSuiRisk(address: string, exposed: boolean, mist: bigint): 
     reasons.push('Public key not yet revealed; the address has not sent a transaction.');
     score = mist > 0n ? 12 : 5;
     if (mist > 0n) {
-      reasons.push('Funds are safe until the first transaction reveals the public key.');
+      reasons.push(
+        'A first transaction can reveal the public key; review short-range exposure before signing.',
+      );
     }
   } else {
     reasons.push(

@@ -48,7 +48,7 @@ describe('getExposure', () => {
     expect(result.hardened).toBe(true);
   });
 
-  it('recognizes a PQWeave account by its pqcVerifier()', async () => {
+  it('does not trust a contract self-reporting a known pqcVerifier()', async () => {
     const verifier = getAddress('0x2222222222222222222222222222222222222222');
     const client = stubClient({
       getCode: async () => '0x363d3d37' as Hex,
@@ -56,7 +56,7 @@ describe('getExposure', () => {
     });
     const result = await getExposure(client, ADDRESS, { knownVerifiers: [verifier] });
     expect(result.isContract).toBe(true);
-    expect(result.pqweaveProtected).toBe(true);
+    expect(result.pqweaveProtected).toBe(false);
   });
 
   it('does not flag an unrelated contract as PQWeave-protected', async () => {
@@ -134,23 +134,24 @@ describe('assessRisk', () => {
     expect(result.level).toBe('safe');
   });
 
-  it('rates a hardened account as safe', () => {
+  it('rates a revocable 7702 delegation as exposed', () => {
     const impl = getAddress('0x1111111111111111111111111111111111111111');
     const result = assessRisk(
       exposure({ exposed: true, nonce: 9, delegatedTo: impl, hardened: true }),
       5_000_000_000_000_000_000n,
       'base',
     );
-    expect(result.level).toBe('safe');
+    expect(result.level).toBe('critical');
+    expect(result.reasons.join(' ')).toContain('ECDSA key can revoke');
   });
 
-  it('rates a PQWeave post-quantum account as safe', () => {
+  it('does not trust an unauthenticated PQ account claim', () => {
     const result = assessRisk(
       exposure({ isContract: true, pqweaveProtected: true }),
       5_000_000_000_000_000_000n,
       'base',
     );
-    expect(result.level).toBe('safe');
-    expect(result.reasons[0]).toContain('PQWeave post-quantum account');
+    expect(result.level).toBe('low');
+    expect(result.reasons[0]).toContain('not been verified');
   });
 });

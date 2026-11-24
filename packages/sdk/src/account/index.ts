@@ -61,7 +61,8 @@ export interface HybridSignatureParams {
   userOpHash: Hex;
   /**
    * Preferred way to attach a post-quantum signature: the signer advances its
-   * one-time leaf index automatically, so a leaf can never be reused. Persist
+   * one-time leaf index within this instance. Restored or concurrent instances
+   * can reuse leaves; prefer DurablePqcSigner for persistent signing. Persist
    * `hashSigner.serialize()` after calling.
    */
   hashSigner?: HashSigSigner;
@@ -101,7 +102,7 @@ export interface AccountParams {
   salt: Hex;
 }
 
-/** Encode a factory call that creates a fresh quantum-safe account for a new user. */
+/** Encode a factory call that creates an experimental post-quantum account for a new user. */
 export function encodeCreateAccount(params: AccountParams): Hex {
   return encodeFunctionData({
     abi: pqWeaveFactoryAbi,
@@ -152,7 +153,8 @@ export interface HardenInPlace {
  *
  * Honesty note: this is transitional, not quantum-safe — the underlying ECDSA
  * key can always sign a new 7702 authorization and remove the delegated code.
- * Full safety requires sweeping value to a PQC-sole account.
+ * A separate PQC-sole account removes that ECDSA fallback; network and token
+ * dependencies remain separate risks.
  */
 export function buildHardenInPlace(params: HardenInPlaceParams): HardenInPlace {
   const self = params.owner;

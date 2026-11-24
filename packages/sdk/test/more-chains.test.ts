@@ -18,10 +18,11 @@ describe('Algorand scanner', () => {
     expect(isAlgorandAddress('0xabc')).toBe(false);
   });
 
-  it('is always exposed and scores by balance', () => {
+  it('treats address-only authorization as unverified', () => {
     expect(assessAlgorandRisk(ALGO, 0n).exposed).toBe(true);
-    expect(assessAlgorandRisk(ALGO, 5_000_000n).level).toBe('high'); // 5 ALGO
+    expect(assessAlgorandRisk(ALGO, 5_000_000n).level).toBe('medium'); // 5 ALGO
     expect(assessAlgorandRisk(ALGO, 5_000_000n).balance).toBe('5');
+    expect(assessAlgorandRisk(ALGO, 5_000_000n).currentAuthority).toBe('unknown');
   });
 
   it('scans via the algod REST API', async () => {
@@ -33,6 +34,17 @@ describe('Algorand scanner', () => {
     const result = await scanAlgorandAddress(ALGO, { fetchImpl });
     expect(result.exposed).toBe(true);
     expect(result.balance).toBe('2');
+  });
+
+  it('reports rekeying without claiming the new signer is Falcon', async () => {
+    const fetchImpl = (async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ amount: 2_000_000, 'auth-addr': ALGO }),
+    })) as unknown as typeof fetch;
+    const result = await scanAlgorandAddress(ALGO, { fetchImpl });
+    expect(result.authorizationAddress).toBe(ALGO);
+    expect(result.currentAuthority).toBe('rekeyed-unknown');
   });
 });
 

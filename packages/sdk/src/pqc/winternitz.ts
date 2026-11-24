@@ -1,3 +1,4 @@
+import { canonicalHashSignature, isDigest, validTreeSize } from './encoding.js';
 import {
   concatHex,
   decodeAbiParameters,
@@ -12,8 +13,8 @@ import {
 import { KeyExhaustedError } from './hashsig.js';
 
 /**
- * Winternitz (WOTS+) one-time signatures over a Merkle tree — a generalized
- * XMSS construction, keccak256 only.
+ * Custom Winternitz-style one-time signatures over a Merkle tree, using keccak256.
+ * This is not a standardized WOTS+, XMSS, or NIST-approved implementation.
  *
  * This is the same security assumption as the Lamport scheme in `hashsig.ts`
  * (preimage and collision resistance of a hash, nothing lattice-based), but far
@@ -186,12 +187,13 @@ function merkleProof(leaves: Hex[], index: number): Hex[] {
 }
 
 function isPowerOfTwo(n: number): boolean {
-  return n > 0 && (n & (n - 1)) === 0;
+  return validTreeSize(n);
 }
 
 /** Create a Winternitz key from a master seed. */
 export function createWinternitzKey(masterSeed: Hex, treeSize = 16): WinternitzKey {
-  if (!isPowerOfTwo(treeSize)) throw new Error('treeSize must be a power of two');
+  if (!isPowerOfTwo(treeSize))
+    throw new Error('treeSize must be a power of two between 1 and 4096');
   if (hexToBytes(masterSeed).length < 16) throw new Error('master seed must be at least 16 bytes');
   return { masterSeed, treeSize, root: merkleRoot(allLeaves(masterSeed, treeSize)) };
 }
@@ -200,10 +202,13 @@ export function createWinternitzKey(masterSeed: Hex, treeSize = 16): WinternitzK
  * Sign a 32-byte digest with the one-time key at `leafIndex`.
  *
  * Signing twice with the same leaf is a key-compromise event, not a bug to work
- * around. {@link WinternitzSigner} exists to make that impossible.
+ * around. Use DurablePqcSigner with a shared journal to reserve leaves before signing.
  */
 export function signWinternitz(key: WinternitzKey, message: Hex, leafIndex: number): Hex {
-  if (leafIndex < 0 || leafIndex >= key.treeSize) throw new Error('leafIndex out of range');
+  if (!isDigest(message)) throw new Error('message must be a 32-byte digest');
+  if (!validTreeSize(key.treeSize)) throw new Error('invalid treeSize');
+  if (!Number.isInteger(leafIndex) || leafIndex < 0 || leafIndex >= key.treeSize)
+    throw new Error('leafIndex out of range');
   const secrets = deriveSecrets(key.masterSeed, leafIndex);
   const digits = toDigits(message);
   const signature = secrets.map((secret, i) => chain(secret, leafIndex, i, 0, digits[i]!));
@@ -216,6 +221,7 @@ export function signWinternitz(key: WinternitzKey, message: Hex, leafIndex: numb
  * step for step, so a signature that verifies here verifies on chain.
  */
 export function verifyWinternitz(root: Hex, message: Hex, signature: Hex): boolean {
+  if (!isDigest(root) || !isDigest(message) || !canonicalHashSignature(signature, 69)) return false;
   let decoded: readonly [bigint, readonly Hex[], readonly Hex[]];
   try {
     decoded = decodeAbiParameters(SIGNATURE_ABI, signature) as unknown as readonly [
@@ -243,7 +249,7 @@ export function verifyWinternitz(root: Hex, message: Hex, signature: Hex): boole
         : keccak256(concatHex([sibling, node]));
     idx >>= 1;
   }
-  return node === root;
+  return node.toLowerCase() === root.toLowerCase();
 }
 
 /** The components of a Winternitz signature. */
@@ -257,6 +263,7 @@ export interface WinternitzParts {
 
 /** Decode an ABI-encoded signature, for re-serializing to a non-EVM verifier. */
 export function decodeWinternitz(signature: Hex): WinternitzParts {
+  if (!canonicalHashSignature(signature, 69)) throw new Error('invalid hash signature encoding');
   const [leafIndex, sig, proof] = decodeAbiParameters(
     SIGNATURE_ABI,
     signature,
@@ -274,7 +281,8 @@ export interface WinternitzSignerState {
 
 /**
  * Strictly monotonic signer. The leaf index only ever moves forward, so a key
- * cannot sign twice even if the caller asks it to.
+ * cannot sign twice within this instance. Restoring an old snapshot or using
+ * another instance can reuse leaves; use DurablePqcSigner with a shared journal.
  *
  * Mirrors `HashSigSigner` so the two schemes are interchangeable at the call
  * site and the safety property does not depend on which one is selected.
@@ -284,7 +292,14 @@ export class WinternitzSigner {
   private index: number;
 
   constructor(key: WinternitzKey, nextIndex = 0) {
-    this.key = key;
+    if (!Number.isInteger(nextIndex) || nextIndex < 0 || nextIndex > key.treeSize) {
+      throw new Error('invalid nextIndex');
+    }
+    const rebuilt = createWinternitzKey(key.masterSeed, key.treeSize);
+    if (rebuilt.root.toLowerCase() !== key.root.toLowerCase()) {
+      throw new Error('signer state is inconsistent with its seed');
+    }
+    this.key = { ...key };
     this.index = nextIndex;
   }
 

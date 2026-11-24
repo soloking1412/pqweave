@@ -52,7 +52,9 @@ export function assessDogecoinRisk(
     reasons.push('Public key not yet revealed; the address has not been spent from.');
     score = koinu > 0n ? 12 : 5;
     if (koinu > 0n) {
-      reasons.push('Funds are safe until the first spend reveals the public key.');
+      reasons.push(
+        'A first spend can reveal the public key; review short-range exposure before spending.',
+      );
     }
   } else {
     reasons.push('Public key is exposed: the address has been spent from.');

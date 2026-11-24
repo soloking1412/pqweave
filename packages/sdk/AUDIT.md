@@ -22,10 +22,22 @@ receives, derives, or stores a private key. It:
 - builds BIP-360 (P2MR) outputs, blocked on mainnet until that BIP activates.
 
 The threat it exists to reduce: a quantum computer running Shor's algorithm can
-derive a private key from an exposed public key. Bitcoin cannot be made
-quantum-safe at the application layer, so this is preparation, not a cure.
+derive a private key from an exposed public key. The standard-wallet route here
+remains preparation. Experimental QSB demonstrates a different construction under
+existing consensus; see [the current research](../../docs/BITCOIN_RESEARCH_2026.md).
 
 ---
+
+## September 2026 review additions
+
+Review `src/bitcoin/kit.ts`, `esplora.ts`, `verify.ts`, the Bitcoin API routes and
+`apps/web/app/protect/bitcoin/evacuation-client.tsx` together. Funding transactions,
+indexer data, saved files, wallet-returned PSBTs and UI acknowledgements cross trust
+boundaries. The public service is now read-only and does not relay transactions.
+Include signature-verification boundaries, request/body limits, stale-plan handling,
+public-key privacy and dependency supply chain in the review. The historical LOC
+estimates below are not the current scope size. Core lifecycle coverage and release
+gates are recorded in [BITCOIN_PRODUCTION.md](../../docs/BITCOIN_PRODUCTION.md).
 
 ## 2. Scope
 

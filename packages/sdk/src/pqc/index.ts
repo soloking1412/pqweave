@@ -27,3 +27,6 @@ export {
   WinternitzSigner,
 } from './winternitz.js';
 export type { WinternitzKey, WinternitzParts, WinternitzSignerState } from './winternitz.js';
+
+export { DurablePqcSigner } from './durable.js';
+export type { LeafReservationStore, StatefulScheme } from './durable.js';

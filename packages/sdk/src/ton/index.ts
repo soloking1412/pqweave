@@ -52,7 +52,9 @@ export function assessTonRisk(address: string, exposed: boolean, nano: bigint): 
     reasons.push('Wallet not yet deployed; the Ed25519 public key has not been revealed on-chain.');
     score = nano > 0n ? 12 : 5;
     if (nano > 0n) {
-      reasons.push('Funds are safe until the wallet is deployed by its first outgoing transfer.');
+      reasons.push(
+        'The wallet deployment and signing policy need review before the first outgoing transfer.',
+      );
     }
   } else {
     reasons.push(
