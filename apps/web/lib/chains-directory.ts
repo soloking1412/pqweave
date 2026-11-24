@@ -53,7 +53,7 @@ export const EXPOSURE_CEILING: Record<ExposureFamily, string> = {
   recoverable:
     'The public key is recoverable from any signature, so exposure starts at the first transaction. A contract layer can enforce a post-quantum signature, which makes a genuine quantum-safe migration possible.',
   'first-spend':
-    'The address is a hash, so the key stays hidden until the first spend. Moving to a fresh address defers exposure but never removes it — a permanent fix has to come from the protocol.',
+    'The address is a hash, so the key stays hidden until the first spend. Moving to a fresh address defers exposure but never removes it, a permanent fix has to come from the protocol.',
   'address-is-key':
     'The address is the public key, so it is exposed the moment it exists. Nothing at the application layer can migrate it; custody behind a post-quantum gate is the only honest option.',
 };
@@ -166,7 +166,7 @@ export const DIRECTORY_CHAINS: DirectoryChain[] = [
     exposure: 'first-spend',
     scheme: 'Ed25519 / secp256k1',
     accent: '#c9cdd3',
-    note: 'Key revealed on the first send, which is the oldest transaction — the scanner reads forward for it.',
+    note: 'Key revealed on the first send, which is the oldest transaction, the scanner reads forward for it.',
   },
   {
     name: 'Aptos',

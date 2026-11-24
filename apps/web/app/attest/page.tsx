@@ -5,7 +5,7 @@ import { AttestClient } from './attest-client';
 export const metadata: Metadata = {
   title: 'Attest a post-quantum key for Bitcoin — PQWeave',
   description:
-    'Bind your Bitcoin address to a post-quantum key and anchor the binding on-chain — an open, verifiable registry, not a proprietary one. One post-quantum key across Bitcoin, EVM, and Solana.',
+    'Bind your Bitcoin address to a post-quantum key and anchor the binding on-chain, an open, verifiable registry, not a proprietary one. One post-quantum key across Bitcoin, EVM, and Solana.',
 };
 
 export default function AttestPage() {
@@ -20,7 +20,7 @@ export default function AttestPage() {
       </h1>
       <p className="mt-3 text-ink-dim">
         Generate a post-quantum key, sign a binding message with your Bitcoin wallet, and anchor the
-        pair on-chain. It is a public, timestamped, verifiable record that both are yours — an open
+        pair on-chain. It is a public, timestamped, verifiable record that both are yours, an open
         registry, not a company&apos;s private one. The same key already secures a PQWeave EVM
         account and Solana vault, so this is one post-quantum identity across all three. It records
         intent and ownership; it does not by itself make your Bitcoin quantum-safe.

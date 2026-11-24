@@ -62,7 +62,7 @@ async function sendEmail(inquiry: Inquiry): Promise<boolean> {
     rows.map(([k, v]) => `${k}: ${v}`).join('\n') +
     `\n\nMessage:\n${inquiry.message}\n`;
 
-  const subject = `Partner inquiry — ${inquiry.name}${
+  const subject = `Partner inquiry, ${inquiry.name}${
     inquiry.organization ? ` (${inquiry.organization})` : ''
   }`;
 

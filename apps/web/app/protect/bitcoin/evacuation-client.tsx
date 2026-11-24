@@ -98,7 +98,7 @@ function DryRun({ psbtBase64, testnet }: { psbtBase64: string; testnet: boolean 
         </div>
         <div className="flex justify-between gap-3">
           <dt>Change</dt>
-          <dd className="text-ink">{summary.isSweep ? 'none — full sweep' : 'present'}</dd>
+          <dd className="text-ink">{summary.isSweep ? 'none, full sweep' : 'present'}</dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt>Fee-bumpable (RBF)</dt>
@@ -441,7 +441,7 @@ export function EvacuationClient() {
       </div>
       <p className="mt-2 text-sm leading-relaxed text-ink-dim">
         Create an unsigned transaction plan for a reviewed sweep from one address you control to a
-        fresh native SegWit address. We build the transactions from public data only —{' '}
+        fresh native SegWit address. We build the transactions from public data only,{' '}
         <span className="text-ink">no private key is ever requested</span>; you sign in your own
         wallet or an air-gapped device. Signing adds nothing to the chain until broadcast. Taproot
         source keys are already visible on-chain.
@@ -604,7 +604,7 @@ export function EvacuationClient() {
             />
             <span>
               I control <span className="break-all font-mono text-ink">{plan.destination}</span> and
-              can still spend from it. This sweep moves the whole balance with no change output — if
+              can still spend from it. This sweep moves the whole balance with no change output, if
               this address is not mine, the coins cannot be recovered.
             </span>
           </label>
@@ -682,7 +682,7 @@ export function EvacuationClient() {
 
           {plan.skipped.map((s) => (
             <div key={s.label} className="text-xs text-ink-dim">
-              {s.label} tier skipped — {s.reason}.
+              {s.label} tier skipped: {s.reason}.
             </div>
           ))}
 

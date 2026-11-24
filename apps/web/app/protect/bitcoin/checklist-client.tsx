@@ -18,7 +18,7 @@ const MAX_PER_CHAIN = 15;
 const SCAN_CONCURRENCY = 5;
 
 const CHECKLIST = [
-  'Create a brand-new native SegWit address (bc1q…) in your own wallet. Do not reuse an old one, and avoid Taproot (bc1p) — its output key is visible as soon as the output is created.',
+  'Create a brand-new native SegWit address (bc1q…) in your own wallet. Do not reuse an old one, and avoid Taproot (bc1p), its output key is visible as soon as the output is created.',
   'Review exposed ordinary BTC with your wallet before moving it. Check fees, privacy, recovery and any inscriptions or Runes; avoid blind consolidation.',
   'Stop reusing addresses: receive each new payment into its own fresh address.',
   'Track experimental QSB and proposed consensus upgrades separately. This standard wallet route only reduces key exposure; it does not add post-quantum signatures.',
@@ -155,14 +155,14 @@ export function BitcoinChecklistClient() {
     if (!rows) return;
     const exposed = rows.filter((row) => row.status === 'exposed');
     const lines = [
-      'PQWeave — Bitcoin quantum-exposure migration plan',
+      'PQWeave: Bitcoin quantum-exposure migration plan',
       `Generated ${new Date().toISOString()}`,
       mode === 'wallet' ? 'Source: extended public key (watch-only wallet scan)' : '',
       '',
       'Addresses scanned:',
       ...rows.map(
         (row) =>
-          `  ${row.path ? `[${row.path}] ` : ''}${row.address} — ${row.status}${
+          `  ${row.path ? `[${row.path}] ` : ''}${row.address} - ${row.status}${
             row.balance ? ` (${row.balance} BTC)` : ''
           }`,
       ),

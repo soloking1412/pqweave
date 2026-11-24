@@ -108,7 +108,7 @@ export function StartClient() {
         <h2 className="text-lg font-semibold tracking-tight">2 · Testnet destination address</h2>
         {!key?.seedSaved ? (
           <p className="mt-3 text-sm text-ink-dim">
-            Save your recovery key above first — the address is derived from it.
+            Save your recovery key above first, the address is derived from it.
           </p>
         ) : !contracts ? (
           <p className="mt-3 text-sm text-ink-dim">
@@ -200,7 +200,7 @@ export function StartClient() {
       </section>
 
       <p className="text-xs leading-relaxed text-ink-faint">
-        Already have a wallet with history? That address has different needs —{' '}
+        Already have a wallet with history? That address has different needs:{' '}
         <Link href="/migrate" className="text-brand hover:underline">
           use the migration flow
         </Link>{' '}

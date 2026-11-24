@@ -84,7 +84,7 @@ export function MultiChainReportCard({ report }: { report: MultiChainScanReport 
       <p className="mt-4 text-sm text-ink-dim">
         {exposedCount === 0
           ? 'Public key not revealed on any scanned chain.'
-          : `Public key exposed on ${exposedCount} of ${report.results.length} chains — exposure is per-chain, so each one needs its own migration.`}
+          : `Public key exposed on ${exposedCount} of ${report.results.length} chains, exposure is per-chain, so each one needs its own migration.`}
       </p>
 
       <div className="mt-5 space-y-2">

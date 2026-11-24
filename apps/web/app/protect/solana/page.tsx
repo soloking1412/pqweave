@@ -5,19 +5,19 @@ import { Reveal } from '@/components/motion';
 export const metadata: Metadata = {
   title: 'Solana quantum exposure — what can and cannot be fixed — PQWeave',
   description:
-    'A Solana address is the Ed25519 public key itself, so it is exposed from day one and no wallet-level fix exists. PQWeave built a post-quantum vault program — custody you move funds into, not a wallet upgrade. Unaudited, not yet deployed.',
+    'A Solana address is the Ed25519 public key itself, so it is exposed from day one and no wallet-level fix exists. PQWeave built a post-quantum vault program, custody you move funds into, not a wallet upgrade. Unaudited, not yet deployed.',
 };
 
 const STEPS = [
   {
     n: 1,
     title: 'Generate a post-quantum key',
-    body: 'A Lamport one-time-signature key with a Merkle root, generated from fresh randomness and saved as a password-encrypted keystore. The same key construction PQWeave uses for EVM accounts — one key can back both.',
+    body: 'A Lamport one-time-signature key with a Merkle root, generated from fresh randomness and saved as a password-encrypted keystore. The same key construction PQWeave uses for EVM accounts, one key can back both.',
   },
   {
     n: 2,
     title: 'Sweep SOL into the vault',
-    body: 'The vault is a program-derived account bound to your post-quantum key. Your normal wallet signs the deposit — the only time your exposed Ed25519 key is involved. After that, it has no authority over the vaulted funds.',
+    body: 'The vault is a program-derived account bound to your post-quantum key. Your normal wallet signs the deposit, the only time your exposed Ed25519 key is involved. After that, it has no authority over the vaulted funds.',
   },
   {
     n: 3,
@@ -29,7 +29,7 @@ const STEPS = [
 const LIMITS = [
   'Your everyday wallet stays quantum-exposed forever. A Solana address is the public key; nothing can hide it, and moving to a fresh address just exposes a different key.',
   'Only funds inside the vault are protected. Everything still sitting at your wallet address is as exposed as before.',
-  'The sweep transaction itself is signed by your exposed Ed25519 key. Safe today, but a quantum attacker present at sweep time could in principle race it — the same caveat as the Bitcoin transitional flow.',
+  'The sweep transaction itself is signed by your exposed Ed25519 key. Safe today, but a quantum attacker present at sweep time could in principle race it, the same caveat as the Bitcoin transitional flow.',
   'The vault is deployed to devnet for testing only. It is not on mainnet and it is not audited. Do not put real funds in it.',
   'Losing the post-quantum seed means losing the vault: there is deliberately no Ed25519 fallback, because a fallback would be the quantum hole.',
 ];
@@ -40,14 +40,14 @@ export default function SolanaProtectPage() {
     <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
       <span className="inline-flex items-center gap-2 rounded-full border border-note/30 bg-note/10 px-3 py-1 text-xs text-note">
         <span className="h-1.5 w-1.5 rounded-full bg-note" />
-        Vault custody — not a wallet fix
+        Vault custody, not a wallet fix
       </span>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
         Your Solana wallet can&apos;t be made quantum-safe. Here&apos;s what can.
       </h1>
       <p className="mt-3 text-ink-dim">
         We&apos;ll be straight with you: a Solana address <span className="text-ink">is</span> the
-        Ed25519 public key — exposed from the moment the account exists. There is no first-spend
+        Ed25519 public key, exposed from the moment the account exists. There is no first-spend
         grace period to preserve, and no account abstraction to swap in a post-quantum signature. No
         app can change that; it would take a protocol upgrade. What{' '}
         <span className="text-ink">can</span> exist is a vault: a program-controlled account that
@@ -59,7 +59,7 @@ export default function SolanaProtectPage() {
         <p className="mt-3 leading-relaxed text-ink-dim">
           On EVM chains, PQWeave migrates your account in place: EIP-7702 delegation lets contract
           code enforce a hash-based signature on the address you already have. Bitcoin at least
-          hides the key behind a hash until you spend. Solana has neither property — validators
+          hides the key behind a hash until you spend. Solana has neither property. Validators
           verify Ed25519 at the protocol level, and the address itself broadcasts the key. That is
           why our scanner reports Solana migration capability as{' '}
           <span className="font-mono text-ink-2">none</span>, and why anyone selling a

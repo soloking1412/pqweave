@@ -96,8 +96,8 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
     } catch (caught) {
       setError(
         caught instanceof DOMException && caught.name === 'AbortError'
-          ? 'Scan timed out — the network or RPC is slow. Try again, or pick a different chain.'
-          : 'Network error — please try again.',
+          ? 'Scan timed out. The network or RPC is slow. Try again, or pick a different chain.'
+          : 'Network error. Please try again.',
       );
     } finally {
       clearTimeout(timer);

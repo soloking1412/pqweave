@@ -171,7 +171,7 @@ export function WalletScanClient() {
         Receive and change addresses are checked up to the configured gap and scan limits; other
         accounts or addresses beyond those limits remain unknown. An extended{' '}
         <span className="text-ink">public</span> key can read balances and history but cannot spend,
-        and it never leaves your browser — only the addresses derived from it are looked up.
+        and it never leaves your browser, only the addresses derived from it are looked up.
       </p>
 
       <div className="mt-5 space-y-4">
@@ -323,7 +323,7 @@ export function WalletScanClient() {
               {account.topExposed.length > 0 && (
                 <div className="mt-3">
                   <div className="text-[11px] uppercase tracking-wide text-ink-dim">
-                    Largest exposed balances — review before deciding to move
+                    Largest exposed balances, review before deciding to move
                   </div>
                   <ul className="mt-1.5 space-y-1">
                     {account.topExposed.map((entry) => (

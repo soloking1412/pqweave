@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PQWeave Quantum Exposure Index — most crypto is already quantum-exposed';
+export const alt = 'PQWeave Quantum Exposure Index: most crypto is already quantum-exposed';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -112,7 +112,8 @@ export default function Image() {
             maxWidth: '960px',
           }}
         >
-          Public keys leak the moment accounts transact — harvestable today, breakable on Q-Day.
+          Public keys leak the moment accounts transact. They can be recorded now and attacked
+          later.
         </div>
       </div>
 

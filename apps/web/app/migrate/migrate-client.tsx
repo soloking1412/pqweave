@@ -75,11 +75,11 @@ const OUTCOMES: OutcomeMeta[] = [
     key: 'harden',
     title: 'Harden my current address in place',
     blurb:
-      'Keep your exact address and add a post-quantum gate on sensitive operations. Transitional only — the underlying key can still re-delegate.',
+      'Keep your exact address and add a post-quantum gate on sensitive operations. Transitional only, the underlying key can still re-delegate.',
   },
   {
     key: 'emergency',
-    title: 'My key may be exposed — get me out now',
+    title: 'My key may be exposed, get me out now',
     blurb:
       'Same as the full migration, framed for urgency: sweep to a fresh account and leave a mailbox so nothing new lands on the exposed key.',
   },
@@ -572,7 +572,7 @@ export function MigrateClient() {
         {outcome === 'harden' && (
           <div className="mt-3 rounded-lg border border-caution/30 bg-caution/10 p-3 text-xs leading-relaxed text-caution">
             Transitional, not quantum-safe. Delegating keeps your original ECDSA key&apos;s
-            protocol-level authority — a quantum attacker who recovers it could sign a new
+            protocol-level authority, a quantum attacker who recovers it could sign a new
             authorization and remove this guard. A separate account removes that ECDSA fallback;
             network and token risks still remain.
           </div>
@@ -632,7 +632,7 @@ export function MigrateClient() {
               <p className="text-xs leading-relaxed text-ink-dim">
                 Your old address now forwards to the new account. Future deposits (exchange
                 withdrawals, refunds) land there and anyone can push them on with a flush. This is
-                transitional — see the security model for the re-delegation caveat.
+                transitional, see the security model for the re-delegation caveat.
               </p>
             )}
             {explorer && (

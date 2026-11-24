@@ -29,7 +29,7 @@ export default async function ScanPage({
       </div>
       <p className="mt-8 text-xs leading-relaxed text-ink-faint">
         Risk reflects whether the address has broadcast a transaction (revealing its public key) and
-        the value it guards — native balance plus, on EVM mainnets, balances in major tokens (USDC,
+        the value it guards, native balance plus, on EVM mainnets, balances in major tokens (USDC,
         USDT, DAI, WETH, WBTC). Other tokens, NFTs, and off-chain risk are not included. This is an
         informational tool, not financial or security advice.
       </p>

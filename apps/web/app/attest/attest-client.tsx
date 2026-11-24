@@ -122,7 +122,7 @@ export function AttestClient() {
           <div className="mt-3">
             <p className="text-sm text-ink-dim">
               Your Bitcoin wallet signs a message binding its address to your post-quantum key. This
-              is a signature only — no transaction, no coins moved.
+              is a signature only, no transaction, no coins moved.
             </p>
             <button
               onClick={connectAndSignBtc}
@@ -142,7 +142,7 @@ export function AttestClient() {
         {!attestation ? (
           <p className="mt-3 text-sm text-ink-dim">
             The attestation registry is not deployed in this environment yet. Your key and signature
-            are valid — anchoring will be available once the contract is live.
+            are valid, anchoring will be available once the contract is live.
           </p>
         ) : txHash ? (
           <div className="mt-3 space-y-2">
@@ -195,7 +195,7 @@ export function AttestClient() {
 
       <p className="text-xs leading-relaxed text-ink-faint">
         Honest scope: this binds and timestamps your key and address. It does not make Bitcoin
-        quantum-safe — only a protocol upgrade can. It prepares you for a future migration path and
+        quantum-safe, only a protocol upgrade can. It prepares you for a future migration path and
         proves ownership today.{' '}
         <Link href="/exposure/bitcoin" className="text-brand hover:underline">
           See the Bitcoin exposure breakdown

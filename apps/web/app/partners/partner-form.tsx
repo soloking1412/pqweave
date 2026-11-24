@@ -62,7 +62,7 @@ export function PartnerForm() {
         setStatus('sent');
       }
     } catch {
-      setServerError('Network error — please try again.');
+      setServerError('Network error. Please try again.');
       setStatus('error');
     }
   }
@@ -73,7 +73,7 @@ export function PartnerForm() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ok/20 text-2xl text-ok">
           ✓
         </div>
-        <h2 className="mt-4 text-xl font-semibold text-ink">Thanks — we&apos;ll be in touch</h2>
+        <h2 className="mt-4 text-xl font-semibold text-ink">Thanks. We&apos;ll be in touch</h2>
         <p className="mt-2 text-sm text-ink-2">
           We read every partnership note and reply within a couple of business days.
         </p>

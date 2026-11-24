@@ -13,12 +13,12 @@ const STATS = [
   {
     value: 'Every active EOA',
     label:
-      'On EVM chains, the public key is recoverable from any transaction the account has ever signed — so every account that has moved funds is already exposed.',
+      'On EVM chains, the public key is recoverable from any transaction the account has ever signed, so every account that has moved funds is already exposed.',
   },
   {
     value: '~30% of BTC',
     label:
-      'Independent analyses estimate roughly a third of all bitcoin sits in addresses that have already revealed their public key (early P2PK coins plus reused addresses). Estimate, not a live figure — see the Bitcoin breakdown.',
+      'Independent analyses estimate roughly a third of all bitcoin sits in addresses that have already revealed their public key (early P2PK coins plus reused addresses). Estimate, not a live figure, see the Bitcoin breakdown.',
   },
   {
     value: `${LIVE_CHAIN_COUNT} chains`,
@@ -34,7 +34,7 @@ const FAMILIES = [
     dot: 'bg-danger',
     chains: 'Ethereum & all EVM chains',
     body: 'The public key can be recovered from any signature the account has produced. Exposure begins with the first outgoing transaction and is permanent.',
-    fix: 'Quantum-safe migration available — sweep into a post-quantum account.',
+    fix: 'Quantum-safe migration available, sweep into a post-quantum account.',
   },
   {
     tag: 'Revealed on first spend',
@@ -42,7 +42,7 @@ const FAMILIES = [
     dot: 'bg-caution',
     chains: 'Bitcoin, Litecoin, Dogecoin, Cosmos, XRP, Cardano, Aptos, Tron, Sui, TON',
     body: 'The address is a hash of the public key, so the key stays hidden until the first spend reveals it. Unspent, never-reused addresses are still safe.',
-    fix: 'Transitional only — move funds to a fresh address; a permanent fix needs a protocol upgrade.',
+    fix: 'Transitional only, move funds to a fresh address; a permanent fix needs a protocol upgrade.',
   },
   {
     tag: 'Address is the key',
@@ -65,7 +65,7 @@ export default function ExposurePage() {
         Most crypto is already quantum-exposed.
       </h1>
       <p className="mt-3 max-w-2xl text-ink-dim">
-        Exposure is not a future event — public keys leak the moment accounts transact, and they can
+        Exposure is not a future event, public keys leak the moment accounts transact, and they can
         be harvested today to be broken once a sufficient quantum computer exists. Here is the shape
         of the problem, and a live scanner to check any address yourself.
       </p>
@@ -119,7 +119,7 @@ export default function ExposurePage() {
           <h2 className="text-xl font-semibold tracking-tight text-ink">Check any address</h2>
           <p className="mt-2 max-w-xl text-sm text-ink-2">
             Paste an address from any of the {LIVE_CHAIN_COUNT} live chains and see its exposure
-            score — no wallet connection, no custody.
+            score, no wallet connection, no custody.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link

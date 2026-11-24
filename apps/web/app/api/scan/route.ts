@@ -335,7 +335,7 @@ export async function GET(request: Request): Promise<Response> {
           : {
               chain: outcome.chain,
               ok: false,
-              error: 'Scan failed — the RPC endpoint may be unavailable.',
+              error: 'Scan failed, the RPC endpoint may be unavailable.',
             },
       );
       const succeeded = results.filter(
@@ -343,7 +343,7 @@ export async function GET(request: Request): Promise<Response> {
       );
       if (succeeded.length === 0) {
         return Response.json(
-          { error: 'Every chain scan failed — RPC endpoints may be unavailable. Try again.' },
+          { error: 'Every chain scan failed, RPC endpoints may be unavailable. Try again.' },
           { status: 502 },
         );
       }
@@ -403,7 +403,7 @@ export async function GET(request: Request): Promise<Response> {
       return bitcoinJson(report);
     } catch {
       return Response.json(
-        { error: `${network.name} scan failed — the indexer may be unavailable. Try again.` },
+        { error: `${network.name} scan failed, the indexer may be unavailable. Try again.` },
         { status: 502 },
       );
     }
@@ -427,7 +427,7 @@ export async function GET(request: Request): Promise<Response> {
       return Response.json(report);
     } catch {
       return Response.json(
-        { error: 'Scan failed — the endpoint may be unavailable. Try again.' },
+        { error: 'Scan failed, the endpoint may be unavailable. Try again.' },
         { status: 502 },
       );
     }
@@ -452,7 +452,7 @@ export async function GET(request: Request): Promise<Response> {
   } catch {
     return Response.json(
       {
-        error: 'Scan failed — the RPC endpoint may be unavailable. Try again or set a custom RPC.',
+        error: 'Scan failed, the RPC endpoint may be unavailable. Try again or set a custom RPC.',
       },
       { status: 502 },
     );

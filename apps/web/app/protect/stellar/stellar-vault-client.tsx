@@ -233,7 +233,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
       if (sent.status === 'ERROR') throw new Error('the network rejected the withdrawal');
       const confirmed = await waitForTx(server, sent.hash);
       if (confirmed.status !== rpc.Api.GetTransactionStatus.SUCCESS) {
-        throw new Error('withdrawal reverted — the one-time key may already be spent; try again');
+        throw new Error('withdrawal reverted. The one-time key may already be spent; try again');
       }
       // Persist the advanced one-time-key index only after success.
       localStorage.setItem(leafKey(target), String(signer.nextLeafIndex));
@@ -271,9 +271,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
 
       {/* Step 1 — key */}
       <div className="mt-5">
-        <div className="text-xs uppercase tracking-wide text-ink-dim">
-          Step 1 — post-quantum key
-        </div>
+        <div className="text-xs uppercase tracking-wide text-ink-dim">Step 1: post-quantum key</div>
         <div className="mt-2">
           <PqcKeygen onChange={setKeyState} />
         </div>
@@ -282,7 +280,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
       {/* Step 2 — wallet */}
       <div className="mt-6 border-t border-rule pt-5">
         <div className="text-xs uppercase tracking-wide text-ink-dim">
-          Step 2 — connect Stellar wallet
+          Step 2: connect Stellar wallet
         </div>
         {wallet ? (
           <p className="mt-2 break-all font-mono text-xs text-ok">{wallet}</p>
@@ -302,7 +300,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
       {vaultId && (
         <div className="mt-6 border-t border-rule pt-5">
           <div className="text-xs uppercase tracking-wide text-ink-dim">
-            Step 3 — your vault address
+            Step 3: your vault address
           </div>
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="rounded-lg bg-white p-2">
@@ -342,7 +340,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
       {vaultId && (
         <div className="mt-6 border-t border-rule pt-5">
           <div className="text-xs uppercase tracking-wide text-ink-dim">
-            Step 4 — withdraw with your post-quantum key
+            Step 4: withdraw with your post-quantum key
           </div>
           <div className="mt-3 grid gap-3">
             <input
@@ -390,7 +388,7 @@ export function StellarVaultClient({ vault }: { vault: StellarVaultConfig | null
           rel="noopener noreferrer"
           className="mt-4 block break-all text-sm text-ok hover:underline"
         >
-          Confirmed — view transaction ↗
+          Confirmed. View transaction ↗
         </a>
       )}
     </div>
