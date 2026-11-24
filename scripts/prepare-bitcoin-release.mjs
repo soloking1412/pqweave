@@ -31,8 +31,6 @@ function copy(source, destination) {
   };
 }
 const web = [
-  'app/page.tsx',
-  'app/layout.tsx',
   'app/globals.css',
   'app/icon.svg',
   'app/bitcoin/research/page.tsx',
@@ -70,6 +68,8 @@ for (const file of readdirSync(join(root, 'packages/sdk/src/bitcoin')).filter((f
   };
 }
 for (const file of [
+  'app/page.tsx',
+  'app/layout.tsx',
   'app/api/scan/route.ts',
   'app/security/page.tsx',
   'components/site-header.tsx',
