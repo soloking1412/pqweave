@@ -1,0 +1,51 @@
+# Ethereum migration: research and implementation decision
+
+Reviewed 25 September 2026. Scope: Ethereum first; other EVM networks require their own deployment and compatibility review.
+
+## Recommended product
+
+Use a separate smart account with no ECDSA owner as the destination. Offer ordinary ETH/ERC-20 transfers for existing wallets; offer EIP-7702 batching only as an explicitly reviewed adapter. Keep inventory, destination verification, signing, submission and receipt reconciliation separate. This is an account-authorization migration, not a claim of quantum-safe Ethereum consensus.
+
+The current implementation is a **local/testnet release candidate**, not an audited custody product. Mainnet asset movement in the website is disabled in code. Bitcoin remains an independently packaged preparation product.
+
+## What current evidence changes
+
+| Finding                                                                                                                                                               | Product decision                                                                                                                                                                | Primary source                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Ethereum's PQ work covers execution, consensus and data availability; its roadmap is subject to governance and change.                                                | Preserve a replaceable verifier boundary; do not promise a network completion date or end-to-end protection.                                                                    | [Ethereum Foundation PQ team](https://pq.ethereum.org/)                                                                |
+| EIP-7702 gives an EOA persistent delegated code while its original key can replace or revoke the delegation. Authorization processing can survive failed execution.   | Prefer a separate account. Treat the old address and forwarding mailbox as revocable. Inspect delegation after failed transactions.                                             | [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702)                                                                    |
+| ERC-4337 separates account validation from execution and has operation-level results inside a transaction receipt.                                                    | Verify the operation event, not just the outer receipt. A failed execution may still consume the one-time key.                                                                  | [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337)                                                                    |
+| EntryPoint versions have distinct interfaces and behavior.                                                                                                            | Pin the v0.7 ABI and test the actual 0.7.0 artifact; do not describe this as supporting every bundler/version.                                                                  | [Upstream v0.7 release](https://github.com/eth-infinitism/account-abstraction/releases/tag/v0.7.0)                     |
+| EIP-8141 is currently Draft and proposes native frame transactions, including an off-ramp from ECDSA account authority.                                               | Track a future adapter; do not build a mainnet dependency on proposed transaction types or opcodes.                                                                             | [EIP-8141 status and specification](https://eips.ethereum.org/EIPS/eip-8141)                                           |
+| Standardized signature options include ML-DSA and SLH-DSA.                                                                                                            | Evaluate audited implementations and real EVM costs before selecting a production verifier. Standardization of an algorithm does not validate a custom contract implementation. | [NIST FIPS 204](https://csrc.nist.gov/pubs/fips/204/final), [NIST FIPS 205](https://csrc.nist.gov/pubs/fips/205/final) |
+| Stateful hash-based signatures need strict state management. NIST's approved stateful profiles do not automatically cover this project's custom Keccak constructions. | Persist reservations before signatures are produced. Reject seed-only or chain-only recovery as evidence of unused keys.                                                        | [NIST SP 800-208](https://csrc.nist.gov/pubs/sp/800/208/final)                                                         |
+
+## Route comparison
+
+| Route                                                      | Compatibility                                                                | Protection boundary                                                       | Decision                                           |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------- |
+| Ordinary transfers to a separate, verified sole-PQ account | Standard wallet transactions; several approvals, partial completion possible | Destination account authorization; source, network and token risks remain | Default SDK preparation route                      |
+| EIP-7702 batch to the same destination                     | Requires authorization support and reviewed delegated executor               | Same destination; old address stays revocable                             | Optional testnet adapter                           |
+| Harden the existing EOA with delegated code                | Keeps address, but original ECDSA authority survives                         | Transitional policy only                                                  | Labeled prototype; not the recommended destination |
+| Mailbox forwarding                                         | Separate flush/operational work, token-specific behavior                     | Incoming funds may still be exposed at the old address                    | Off by default                                     |
+| Native frame transactions or PQ precompiles                | Depends on activation and implementation                                     | Potential future protocol integration                                     | Research only                                      |
+
+## Implemented security boundaries
+
+- The transfer planner checks chain ID, distinct account/verifier/EntryPoint roles, runtime hashes from a trusted deployment manifest, zero ECDSA owner, expected root and verifier, and the pinned EntryPoint. Reads use one mined block. Expiry, reorganization, insufficient gas reserve and changed inventory require a new review.
+- Inventory is explicitly supplied, capped at 100 tokens, read in bounded batches and rejected on missing token code or failed balance reads. NFTs, ERC-1155, staking, lending positions, allowances and governance roles are not silently treated as migrated. Tests separately exercise an ERC-721 transfer.
+- A file-backed journal commits and synchronizes each reservation before producing a signature. It rejects missing/corrupt state and concurrent locks. Uncertain writes fail closed. It is a **single-host POSIX adapter**, not a distributed custody coordinator or rollback-resistant hardware device.
+- Use a fresh seed for every new authority, scheme and tree. Never recreate a journal for a previously used seed/root, share a seed between uncoordinated devices, change tree size under the same seed, or restore an old journal into service. On-chain consumed leaves are only a lower bound: rejected, dropped and pending signatures may already be public.
+- Root rotation has its own consumed-leaf namespace, while old root history remains retained. Rotating back cannot reactivate consumed keys. Rotate before exhausting the old tree; an exhausted sole-authority tree can permanently lock funds.
+- New recovery files authenticate metadata as well as the seed and bound imported KDF work. Legacy versions remain readable, but their metadata was not authenticated and must be checked against a recomputed root. Neither version contains a complete reservation journal.
+- Successful `handleOps` submission is distinct from successful account execution. The SDK requires a matching EntryPoint event and exposes its success flag and gas accounting.
+
+## Remaining production work
+
+1. Independent cryptographic review of both custom hash-based schemes and an algorithm-selection decision against standardized alternatives. No assertion of NIST conformance or a formally proven security level is made here.
+2. Contract review, fuzz/invariant expansion and review of the final compiler/runtime artifacts. Changes in this rework alter CREATE2 addresses and account storage layout; existing deployments are not upgraded by editing this repository.
+3. A browser/hardware or enterprise signing service with durable reservations across devices, disaster recovery, anti-rollback controls, safe rotation capacity and operator drills. The Node adapter establishes the storage contract but does not supply those operational guarantees.
+4. Wallet compatibility, public Sepolia deployment verification, gas benchmarking across realistic token inventories, fee estimation and operation simulation. Self-bundled local success does not establish public bundler acceptance.
+5. Partial-migration reconciliation, nonstandard token/position adapters, exchange deposit changes, monitoring and incident procedures. No automatic promise to migrate “all assets.”
+
+No public network transaction, deployment, contract verification or audit was performed as part of the local tests.

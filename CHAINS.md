@@ -1,96 +1,23 @@
-# Multi-chain quantum exposure: problem and solution per chain
+# Chain capability matrix
 
-The quantum threat is **universal** — nearly every public blockchain authorizes
-spending with elliptic-curve signatures (ECDSA or EdDSA) that Shor's algorithm
-breaks. Of the top ~26 chains, ~24 rely purely on quantum-vulnerable signatures.
+Last reviewed: 24 September 2026. A public-address scan measures limited observable facts; it does not prove wallet control, complete asset inventory, or the safety of a signer. The [kit](apps/web/app/kit) returns a route with checks and limitations for each account.
 
-But the **defense is not portable**. Each chain has a different execution model,
-so "the solution" differs sharply. The honest split:
+| Network                                     | Public-key exposure                                                   | Available route                                                                                    | PQWeave status                                |
+| ------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Ethereum, Base, Arbitrum, Optimism, Polygon | A signed EOA transaction reveals the ECDSA key                        | Sweep to a separate, sole-authority PQ smart account; EIP-7702 in-place delegation stays revocable | Scan live; sweep testnet prototype, unaudited |
+| Algorand                                    | Address shape alone cannot reveal the active signing scheme           | Native Falcon-1024 account or rekey existing account to Falcon authority                           | Scan live; kit links to official rekey guide  |
+| Bitcoin                                     | Key may appear in the output or first spend, depending on script type | Fresh unused address can reduce exposure; PQ signatures need network support                       | Scan and watch-only PSBT tools                |
+| Litecoin, Dogecoin                          | UTXO first-spend exposure varies by output type                       | Fresh-address preparation only                                                                     | Scan; kit plans                               |
+| Solana                                      | Classical Ed25519 address reveals its key                             | Move supported assets to a PQ-gated program vault                                                  | Scan; unaudited research vault                |
+| Stellar                                     | Classical Ed25519 address reveals its key                             | Soroban custom-account vault                                                                       | Scan; unaudited testnet prototype             |
+| Cardano                                     | Payment key revealed on a spend                                       | Fresh-address preparation and protocol tracking                                                    | Scan; no PQ execution                         |
+| Cosmos Hub, XRP, Aptos, NEAR                | Exposure depends on account type and transaction history              | Account assessment and protocol tracking                                                           | Scan; no verified PQ execution                |
+| Sui, Tron, TON, Polkadot                    | Depends on scheme and account type                                    | Account assessment and protocol tracking                                                           | Scan; no verified PQ execution                |
 
-- **Detection (scanning) is portable.** Spotting an exposed public key is just
-  on-chain analysis. PQWeave ships this for EVM, Bitcoin, Litecoin, Solana,
-  Cardano, Cosmos, XRP, Algorand, Stellar, NEAR, and Aptos today — covering all
-  three exposure families (recoverable from signatures, hash-behind-address, and
-  address-is-the-key). Each scan result reports its honest migration capability
-  (`migrationCapability` in the SDK): **quantum-safe** for EVM, **transitional**
-  (move-to-fresh-address) for first-spend chains, **none** for address-is-key
-  chains until a protocol upgrade ships.
-- **Protection (migration) is chain-specific.** Our EVM approach uses smart
-  accounts (ERC-4337) and EIP-7702 delegation. **Bitcoin has no smart contracts,
-  so that approach cannot be ported to it.** Bitcoin's real fix is a protocol-level
-  soft fork.
+**Do not collapse these into one “quantum-safe” badge.** The migration kit distinguishes target protection, transitional exposure reduction, custody change, and assessment-only routes. It also distinguishes a chain's native capability from what PQWeave has implemented.
 
-## Per-chain matrix
+Algorand supports [native Falcon accounts and rekeying](https://dev.algorand.co/concepts/accounts/post-quantum/). Existing accounts can keep their address while changing authorization, subject to wallet and application support. PQWeave's scan does not infer Falcon authority from the address format.
 
-| Chain                                 | Signature                   | What exposes the key                                                                                          | Migration path                                                                                                              | Our support                                          |
-| ------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **EVM** (Ethereum, Base, Arbitrum, …) | secp256k1 ECDSA             | Any sent transaction (key recoverable from the signature)                                                     | Smart account (ERC-4337) + one-tx EIP-7702 sweep into a post-quantum account                                                | **Scan + migrate (built)**                           |
-| **Bitcoin**                           | secp256k1 ECDSA / Schnorr   | P2PK (key in output), reused P2PKH/P2WPKH (revealed on first spend), Taproot key-path (tweaked key in output) | No smart contracts → no in-place fix. Move to a fresh unused address; await BIP-360 (P2MR, prefix `bc1r`, ML-DSA) soft fork | **Scan (built)**                                     |
-| **Litecoin**                          | secp256k1 ECDSA             | Same UTXO model as Bitcoin                                                                                    | Move to a fresh address; await protocol fix                                                                                 | **Scan (built)**                                     |
-| **Solana**                            | Ed25519                     | The address _is_ the public key — exposed from creation, before any transaction                               | Protocol-level PQC (on Solana's roadmap)                                                                                    | **Scan (built)**                                     |
-| **Cosmos Hub (ATOM)**                 | secp256k1 ECDSA             | Account stores its public key after the first signed transaction                                              | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
-| **XRP Ledger**                        | secp256k1 ECDSA             | Signing public key revealed in every submitted transaction                                                    | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
-| **Cardano**                           | Ed25519                     | Payment public key revealed when the address is a transaction input                                           | Move to a fresh address; protocol fix                                                                                       | **Scan (built)**                                     |
-| **Algorand**                          | Ed25519                     | Address _is_ the public key — exposed from creation                                                           | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
-| **Stellar**                           | Ed25519                     | Address _is_ the public key — exposed from creation                                                           | No in-place fix; Soroban PQ-vault custody (sweep to a new `__check_auth` account) — testnet, unaudited                      | **Scan + vault (built, testnet)**                    |
-| **Dogecoin, Bitcoin Cash**            | secp256k1 ECDSA             | UTXO model                                                                                                    | Move to fresh address; protocol fix                                                                                         | Scan-ready (no reliable public Esplora endpoint yet) |
-| **NEAR**                              | Ed25519                     | Account access-key public keys stored on-chain                                                                | Protocol-level PQC                                                                                                          | **Scan (built)**                                     |
-| **Aptos**                             | Ed25519                     | Public key revealed on the first signed transaction (sequence > 0)                                            | Move to a fresh address; protocol fix                                                                                       | **Scan (built)**                                     |
-| **Sui, Tron, Polkadot, …**            | EdDSA / secp256k1 / sr25519 | Address or first-spend reveals the key                                                                        | Protocol-level, varies                                                                                                      | Scan (planned, same pattern)                         |
+Bitcoin's [BIP-360](https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki) and [BIP-361](https://github.com/bitcoin/bips/blob/master/bip-0361.mediawiki) remain proposals. P2MR is not an activated mainnet post-quantum destination. The signer and any proposed output must be independently verified before use.
 
-## Why EVM gets the full solution and Bitcoin only gets scanning
-
-EVM chains run arbitrary smart-contract code, so we can deploy a contract that
-verifies a post-quantum signature and move funds into an account it controls —
-**at the application layer, today, without changing the protocol.** That is the
-whole PQWeave account + EIP-7702 design.
-
-Bitcoin's Script is intentionally limited and has no general computation, so you
-cannot deploy a "post-quantum verifier" for it. A Bitcoin holder's only real
-options are:
-
-1. **Scan** to learn whether a given address is already exposed (what we provide).
-2. **Move to a fresh address** never spent from — this delays exposure but does
-   not remove it, since spending re-reveals the key.
-3. **Wait for the protocol fix** —
-   [BIP-360 (P2MR, Pay-to-Merkle-Root)](https://github.com/bitcoin/bips/blob/master/bip-0360.mediawiki),
-   a draft soft fork adding an output type that commits to a script tree with no
-   public key (SegWit v2, `bc1z…`). It was **merged into bitcoin/bips in Feb 2026
-   but is `Status: Draft` and not activated.** It deliberately contains no
-   post-quantum signatures — those are deferred to a companion BIP via
-   `OP_SUCCESSx`. Until it activates, witness v2 outputs are **anyone-can-spend**,
-   so nothing should be sent to a `bc1z` address on mainnet. PQWeave ships tested
-   construction and migration tooling for it (`packages/sdk/BIP360.md`), hard-
-   blocked on mainnet, so the path is ready the day activation lands.
-
-So for Bitcoin we are honest: PQWeave is an **awareness and detection** tool
-until the network ships a protocol-level remedy. We do not claim to "migrate"
-Bitcoin, because at the application layer that is not technically possible.
-
-## Vault custody for address-is-the-key chains (Solana, Stellar)
-
-On Solana and Stellar the address _is_ the Ed25519 public key, so nothing can
-harden your existing account — `migrationCapability` stays `none`, and we never
-call this "migration". What these chains _do_ allow is a **vault**: a program
-(Solana) or Soroban custom account (Stellar) that only releases funds against a
-Lamport+Merkle post-quantum signature, using the same key as the EVM account. You
-**sweep funds into a new account**; the old key stays exposed forever and only the
-swept funds are protected. Stellar's vault is on **testnet**, unaudited — see
-`/protect/stellar` and `packages/stellar-vault`. This is transitional custody, not
-a quantum-safe wallet, and every surface says so.
-
-## SDK usage
-
-```ts
-import { scanBitcoinAddress } from '@pqweave/sdk/bitcoin';
-
-const report = await scanBitcoinAddress('bc1q…');
-console.log(report.type, report.exposed, report.level, report.reasons);
-```
-
-## References
-
-- [Why quantum matters now for blockchain (Cambridge Judge)](https://www.jbs.cam.ac.uk/2025/why-quantum-matters-now-for-blockchain/)
-- [BIP-360 (Pay-to-Merkle-Root)](https://bip360.org/bip360.html) ·
-  [explainer](https://crypto.news/bitcoin-is-going-quantum-proof-inside-bip-360-and-the-migration/)
-- [Solana Ed25519 quantum exposure](https://bmic.ai/blog/can-solana-survive-quantum-computing-the-ed25519-vulnerability-explained/)
+See [REWORK_2026.md](docs/REWORK_2026.md) for the threat model, evidence, and implementation sequence.

@@ -7,31 +7,35 @@ protect against. Read it before trusting it with real funds.
 > code that has not had an independent security audit. Do not secure real funds
 > with it yet. Use testnets.
 
-## What it defends against
+The [25 September implementation self-audit](docs/SELF_AUDIT_2026-09-25.md) records
+confirmed findings, fixes and test evidence. Independent review is still required.
 
-A quantum computer running Shor's algorithm can derive an ECDSA private key from
-the public key it exposes. Every EVM account reveals its public key the moment it
-sends a transaction, so funds are harvestable today ("harvest now, decrypt
-later") and spendable once a sufficient quantum computer exists. PQWeave
-moves the authority for spending behind a **post-quantum signature** that such a
-computer cannot forge.
+## Threat and protection boundary
+
+A sufficiently capable fault-tolerant quantum computer could recover ECDSA keys
+from exposed public keys. EOA transaction signatures reveal enough information
+to recover the public key. This is a future authorization risk, not decryption
+of coins or rewriting past transactions. See the [Ethereum Foundation PQ team's
+assessment](https://pq.ethereum.org/).
+
+A factory-created account with no ECDSA owner can require the experimental
+post-quantum verifier for authorization. This does not protect Ethereum
+consensus, bridges, token administrator keys or compromised client devices.
+Mainnet execution in the website is disabled. Review the [Ethereum research and
+release gates](docs/ETHEREUM_RESEARCH_2026.md).
 
 ## The cryptographic basis
 
-The default verifier is **hash-based** (Lamport one-time signatures inside a
-Merkle tree, an XMSS-style construction). Its security rests only on the preimage
-and collision resistance of keccak256:
-
-- Shor's algorithm does not break hash functions.
-- Grover's algorithm only halves the security level, so keccak256 keeps roughly
-  128-bit strength against a quantum attacker.
-
-There is no lattice or discrete-log assumption. The scheme is also pluggable
-(`IPQCVerifier`), so NIST lattice verifiers (Falcon, ML-DSA) can be swapped in.
+The custom Lamport/Merkle and Winternitz/Merkle verifiers use Keccak hashing
+rather than an elliptic-curve signature check. They are experimental constructions,
+not NIST-approved XMSS, LMS or SLH-DSA implementations. Generic quantum hash
+attack estimates are not a proof of the security level of these complete schemes.
+Independent cryptographic analysis is required. The verifier interface permits
+future alternatives, but it does not make an arbitrary replacement safe.
 
 ### Two hash-based verifiers
 
-A second verifier, **Winternitz (WOTS+) + Merkle**, ships alongside the Lamport
+A second verifier, **custom Winternitz + Merkle**, ships alongside the Lamport
 one. Same assumption, same keccak256, much cheaper: it derives the one-time
 public key by finishing each hash chain instead of transmitting it, so the
 signature is 2,304 bytes rather than 24,736.
@@ -44,44 +48,47 @@ signature is 2,304 bytes rather than 24,736.
 Measured at tree depth 2 by `VerifierGas.t.sol`, so the figures can be
 reproduced rather than taken on trust.
 
-This is the same family Ethereum's own post-quantum work selected (leanSig /
-leanXMSS is a generalized XMSS with Winternitz chains), though it instantiates
-the hash with Poseidon2 for SNARK-friendliness while we stay on keccak256.
-Poseidon2 has been under cryptanalytic pressure from recent algebraic attacks;
-keccak256 has not, and on EVM it is a precompile-cheap native operation.
+These are historical verifier microbenchmarks, not wallet transaction fee
+quotes. Full UserOperation calldata, prefunding, chain fee rules, tree depth
+and token execution affect actual cost.
 
-**Reuse is worse here than under Lamport.** A Winternitz signature reveals a
-point partway along each chain, so signing twice under one leaf exposes every
-step above the lower digit. `WinternitzSigner` is strictly monotonic and is the
-only intended entry point.
+One-time-key reuse is unsafe for both schemes. The in-memory signers only
+advance within one instance. Use `DurablePqcSigner` with a trusted reservation
+store; never treat serialization or an on-chain bitmap as proof that a leaf
+has not been exposed off-chain.
+
+Verifiers require canonical ABI encodings, a Merkle proof depth of at most 12,
+and a leaf index strictly inside that tree. The SDK applies the same bounds.
+Use a new independent seed for each authority, scheme and tree configuration.
 
 ## Security levels (choose per account)
 
-| Mode                                      | ECDSA       | Post-quantum       | Use for                      |
-| ----------------------------------------- | ----------- | ------------------ | ---------------------------- |
-| Hybrid (default)                          | routine ops | sensitive ops only | daily wallets                |
-| `pqcOnly`                                 | every op    | every op           | high-value wallets           |
-| **Sole authority** (`owner = address(0)`) | **never**   | **every op**       | vaults / true quantum safety |
+| Mode                                      | ECDSA       | Post-quantum       | Use for                     |
+| ----------------------------------------- | ----------- | ------------------ | --------------------------- |
+| Hybrid (default)                          | routine ops | sensitive ops only | daily wallets               |
+| `pqcOnly`                                 | every op    | every op           | high-value wallets          |
+| **Sole authority** (`owner = address(0)`) | **never**   | **every op**       | experimental sole authority |
 
-**Sole authority is the only fully quantum-safe configuration**: the ECDSA key is
-removed from the trust model entirely, so a quantum break of it grants nothing.
-The web migration flow defaults to this mode.
+The web prototype defaults to sole authority in a separate account. An EIP-7702
+EOA still retains protocol-level ECDSA authority even if its delegated contract
+sets `owner` to zero.
 
-## Two things that are easy to get wrong (and how we handle them)
+## Signing and recovery requirements
 
 1. **The post-quantum key must be independent of the ECDSA key.** If you derived
    it from a wallet signature, a quantum attacker who broke the ECDSA key could
    reproduce that signature and re-derive the post-quantum key — defeating the
-   point. PQWeave generates the key from fresh CSPRNG entropy and requires
-   you to back it up. There is no free lunch: true quantum safety means holding a
-   new, independent secret.
+   point. PQWeave generates fresh CSPRNG entropy. Use a unique seed for every
+   authority, scheme and tree; keep both its encrypted backup and complete
+   reservation history.
 2. **One-time keys must never be reused.** Signing two different messages with the
    same Lamport leaf breaks the scheme, and that can happen off-chain where the
-   on-chain reuse-guard cannot help. The SDK's `HashSigSigner` makes this
-   impossible by construction: it hands out a strictly increasing leaf index,
-   never repeats one, refuses to sign once exhausted, and persists its counter so
-   leaves are not reused across sessions. Always sign through it (not the
-   low-level `signHashSig`) and persist `serialize()` after each signature.
+   on-chain reuse-guard cannot help. Persist a monotonic reservation BEFORE
+   signing, using one shared authority journal. The file-backed Node adapter
+   synchronizes writes, rejects concurrent locks and fails closed on uncertain
+   state. It does not prevent disk rollback or uncoordinated copies on another
+   device. Seed-only and chain-only recovery are insufficient. Never initialize
+   a fresh journal for a key that has previously signed.
 3. **One-time keys are exhaustible.** Each authorization consumes one leaf; rotate
    (`rotatePqcKey`) before the tree is exhausted. In sole-authority mode, losing
    the post-quantum seed means losing the account — there is no ECDSA fallback.
@@ -95,13 +102,12 @@ The web migration flow defaults to this mode.
   type-4 authorization signed by that key replaces the delegated code, no
   matter what the delegated contract says. So a quantum attacker who recovers
   the ECDSA key can strip the post-quantum guard from a hardened address and
-  drain it. No application code can close this; it is protocol-level. Real
-  safety requires _migrating_ funds to a sole-authority account, not hardening
-  the old address.
+  drain it. A separate sole-authority account removes that fallback, subject
+  to its verifier and remaining infrastructure assumptions.
 - **The Forwarder ("mailbox") shrinks the exposure window; it does not close
   it.** Keeping an old address as a receiving point means incoming funds sit on
-  a quantum-exposed key until the next `flush()` — minutes instead of forever,
-  but not zero. The same re-delegation caveat applies to the mailbox itself.
+  a quantum-exposed key until a successful `flush()`. There is no guaranteed
+  maximum waiting time. The same re-delegation caveat applies to the mailbox itself.
   Its one PQC-gated control (`setDestination`) means the ECDSA key cannot
   quietly retarget forwarding, but a re-delegation can remove the mailbox
   entirely. The mailbox deliberately has no PQC root rotation in v1: the
@@ -112,38 +118,29 @@ The web migration flow defaults to this mode.
   smart-contract addresses, or send them with a fixed gas stipend. The
   Forwarder's `receive()` is deliberately empty so stipend-limited transfers
   succeed, but users should always test with a small withdrawal first.
-- **Bitcoin is not, and cannot be, quantum-safe at the app layer.** Bitcoin
-  Script cannot verify a post-quantum signature, so nothing PQWeave ships makes
-  bitcoin quantum-safe. The real fix is consensus-level (BIP-360 P2MR / BIP-361
-  legacy-signature sunset), which no application can deliver. The Bitcoin tools
-  here are explicitly transitional / preparatory:
-  - **Evacuation kit** — pre-signs sweep transactions (watch-only; the user
-    signs in their own wallet, keys never touch us) so funds can move within
-    minutes of a threat. Pre-signing exposes nothing, but broadcasting still
-    reveals the key and races the mempool. It only covers the UTXOs that existed
-    when it was built; already-exposed addresses gain little. Reaction-time
-    reduction, not a cure.
-    - **An unsignable escape hatch is worse than none**, because the failure
-      surfaces at the moment it is needed. Each PSBT input therefore carries
-      exactly what its script type requires — `nonWitnessUtxo` for legacy and
-      wrapped SegWit, `redeemScript` for wrapped SegWit, `tapInternalKey` for
-      Taproot, and `bip32Derivation` (master fingerprint + full path) so a
-      hardware wallet can match the input to one of its own keys. An input that
-      cannot be made signable is **rejected outright** rather than emitted.
-      Every script type is signed and finalized for real in the test suite.
-    - **Destination rails.** A sweep to an address that has already been spent
-      from lands the funds somewhere already exposed, so the destination is
-      checked on-chain and refused if used, refused if it is one of the source
-      addresses, and flagged if it is Taproot (a P2TR output publishes the key
-      the moment it is funded). If the indexer is unreachable the check degrades
-      to a warning — an outage must not block an emergency evacuation. A sweep
-      sends the whole balance with no change output, so the UI also requires an
-      explicit confirmation that you control the destination before anything can
-      be signed: if that address is not yours, the coins are unrecoverable.
-    - **Dry run before signing.** `describePsbt` decodes the bundle and states
-      what it actually does (inputs, destination, amount, fee, RBF, change), and
-      `verifySweepMatchesPlan` asserts it matches the tier it claims to be. Read
-      it rather than trusting that we built it correctly.
+- **Bitcoin standard-wallet preparation is not post-quantum signing.** QSB was
+  demonstrated under existing consensus in August 2026; it remains an experimental
+  miner-assisted construction with a different security and recovery model.
+  See [the current Bitcoin research](docs/BITCOIN_RESEARCH_2026.md).
+  - **Preparation kit:** unsigned plans, no custody, no hosted broadcast. Every
+    input includes its verified full funding transaction, even native SegWit.
+    Single-key P2PKH, P2WPKH, wrapped P2WPKH and key-only P2TR inputs are supported.
+    Public key and origin data must match the source. The signer must independently
+    verify destination, amounts, fees, network and signatures.
+  - **Strict destination policy:** fresh P2WPKH only, no self transfer, no used
+    destination. Missing confirmed or mempool history blocks signing/export in the
+    website. A successful indexer lookup cannot establish wallet ownership or
+    rule out public keys leaked elsewhere.
+  - **Limits:** 100 inputs; fees at most 100,000 sats and 5% of balance; confirmed
+    coins only; plans expire after 24 hours and must be rechecked before export.
+    Inscriptions, Runes, multisig and custom scripts need separate wallet review.
+    No automatic consolidation or automatic emergency broadcast.
+  - **Restore and review:** a versioned unsigned bundle rebuilds all PSBTs and
+    checks its checksum. The checksum detects edits but does not authenticate its
+    author. Never sign a file solely because the checksum passes. PSBT comparison
+    checks the exact unsigned transaction and funding data; it is not signature
+    verification. Bitcoin Core integration tests validate real signatures,
+    replacement, confirmation and destination spending on isolated regtest.
   - **PQ attestation** — anchors a Bitcoin-address ↔ post-quantum-key binding as
     an immutable on-chain event. The Bitcoin signature is verified off-chain
     (BIP-322 on-chain is infeasible); the contract only timestamps. It records
@@ -162,13 +159,13 @@ The web migration flow defaults to this mode.
     independently is worth very little.
   - **BIP-360 (P2MR) migration tooling** — built now so it is tested before it is
     urgent, **not** because it can be used today. BIP-360 is `Status: Draft` and
-    no network enforces its rules. Under BIP-141 forward compatibility, witness
+    the supported public networks do not enforce its rules. Under BIP-141 forward compatibility, witness
     versions 2–16 are **anyone-can-spend**, and P2MR is witness version 2 — so
     coins sent to a `bc1z…` address right now could be taken by anybody and never
     recovered. The library therefore **refuses** a mainnet P2MR migration outright
     rather than warning about it, requires an explicit acknowledgement even on
     test networks, marks a mainnet `bc1z` destination `unsafe`, and throws if you
-    try to sweep _from_ a P2MR output (no node can validate that spend). It ships
+    try to sweep _from_ a P2MR output (the supported public networks do not enforce P2MR spending rules). It ships
     no post-quantum leaf templates, because BIP-360 defines no PQ signature
     opcodes yet — those come in a companion BIP, and inventing them would be
     fiction. See `packages/sdk/BIP360.md`.
@@ -183,19 +180,26 @@ The web migration flow defaults to this mode.
   race it). The Stellar vault is on **testnet and unaudited**; the Solana vault on
   devnet. This is transitional custody, not a quantum-safe wallet.
 - **Hybrid mode is defense-in-depth, not absolute.** Sub-threshold operations are
-  still ECDSA-authorized. Use `pqcOnly` or sole authority for full coverage.
-- **Timeline is a projection.** "Q-Day" estimates (2029–2030) are forecasts, not
-  facts. The concrete present risk is exposed keys being harvested.
-- **No novel cryptography.** Security equals the strength of keccak256 plus the
-  correctness of this implementation. The former is strong; the latter is
-  unproven until audited.
+  to addresses without code and with empty calldata are still ECDSA-authorized.
+  Contract calls, all nonempty calldata and native batches whose combined value
+  reaches the threshold require PQ authorization. The threshold is per operation,
+  not a daily spending cap: repeated small transfers remain possible. Use
+  `pqcOnly` or sole authority for full coverage.
+- **Timeline is uncertain.** Forecasts are not evidence of a cryptographically
+  relevant quantum computer. Migration design and operational preparation can
+  proceed without claiming an imminent break.
+- **Custom cryptography.** Familiar components do not establish the security of
+  a new construction, encoding, state machine or implementation. All need review.
 
 ## What "ready for real funds" requires
 
-1. One or more independent security audits, ideally with formal verification of
+1. Complete signer-state recovery, rotation and disaster-recovery drills.
+2. Reviewed deployment manifests, supported wallet tests, token reconciliation
+   and dependency remediation.
+3. One or more independent security audits, ideally with formal verification of
    the verifier.
-2. A public bug bounty and time running in production with bounded value.
-3. Standardization (an ERC) so the wider ecosystem reviews the design, on the path
+4. A public bug bounty and time running in production with bounded value.
+5. Standardization (an ERC) so the wider ecosystem reviews the design, on the path
    to native protocol-level post-quantum support.
 
 ## Reporting

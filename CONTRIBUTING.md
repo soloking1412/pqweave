@@ -35,8 +35,8 @@ For a security issue, **do not open an issue**. Email security@pqweave.com. See
 ## What gets rejected
 
 **Anything that claims more safety than it delivers.** No "audited", "perfect",
-"unbreakable", or "quantum-proof". The contracts are not audited. Bitcoin cannot
-be made quantum-safe at the application layer. Keeping your address via EIP-7702
+"unbreakable", or "quantum-proof". The contracts are not audited. The standard Bitcoin kit does not add post-quantum signatures; QSB is a separate
+experimental construction. Keeping your address via EIP-7702
 is transitional, not safe. These limits go in the UI next to the feature, not in
 a footnote.
 
