@@ -90,7 +90,8 @@ export function PqcKeygen({
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
           Keep both the file <span className="font-medium">and</span> your password safe. The file
           is useless without the password, and together they are the only way to control your
-          account. We cannot recover either.
+          account. After signing begins, keep a complete, current signing journal too: this seed
+          file cannot recover which one-time keys were already exposed. We cannot recover either.
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button

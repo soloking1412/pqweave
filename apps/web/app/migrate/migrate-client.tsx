@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { type Address, type Hex, isAddress, keccak256, parseEther, zeroAddress } from 'viem';
+import {
+  type Address,
+  type Hex,
+  getAddress,
+  isAddress,
+  keccak256,
+  parseEther,
+  zeroAddress,
+} from 'viem';
 import {
   useAccount,
   useChainId,
@@ -12,19 +20,26 @@ import {
 } from 'wagmi';
 import type { ChainKey } from '@pqweave/sdk/chains';
 import { knownTokens } from '@pqweave/sdk/chains';
-import { buildHardenInPlace, predictAccountAddress } from '@pqweave/sdk/account';
+import {
+  buildHardenInPlace,
+  encodeCreateAccount,
+  pqWeaveAccountAbi,
+  predictAccountAddress,
+} from '@pqweave/sdk/account';
 import {
   buildOneClickMigration,
   discoverErc20Balances,
   mergeTokenCandidates,
 } from '@pqweave/sdk/migration';
+import { ENTRYPOINT_V07 } from '@pqweave/sdk/userop';
+import { verifyEthereumDestination } from '@pqweave/sdk/migration';
 import { buildForwarderInstall } from '@pqweave/sdk/forwarder';
 import Link from 'next/link';
 import { ScanReportCard } from '@/components/scan-report-card';
 import { MigrateStatusBanner } from '@/components/migrate-status-banner';
 import { PqcKeygen, type PqcKeyState } from '@/components/pqc-keygen';
 import { explorerTxUrl } from '@/lib/contracts';
-import { chainName, getDeploymentStatus } from '@/lib/deployment';
+import { chainName, getDeploymentStatus, isExecutionNetwork } from '@/lib/deployment';
 import { shortenAddress } from '@/lib/risk';
 import type { ScanReport } from '@/lib/types';
 
@@ -52,9 +67,9 @@ interface OutcomeMeta {
 const OUTCOMES: OutcomeMeta[] = [
   {
     key: 'full',
-    title: 'Move to a fresh quantum-safe account',
+    title: 'Move listed assets to a separate PQ account',
     blurb:
-      'Sweep everything into a new post-quantum account. The safest end state. Optionally keep your old address working as a mailbox that auto-forwards future deposits.',
+      'Move the assets this transaction supports to a separate account. Verify the inventory, destination policy, and any assets left behind.',
   },
   {
     key: 'harden',
@@ -121,18 +136,23 @@ export function MigrateClient() {
   const [key, setKey] = useState<PqcKeyState | null>(null);
   const [outcome, setOutcome] = useState<Outcome>('full');
   const [outcomeTouched, setOutcomeTouched] = useState(false);
-  const [installMailbox, setInstallMailbox] = useState(true);
+  const [installMailbox, setInstallMailbox] = useState(false);
   const [pqcOnly, setPqcOnly] = useState(false);
   const [tokensInput, setTokensInput] = useState('');
   const [migrating, setMigrating] = useState(false);
   const [migrateError, setMigrateError] = useState<string | null>(null);
   const [safeAddress, setSafeAddress] = useState<Address | null>(null);
   const [txHash, setTxHash] = useState<Hex | null>(null);
+  const [deploymentHash, setDeploymentHash] = useState<Hex | null>(null);
+  const [txConfirmed, setTxConfirmed] = useState(false);
+  const [phase, setPhase] = useState<string | null>(null);
+  const [reconciliation, setReconciliation] = useState<string | null>(null);
 
   const chainKey = CHAIN_KEY_BY_ID[chainId] ?? 'ethereum';
   const network = chainName(chainId);
   const status = getDeploymentStatus();
   const contracts = status.contracts;
+  const executionLive = status.live && isExecutionNetwork(status.stage, chainId);
   const seedSaved = Boolean(key?.seedSaved);
   const pqcRoot = key?.root ?? null;
 
@@ -167,6 +187,17 @@ export function MigrateClient() {
     };
   }, [address, chainKey, outcomeTouched]);
 
+  useEffect(() => {
+    setReport(null);
+    setKey(null);
+    setSafeAddress(null);
+    setTxHash(null);
+    setDeploymentHash(null);
+    setTxConfirmed(false);
+    setReconciliation(null);
+    setTokensInput('');
+  }, [address, chainId]);
+
   // Pre-fill the sweep list from the scan's detected tokens plus the chain's
   // known-token registry, so a user rarely has to paste addresses by hand.
   const suggestedTokens = useMemo(() => {
@@ -191,14 +222,63 @@ export function MigrateClient() {
   async function run() {
     setMigrateError(null);
     setTxHash(null);
+    setDeploymentHash(null);
+    setTxConfirmed(false);
+    setPhase(null);
+    setReconciliation(null);
     setMigrating(true);
     try {
-      if (!contracts || !walletClient || !publicClient || !address || !pqcRoot) {
+      if (!executionLive || !contracts || !walletClient || !publicClient || !address || !pqcRoot) {
         throw new Error('Not ready to migrate.');
+      }
+      const assertWalletContext = async () => {
+        const accounts = await walletClient.getAddresses();
+        if (
+          (await walletClient.getChainId()) !== chainId ||
+          (await publicClient.getChainId()) !== chainId ||
+          accounts[0]?.toLowerCase() !== address.toLowerCase()
+        ) {
+          throw new Error('Wallet or network changed. Reconnect and review again.');
+        }
+      };
+      await assertWalletContext();
+      const requiredContracts = [
+        contracts.factory,
+        contracts.verifier,
+        contracts.batchExecutor,
+        ENTRYPOINT_V07,
+      ];
+      const expectedHashes = [
+        contracts.codeHashes.factory,
+        contracts.codeHashes.verifier,
+        contracts.codeHashes.batchExecutor,
+        contracts.codeHashes.entryPoint,
+      ];
+      const deployed = await Promise.all(
+        requiredContracts.map((contract) => publicClient.getCode({ address: contract })),
+      );
+      if (
+        deployed.some(
+          (code, index) =>
+            !code ||
+            code === '0x' ||
+            keccak256(code).toLowerCase() !== expectedHashes[index].toLowerCase(),
+        )
+      ) {
+        throw new Error('Migration contract code does not match the reviewed deployment manifest.');
       }
 
       if (outcome === 'harden') {
         if (!contracts.accountImpl) throw new Error('Harden-in-place is not available yet.');
+        const implementationCode = await publicClient.getCode({ address: contracts.accountImpl });
+        if (
+          !implementationCode ||
+          !contracts.codeHashes.accountImpl ||
+          keccak256(implementationCode).toLowerCase() !==
+            contracts.codeHashes.accountImpl.toLowerCase()
+        ) {
+          throw new Error('The hardening implementation is missing on this wallet network.');
+        }
         const { delegate, data } = buildHardenInPlace({
           accountImpl: contracts.accountImpl,
           owner: address,
@@ -207,6 +287,7 @@ export function MigrateClient() {
           valueThreshold: DEFAULT_THRESHOLD,
           pqcOnly,
         });
+        await assertWalletContext();
         const authorization = await walletClient.signAuthorization({
           contractAddress: delegate,
           executor: 'self',
@@ -218,10 +299,35 @@ export function MigrateClient() {
         });
         setSafeAddress(address);
         setTxHash(hash);
+        setPhase('Waiting for the delegation to confirm…');
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        if (receipt.status !== 'success') throw new Error('The delegation transaction reverted.');
+        const [delegatedOwner, delegatedRoot] = await Promise.all([
+          publicClient.readContract({ address, abi: pqWeaveAccountAbi, functionName: 'owner' }),
+          publicClient.readContract({
+            address,
+            abi: pqWeaveAccountAbi,
+            functionName: 'pqcPublicKey',
+          }),
+        ]);
+        if (
+          delegatedOwner.toLowerCase() !== address.toLowerCase() ||
+          delegatedRoot.toLowerCase() !== pqcRoot.toLowerCase()
+        ) {
+          throw new Error('The confirmed delegation does not match your account configuration.');
+        }
+        setTxConfirmed(true);
         return;
       }
 
       // full / emergency: sweep into a fresh sole-authority account.
+      const rawTokens = tokensInput
+        .split(/[\s,]+/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const invalidToken = rawTokens.find((value) => !isAddress(value));
+      if (invalidToken) throw new Error(`Invalid token address: ${invalidToken}`);
+      const tokenList = [...new Set(rawTokens.map((value) => getAddress(value)))];
       const salt = keccak256(pqcRoot);
       const safe = await predictAccountAddress(publicClient, contracts.factory, {
         owner: zeroAddress,
@@ -232,12 +338,70 @@ export function MigrateClient() {
       });
       setSafeAddress(safe);
 
-      const tokenList = tokensInput
-        .split(/[\s,]+/)
-        .map((value) => value.trim())
-        .filter((value): value is Address => isAddress(value));
+      // A predicted CREATE2 address is not yet an account. Deploy and verify its
+      // sole-authority configuration before any asset can be swept into it.
+      let safeCode = await publicClient.getCode({ address: safe });
+      if (!safeCode || safeCode === '0x') {
+        setPhase('Deploying and verifying the destination account…');
+        const deployHash = await walletClient.sendTransaction({
+          to: contracts.factory,
+          data: encodeCreateAccount({
+            owner: zeroAddress,
+            pqcPublicKey: pqcRoot,
+            verifier: contracts.verifier,
+            valueThreshold: DEFAULT_THRESHOLD,
+            salt,
+          }),
+        });
+        setDeploymentHash(deployHash);
+        const deployReceipt = await publicClient.waitForTransactionReceipt({ hash: deployHash });
+        if (deployReceipt.status !== 'success') {
+          throw new Error('The destination account deployment reverted. No assets were moved.');
+        }
+        safeCode = await publicClient.getCode({ address: safe });
+      }
+      if (!safeCode || safeCode === '0x') {
+        throw new Error('Destination account code is missing. No assets were moved.');
+      }
+      const [safeOwner, safeRoot, safeVerifier] = await Promise.all([
+        publicClient.readContract({ address: safe, abi: pqWeaveAccountAbi, functionName: 'owner' }),
+        publicClient.readContract({
+          address: safe,
+          abi: pqWeaveAccountAbi,
+          functionName: 'pqcPublicKey',
+        }),
+        publicClient.readContract({
+          address: safe,
+          abi: pqWeaveAccountAbi,
+          functionName: 'pqcVerifier',
+        }),
+      ]);
+      if (
+        safeOwner.toLowerCase() !== zeroAddress ||
+        safeRoot.toLowerCase() !== pqcRoot.toLowerCase() ||
+        safeVerifier.toLowerCase() !== contracts.verifier.toLowerCase()
+      ) {
+        throw new Error(
+          'Destination account authority does not match this migration. No assets were moved.',
+        );
+      }
+
+      await verifyEthereumDestination(
+        publicClient,
+        {
+          chainId,
+          account: safe,
+          root: pqcRoot,
+          verifier: contracts.verifier,
+          entryPoint: ENTRYPOINT_V07,
+          accountCodeHash: contracts.codeHashes.account,
+          verifierCodeHash: contracts.codeHashes.verifier,
+          entryPointCodeHash: contracts.codeHashes.entryPoint,
+        },
+        await publicClient.getBlockNumber(),
+      );
       const erc20s = tokenList.length
-        ? await discoverErc20Balances(publicClient, address, tokenList)
+        ? await discoverErc20Balances(publicClient, address, tokenList, true)
         : [];
       const balance = await publicClient.getBalance({ address });
 
@@ -245,6 +409,14 @@ export function MigrateClient() {
       let delegate: Address;
       let data: Hex;
       if (useMailbox) {
+        const code = await publicClient.getCode({ address: contracts.forwarder! });
+        if (
+          !code ||
+          !contracts.codeHashes.forwarder ||
+          keccak256(code).toLowerCase() !== contracts.codeHashes.forwarder.toLowerCase()
+        ) {
+          throw new Error('Forwarder does not match the reviewed deployment manifest.');
+        }
         // One tx: delegate to the forwarder and initializeAndFlush. The forwarder
         // pushes the FULL native balance (inside the tx, balance is already net
         // of gas), so no gas-buffer arithmetic here.
@@ -266,6 +438,7 @@ export function MigrateClient() {
         }));
       }
 
+      await assertWalletContext();
       const authorization = await walletClient.signAuthorization({
         contractAddress: delegate,
         executor: 'self',
@@ -276,15 +449,35 @@ export function MigrateClient() {
         authorizationList: [authorization],
       });
       setTxHash(hash);
+      setPhase('Waiting for the sweep to confirm…');
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success')
+        throw new Error(
+          'The sweep reverted. Your EIP-7702 delegation may still be active. Check the original wallet and revoke or reconcile the delegation before retrying.',
+        );
+      setTxConfirmed(true);
+      try {
+        const remaining = await discoverErc20Balances(publicClient, address, tokenList, true);
+        setReconciliation(
+          remaining.length > 0
+            ? `${remaining.length} listed token balance(s) remain at the original address. Review them before considering this complete.`
+            : 'Listed token balances at the original address are now zero. Check the destination and any unlisted assets separately.',
+        );
+      } catch {
+        setReconciliation(
+          'The sweep confirmed, but token balances could not be checked. Verify both addresses in a block explorer.',
+        );
+      }
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Migration failed.';
       setMigrateError(
         /authorization|7702|eip-7702/i.test(message)
-          ? 'Your wallet may not support EIP-7702 yet. Use a 7702-capable wallet (e.g. MetaMask) on a supported network.'
+          ? `${message} Check wallet support and any existing delegation before retrying.`
           : message,
       );
     } finally {
       setMigrating(false);
+      setPhase(null);
     }
   }
 
@@ -384,7 +577,8 @@ export function MigrateClient() {
           <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
             Transitional, not quantum-safe. Delegating keeps your original ECDSA key&apos;s
             protocol-level authority — a quantum attacker who recovers it could sign a new
-            authorization and remove this guard. For full safety, move funds to a fresh account.
+            authorization and remove this guard. A separate account removes that ECDSA fallback;
+            network and token risks still remain.
           </div>
         )}
       </Step>
@@ -395,16 +589,20 @@ export function MigrateClient() {
         active={isConnected && !seedSaved}
         done={seedSaved}
       >
-        <PqcKeygen disabled={!isConnected} onChange={setKey} />
+        <PqcKeygen
+          key={`${chainId}:${address ?? 'none'}`}
+          disabled={!isConnected || migrating}
+          onChange={setKey}
+        />
       </Step>
 
-      <Step index={5} title="Execute" active={seedSaved && !txHash} done={Boolean(txHash)}>
-        {!status.live ? (
+      <Step index={5} title="Execute" active={seedSaved && !txConfirmed} done={txConfirmed}>
+        {!executionLive ? (
           <div className="space-y-3 rounded-lg border border-white/5 bg-black/20 p-4">
             <p className="text-sm leading-relaxed text-zinc-300">
-              Everything above is real and yours — the post-quantum key you generated is valid and
-              independent of your wallet. The on-chain step goes live on a public testnet next, then
-              mainnet once the contracts pass their independent audit.
+              {status.live
+                ? 'This wallet is on a different network from the configured deployment. Switch to the supported testnet before executing, and use test funds only.'
+                : 'The post-quantum key was generated locally. On-chain execution is unavailable until a configured deployment is ready; contracts must pass an independent audit before real funds are used.'}
             </p>
             <Link
               href="/security"
@@ -415,17 +613,21 @@ export function MigrateClient() {
           </div>
         ) : txHash ? (
           <div className="space-y-3">
-            <p className="text-sm text-emerald-300">
-              {outcome === 'harden'
-                ? 'Your address is hardened. Sensitive operations now require your post-quantum key.'
-                : 'Migration submitted. Your wallet was swept into a fresh quantum-safe account in a single transaction.'}
+            <p className={txConfirmed ? 'text-sm text-emerald-300' : 'text-sm text-amber-200'}>
+              {txConfirmed
+                ? outcome === 'harden'
+                  ? 'Delegation confirmed. The original ECDSA key can still revoke it.'
+                  : 'Sweep confirmed. Verify every asset at the destination before relying on it.'
+                : (phase ?? 'Transaction submitted; confirmation is pending.')}
             </p>
+            {migrateError && <p className="text-sm text-rose-300">{migrateError}</p>}
+            {reconciliation && <p className="text-sm text-zinc-300">{reconciliation}</p>}
             {safeAddress && (
               <div className="rounded-lg border border-white/5 bg-black/20 p-3">
                 <div className="text-xs uppercase tracking-wide text-zinc-500">
                   {outcome === 'harden'
-                    ? `Hardened address · ${pqcOnly ? 'post-quantum on every op' : 'hybrid'}`
-                    : 'Quantum-safe account · post-quantum only'}
+                    ? `Revocable delegation · ${pqcOnly ? 'PQ check on account operations' : 'hybrid'}`
+                    : 'Destination account · verify sole authority'}
                 </div>
                 <div className="mt-1 break-all font-mono text-xs text-accent">{safeAddress}</div>
               </div>
@@ -453,8 +655,8 @@ export function MigrateClient() {
             {isSweep ? (
               <>
                 <p className="text-sm text-zinc-400">
-                  Sweep your native balance — and the tokens listed below — into a fresh
-                  post-quantum account in a single transaction.
+                  Deploy a fresh post-quantum account, then sweep your native balance and listed
+                  tokens to it. This takes up to two transactions.
                 </p>
                 <label className="mt-4 block text-xs uppercase tracking-wide text-zinc-500">
                   ERC-20 token addresses (pre-filled from your scan; edit freely)
@@ -478,8 +680,9 @@ export function MigrateClient() {
                   <span className="text-sm text-zinc-300">
                     <span className="font-medium text-white">Keep my old address as a mailbox</span>
                     <span className="mt-0.5 block text-xs text-zinc-400">
-                      Exchange whitelists and anyone paying your old address keep working. Incoming
-                      funds auto-forward to your new account instead of resting on the exposed key.
+                      Exchange whitelists and anyone paying your old address keep working. Receipts
+                      need a separate flush from the old address. The old ECDSA key can still
+                      replace this mailbox.
                       {!contracts?.forwarder && ' (Unavailable until the forwarder is deployed.)'}
                     </span>
                   </span>
@@ -513,15 +716,21 @@ export function MigrateClient() {
             )}
             <button
               onClick={run}
-              disabled={!seedSaved || migrating}
+              disabled={!seedSaved || migrating || !executionLive}
               className="mt-4 rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
             >
               {migrating
                 ? 'Working…'
                 : outcome === 'harden'
                   ? 'Harden my address (one transaction)'
-                  : 'Migrate my wallet (one transaction)'}
+                  : 'Deploy and migrate my wallet'}
             </button>
+            {deploymentHash && (
+              <p className="mt-3 text-xs text-zinc-400">
+                Destination deployment submitted: {deploymentHash.slice(0, 12)}…
+              </p>
+            )}
+            {phase && <p className="mt-3 text-xs text-amber-200">{phase}</p>}
             {!seedSaved && (
               <p className="mt-3 text-xs text-zinc-500">Save your recovery key in step 4 first.</p>
             )}

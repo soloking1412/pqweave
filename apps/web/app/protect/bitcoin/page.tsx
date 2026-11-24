@@ -1,131 +1,117 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Reveal } from '@/components/motion';
 import { BitcoinChecklistClient } from './checklist-client';
 import { EvacuationClient } from './evacuation-client';
 import { WalletScanClient } from './wallet-scan-client';
 
 export const metadata: Metadata = {
-  title: 'Reduce Bitcoin quantum exposure (transitional) — PQWeave',
+  title: 'Bitcoin readiness kit — PQWeave',
   description:
-    'Bitcoin cannot be made quantum-safe at the app layer — that needs a protocol upgrade (BIP-360). The one thing you can do today is transitional: keep your public key hidden by moving to a fresh, never-used address.',
+    'Inspect Bitcoin public-key exposure, prepare an unsigned PSBT, and review a transaction for your own wallet to sign. Transitional exposure reduction with no key custody.',
 };
 
 const STEPS = [
-  {
-    n: 1,
-    title: 'Create a brand-new, never-used address',
-    body: 'In your own wallet, generate a fresh native SegWit address (starts with bc1q). Do not reuse an old one. Avoid Taproot (bc1p) here — Taproot key-path spends reveal the public key in the output, which defeats the purpose.',
-  },
-  {
-    n: 2,
-    title: 'Move your funds to it in one transaction',
-    body: 'Consolidate your balance into the new address. PQWeave never touches your keys — you sign this in your own wallet. Until you spend from the new address, only its hash is public, so the key stays hidden.',
-  },
-  {
-    n: 3,
-    title: 'Treat every address as one-time',
-    body: 'Each spend re-reveals the public key behind that address. Receive into fresh addresses and avoid address reuse, so a revealed key never guards remaining funds.',
-  },
-];
-
-const LIMITS = [
-  'This is transitional, not quantum-safe. The moment you spend from the new address, its public key is revealed again.',
-  'A sufficiently fast quantum attacker could still race your spend — seeing the key in the mempool and trying to forge a conflicting transaction before yours confirms.',
-  'There is no post-quantum signature protecting Bitcoin today. This only defers exposure; it does not remove it.',
-  'The permanent fix is a Bitcoin protocol upgrade — e.g. BIP-360 (Pay-to-Quantum-Resistant-Hash) — which is consensus-level and not something any app can ship.',
+  [
+    'Inspect the coins you intend to move',
+    'Review source history and spending conditions. Check fees and privacy before deciding to move. Combining outputs can link previously separate addresses.',
+  ],
+  [
+    'Confirm a fresh destination in your wallet',
+    'For the standard exposure-reduction route, use a never-used native SegWit address on the same network. Verify the destination on your signer. A scan cannot establish that you control an address.',
+  ],
+  [
+    'Review and export the unsigned plan',
+    'Check every input against its complete source transaction, then inspect the destination, amount, and fee. Import the PSBT into a compatible wallet; support varies by signer and output type.',
+  ],
+  [
+    'Sign, verify, then broadcast',
+    'Approve with your own wallet. Import the signed PSBT and compare it with the reviewed plan before broadcast. Track confirmation in your wallet and retain the transaction record.',
+  ],
 ];
 
 export default function BitcoinProtectPage() {
   return (
-    <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
-      <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-        Transitional protection — not quantum-safe
-      </span>
-      <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-        Reduce your Bitcoin quantum exposure
+    <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-5">
+        <span className="tabular text-xs uppercase tracking-widest text-amber-300">
+          BTC / Readiness kit
+        </span>
+        <span className="text-xs text-zinc-300">Watch-only preparation · External signing</span>
+      </div>
+      <h1 className="mt-8 text-3xl font-semibold tracking-tight sm:text-4xl">
+        Prepare your next Bitcoin move.
       </h1>
-      <p className="mt-3 text-zinc-400">
-        We&apos;ll be straight with you: Bitcoin cannot be made quantum-safe at the application
-        layer. It has no smart-contract accounts to enforce a post-quantum signature, so a real fix
-        needs a protocol upgrade. What you <span className="text-zinc-200">can</span> do today is
-        keep your public key hidden for as long as possible. This is risk reduction, not a cure.
+      <p className="mt-4 leading-relaxed text-zinc-300">
+        Inspect public-key exposure and prepare a transaction for your own wallet to sign. The
+        standard route moves selected coins to a fresh native SegWit address when the benefits
+        justify the fees and privacy cost.
+      </p>
+      <div className="mt-6 border-l-2 border-amber-400 bg-amber-500/5 px-5 py-4">
+        <p className="text-sm font-medium text-amber-200">
+          Exposure reduction, not post-quantum protection
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+          A fresh public-key-hash output can keep a key hidden until spending. Taproot output keys
+          are already visible. Moving does not prevent a sufficiently capable attacker from racing a
+          spend after the key is revealed.
+        </p>
+      </div>
+      <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+        No seed phrase or private key is requested. Public address and xpub scans reveal queried or
+        derived addresses to the indexer. Scans may miss assets or wallet history outside their
+        scope.
       </p>
 
-      <Reveal className="mt-10">
-        <h2 className="text-xl font-semibold tracking-tight">Why this works (a little)</h2>
-        <p className="mt-3 leading-relaxed text-zinc-400">
-          A Bitcoin address is a hash of your public key. The key itself stays hidden until you
-          spend from the address — that&apos;s when the signature, and the key, become public and
-          harvestable. So funds sitting in a fresh, never-spent address are not yet exposed. Moving
-          there buys time; it does not make the coins quantum-proof.
-        </p>
-      </Reveal>
-
-      <Reveal className="mt-10">
-        <WalletScanClient />
-      </Reveal>
-
-      <Reveal className="mt-10">
+      <section className="mt-10" aria-label="Bitcoin transaction preparation">
         <EvacuationClient />
-      </Reveal>
+      </section>
+      <section className="mt-10" aria-label="Wallet inventory">
+        <WalletScanClient />
+      </section>
 
-      <Reveal className="mt-10">
-        <BitcoinChecklistClient />
-      </Reveal>
-
-      <Reveal className="mt-10">
-        <h2 className="text-xl font-semibold tracking-tight">The steps, in detail</h2>
-        <ol className="mt-4 space-y-3">
-          {STEPS.map((step) => (
-            <li key={step.n} className="flex gap-4 rounded-panel border border-rule bg-panel p-5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-white">
-                {step.n}
+      <section className="mt-12 border-t border-rule pt-8" aria-labelledby="review-title">
+        <div className="tabular text-xs uppercase tracking-widest text-accent">Review path</div>
+        <h2 id="review-title" className="mt-3 text-xl font-semibold tracking-tight">
+          Keep control of the decision and the signature.
+        </h2>
+        <ol className="mt-5 divide-y divide-rule">
+          {STEPS.map(([title, body], index) => (
+            <li key={title} className="flex gap-5 py-5">
+              <span className="tabular mt-1 shrink-0 text-xs text-accent">
+                {String(index + 1).padStart(2, '0')}
               </span>
               <div>
-                <h3 className="text-base font-semibold text-white">{step.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{step.body}</p>
+                <h3 className="text-[1rem] font-semibold text-zinc-100">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{body}</p>
               </div>
             </li>
           ))}
         </ol>
-      </Reveal>
-
-      <Reveal className="mt-10">
-        <h2 className="text-xl font-semibold tracking-tight">What this does not do</h2>
-        <ul className="mt-4 space-y-2.5">
-          {LIMITS.map((limit) => (
-            <li
-              key={limit}
-              className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-300"
-            >
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-              {limit}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 text-sm text-zinc-500">
-          The same transitional approach applies to other first-spend chains (Litecoin, Dogecoin,
-          and similar). Only EVM chains support a true quantum-safe migration today, because only
-          they have the account layer to enforce a post-quantum signature.
+      </section>
+      <section className="mt-8" aria-label="Bitcoin readiness checklist">
+        <BitcoinChecklistClient />
+      </section>
+      <section className="mt-10 border border-rule bg-panel p-6" aria-labelledby="scope-title">
+        <h2 id="scope-title" className="text-lg font-semibold">
+          Check what these coins represent.
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+          Inscriptions, runes, multisig, timelocks, and custom scripts need specialized tools. A
+          basic UTXO inventory cannot prove that these are absent. Do not use an ordinary sweep for
+          coins whose additional assets or spending conditions have not been reviewed.
         </p>
-      </Reveal>
-
-      <Reveal className="mt-10 flex flex-wrap gap-3">
+        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          Experimental PQ constructions are excluded from this kit. BIP-360 P2MR is a draft and does
+          not itself add post-quantum signatures. Do not send funds to draft P2MR addresses on
+          current public networks.
+        </p>
         <Link
-          href="/scan"
-          className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright"
+          href="/bitcoin/research"
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-brand-bright underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-brand-bright"
         >
-          Scan another address
+          Compare current Bitcoin research →
         </Link>
-        <Link
-          href="/migrate"
-          className="rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-200 transition hover:bg-white/5"
-        >
-          Quantum-safe migration (EVM)
-        </Link>
-      </Reveal>
+      </section>
     </div>
   );
 }

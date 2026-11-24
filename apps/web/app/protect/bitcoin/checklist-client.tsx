@@ -18,10 +18,10 @@ const MAX_PER_CHAIN = 15;
 const SCAN_CONCURRENCY = 5;
 
 const CHECKLIST = [
-  'Create a brand-new native SegWit address (bc1q…) in your own wallet. Do not reuse an old one, and avoid Taproot (bc1p) — a key-path spend reveals the public key.',
-  'Move the balance from each exposed address into the fresh address in one consolidation transaction.',
+  'Create a brand-new native SegWit address (bc1q…) in your own wallet. Do not reuse an old one, and avoid Taproot (bc1p) — its output key is visible as soon as the output is created.',
+  'Review exposed ordinary BTC with your wallet before moving it. Check fees, privacy, recovery and any inscriptions or Runes; avoid blind consolidation.',
   'Stop reusing addresses: receive each new payment into its own fresh address.',
-  'Keep watching this space: a real fix needs a Bitcoin protocol upgrade (e.g. BIP-360). Until then this only defers exposure.',
+  'Track experimental QSB and proposed consensus upgrades separately. This standard wallet route only reduces key exposure; it does not add post-quantum signatures.',
 ];
 
 function parseAddresses(input: string): string[] {
@@ -168,14 +168,14 @@ export function BitcoinChecklistClient() {
       ),
       '',
       exposed.length > 0
-        ? `${exposed.length} address(es) have revealed their public key and should be migrated.`
-        : 'No scanned address has revealed its public key yet. Keep them that way.',
+        ? `${exposed.length} address(es) have visible public keys and need a wallet-specific review.`
+        : 'No exposure was detected among successful checks. Failed checks and addresses beyond this scan remain unknown.',
       '',
       'Checklist:',
       ...CHECKLIST.map((item, i) => `  [ ] ${i + 1}. ${item}`),
       '',
       'Note: this is transitional risk reduction, not quantum safety. Bitcoin has no',
-      'post-quantum signatures at the protocol level today.',
+      'general-purpose post-quantum signature opcode today; experimental QSB is a separate route.',
     ].filter((line) => line !== '');
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -190,12 +190,13 @@ export function BitcoinChecklistClient() {
 
   return (
     <div className="rounded-panel border border-rule bg-panel p-6">
-      <h2 className="text-xl font-semibold tracking-tight">Build your migration plan</h2>
+      <h2 className="text-xl font-semibold tracking-tight">Check address exposure</h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-        Paste your Bitcoin addresses (up to 20), or one extended public key (xpub / ypub / zpub) to
-        scan a whole watch-only wallet. We check which addresses have already revealed their public
-        key, then give you a personalized checklist. Nothing is stored on our side and no keys — not
-        even the extended public key — are ever kept.
+        Get an address exposure report and a readiness checklist. Paste your Bitcoin addresses (up
+        to 20), or one extended public key (xpub / ypub / zpub) to scan a limited range of receive
+        and change addresses. Extended public keys are processed in your browser; derived addresses
+        are queried through our server and its indexer, which can correlate them. This is not a
+        complete wallet recovery scan. Never enter a seed or private key.
       </p>
 
       <textarea
@@ -209,7 +210,7 @@ export function BitcoinChecklistClient() {
       <button
         onClick={scan}
         disabled={scanning || input.trim() === ''}
-        className="mt-3 rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+        className="mt-3 rounded-control bg-[#285f96] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
       >
         {scanning ? 'Checking…' : 'Check my addresses'}
       </button>
@@ -266,7 +267,7 @@ export function BitcoinChecklistClient() {
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-100">
             {exposedCount > 0
               ? `${exposedCount} of ${rows.length} addresses have revealed their public key. Follow the checklist to reduce their exposure.`
-              : 'None of these addresses have revealed their public key yet. The checklist keeps it that way.'}
+              : 'No exposure detected in successful checks. Failed checks and unscanned addresses remain unknown.'}
           </div>
 
           <div>

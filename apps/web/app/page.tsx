@@ -1,216 +1,174 @@
 import Link from 'next/link';
-import { ChainsSection } from '@/components/landing/chains-section';
-import { Hero } from '@/components/landing/hero';
-import { PartnerCta } from '@/components/landing/partner-cta';
-import { RoadmapSection } from '@/components/landing/roadmap-section';
-import { VerifierComparison } from '@/components/landing/verifier-comparison';
-import { Reveal } from '@/components/motion';
-import { LIVE_CHAIN_COUNT } from '@/lib/chains-directory';
 
-/** Measured facts, with the source attached. No number here is ours to round. */
-const READINGS = [
-  {
-    value: '~1,200',
-    unit: 'logical qubits',
-    label: 'to derive a secp256k1 private key, in minutes of runtime',
-    source: 'Google Quantum AI, Mar 2026',
-  },
-  {
-    value: '34',
-    unit: '% of BTC',
-    label: 'had already revealed a public key on chain by 1 March 2026',
-    source: 'BIP-361',
-  },
-  {
-    value: '41',
-    unit: '% odds',
-    label: 'of a key being derived before a Bitcoin transaction confirms',
-    source: 'Google Quantum AI, Mar 2026',
-  },
-  {
-    value: String(LIVE_CHAIN_COUNT),
-    unit: 'chains',
-    label: 'scanned live across all three exposure families',
-    source: 'This repository',
-  },
-];
-
-const TIERS = [
-  {
-    step: '01',
-    title: 'Scan',
-    body: `Check whether an address has published its public key and score the exposure — ${LIVE_CHAIN_COUNT} chains, three exposure families, no wallet connection.`,
-    href: '/scan',
-    cta: 'Open the scanner',
-  },
-  {
-    step: '02',
-    title: 'Migrate',
-    body: 'Sweep an entire EVM wallet — native, ERC-20 and NFTs — into a post-quantum account in one EIP-7702 transaction, or keep the address and harden it in place.',
-    href: '/migrate',
-    cta: 'Migrate a wallet',
-  },
-  {
-    step: '03',
-    title: 'Start clean',
-    body: 'New accounts are post-quantum from the first block, with a counterfactual address safe to fund before it is even deployed.',
-    href: '/start',
-    cta: 'Create an account',
-  },
-];
-
-const VERIFIERS = [
-  {
-    name: 'Winternitz + Merkle',
-    standard: 'WOTS+, keccak256',
-    role: 'Default. Same construction family as Ethereum’s leanSig. 2,304-byte signatures.',
-    state: 'shipped' as const,
-  },
-  {
-    name: 'Lamport + Merkle',
-    standard: 'Hash-based, keccak256',
-    role: 'The original verifier, still deployed. Simpler to audit, 10x larger on the wire.',
-    state: 'shipped' as const,
-  },
-  {
-    name: 'Falcon-512',
-    standard: 'FIPS 206',
-    role: 'Blocked: FIPS 206 is still a draft, expected final late 2026. Pluggable when it lands.',
-    state: 'blocked' as const,
-  },
+const WORKFLOW = [
+  ['01', 'Source outputs', 'Inspect addresses, spend history, and the coins you intend to move.'],
+  ['02', 'Reviewed PSBT', 'Check the destination, source transactions, fees, and every input.'],
+  ['03', 'Your signer', 'Export the unsigned plan and approve it in your own compatible wallet.'],
+  ['04', 'Verified transaction', 'Compare the signed transaction with the plan before broadcast.'],
 ];
 
 export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-5">
-      <Hero />
-
-      {/* Readings — an instrument strip, not a row of cards. */}
-      <Reveal>
-        <section
-          aria-label="Measured threat readings"
-          className="grid border-y border-rule sm:grid-cols-2 lg:grid-cols-4"
-        >
-          {READINGS.map((r, i) => (
-            <div
-              key={r.label}
-              className={`px-5 py-6 ${i > 0 ? 'border-t border-rule sm:border-t-0 sm:border-l' : ''} ${
-                i === 2 ? 'lg:border-l' : ''
-              } ${i % 2 === 0 ? 'sm:border-l-0 lg:border-l' : ''} ${i === 0 ? 'lg:border-l-0' : ''}`}
-            >
-              <div className="flex items-baseline gap-1.5">
-                <span className="tabular text-2xl text-white">{r.value}</span>
-                <span className="tabular text-[11px] text-accent">{r.unit}</span>
-              </div>
-              <p className="mt-2 text-[12px] leading-relaxed text-zinc-400">{r.label}</p>
-              <p className="tabular mt-2 text-[10px] text-zinc-600">{r.source}</p>
-            </div>
-          ))}
-        </section>
-      </Reveal>
-
-      <ChainsSection />
-
-      {/* What the verifier upgrade actually bought — measured, not asserted. */}
-      <VerifierComparison />
-
-      {/* How it works */}
-      <Reveal>
-        <section id="how" className="scroll-mt-20 border-t border-rule py-20 sm:py-28">
-          <h2 className="text-[1.7rem] font-semibold tracking-tight sm:text-4xl">
-            Scan, migrate, start clean
-          </h2>
-          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-zinc-400">
-            Measure the exposure, move an existing wallet behind a post-quantum signature, or begin
-            on an account that never had a vulnerable key to begin with.
+      <section className="grid gap-12 py-16 sm:py-24 lg:grid-cols-[1.2fr_.8fr] lg:items-center">
+        <div>
+          <div className="tabular flex items-center gap-2 text-xs uppercase tracking-widest text-amber-300">
+            <span className="h-2 w-2 bg-amber-400" aria-hidden />
+            Bitcoin readiness / 01
+          </div>
+          <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+            Your bitcoin.
+            <br />
+            Your signer.
+            <br />
+            <span className="text-accent">A reviewed next move.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-[1rem] leading-relaxed text-zinc-300">
+            A noncustodial kit to understand quantum exposure, validate existing coins, and prepare
+            a Bitcoin transaction for your own wallet to sign.
           </p>
-          <div className="mt-10 grid gap-px overflow-hidden border border-rule bg-rule lg:grid-cols-3">
-            {TIERS.map((tier) => (
-              <div key={tier.step} className="group flex flex-col bg-panel p-6">
-                <div className="tabular text-[11px] text-accent">{tier.step}</div>
-                <h3 className="mt-3 text-lg font-semibold tracking-tight">{tier.title}</h3>
-                <p className="mt-2.5 flex-1 text-[13px] leading-relaxed text-zinc-400">
-                  {tier.body}
-                </p>
-                <Link
-                  href={tier.href}
-                  className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-brand-bright transition-all duration-150 group-hover:gap-2.5"
-                >
-                  {tier.cta} <span aria-hidden>→</span>
-                </Link>
-              </div>
-            ))}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/protect/bitcoin"
+              className="inline-flex min-h-11 items-center rounded-control bg-[#285f96] px-5 py-3 text-sm font-semibold text-white hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:ring-2 focus-visible:ring-brand-bright focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+            >
+              Prepare a Bitcoin plan →
+            </Link>
+            <Link
+              href="/bitcoin/research"
+              className="inline-flex min-h-11 items-center rounded-control border border-rule-strong px-5 py-3 text-sm font-medium text-zinc-100 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-brand-bright"
+            >
+              Review the research
+            </Link>
           </div>
-        </section>
-      </Reveal>
-
-      {/* Hybrid circuit-breaker */}
-      <Reveal>
-        <section className="grid gap-10 border-t border-rule py-20 sm:py-28 lg:grid-cols-2">
-          <div>
-            <h2 className="text-[1.7rem] font-semibold tracking-tight sm:text-3xl">
-              A circuit-breaker, not a rip-and-replace
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">
+            The standard route reduces public-key exposure. It does not add a post-quantum signature
+            to your bitcoin.
+          </p>
+        </div>
+        <aside className="panel" aria-label="Bitcoin kit capability">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule bg-panel-raised px-6 py-4">
+            <span className="tabular text-xs uppercase tracking-widest text-zinc-300">
+              Route status
+            </span>
+            <span className="text-xs text-amber-200">Transitional</span>
+          </div>
+          <div className="px-6 py-7">
+            <div className="tabular text-xs text-accent">BTC / NATIVE SEGWIT</div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+              Preparation you can inspect.
             </h2>
-            <p className="mt-4 text-[15px] leading-relaxed text-zinc-400">
-              ECDSA keeps signing routine activity, so the wallet still feels like the wallet. The
-              moment an operation gets dangerous — a large transfer, a token approval, an account
-              change — a second post-quantum signature is required. Break the ECDSA key and the gate
-              still holds.
-            </p>
-            <ul className="mt-6 space-y-2.5 text-[13px] text-zinc-300">
+            <dl className="mt-6 divide-y divide-rule text-sm">
               {[
-                'Large native transfers above a configurable threshold',
-                'Token approvals (approve / setApprovalForAll)',
-                'Administrative changes: key rotation, verifier swap, owner change',
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <span className="mt-1.5 h-1 w-1 shrink-0 bg-accent" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 max-w-lg border-l-2 border-amber-500/40 pl-3 text-[12px] leading-relaxed text-zinc-500">
-              Fully quantum-safe means removing ECDSA from the trust model entirely — sweeping into
-              an account where the post-quantum key is sole authority. Keeping your old address is
-              always transitional, because an EIP-7702 delegation stays revocable by the ECDSA key.
-            </p>
-          </div>
-
-          <div className="panel h-fit p-6">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-400">
-                Pluggable verifiers
-              </span>
-              <span className="tabular text-[10px] text-zinc-600">IPQCVerifier</span>
-            </div>
-            <div className="mt-4 divide-y divide-rule">
-              {VERIFIERS.map((v) => (
-                <div key={v.name} className="py-3.5 first:pt-0 last:pb-0">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-[13px] font-medium text-white">
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          v.state === 'shipped' ? 'bg-accent' : 'bg-zinc-600'
-                        }`}
-                        aria-hidden
-                      />
-                      {v.name}
-                    </span>
-                    <span className="tabular text-[10px] text-zinc-500">{v.standard}</span>
-                  </div>
-                  <div className="mt-1.5 pl-3.5 text-[12px] leading-relaxed text-zinc-400">
-                    {v.role}
-                  </div>
+                ['Key custody', 'Your existing wallet'],
+                ['Preparation', 'Watch-only'],
+                ['Signing', 'External wallet'],
+                ['Experimental PQ routes', 'Excluded'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex flex-wrap justify-between gap-2 py-4">
+                  <dt className="text-zinc-400">{label}</dt>
+                  <dd className="font-medium text-zinc-100">{value}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </div>
-        </section>
-      </Reveal>
+          <p className="border-t border-rule bg-panel-raised px-6 py-4 text-xs leading-relaxed text-zinc-300">
+            No seed phrase or private key requested. Signing support depends on your wallet and the
+            source output type.
+          </p>
+        </aside>
+      </section>
 
-      <RoadmapSection />
+      <section className="border-y border-rule py-12 sm:py-16" aria-labelledby="workflow-title">
+        <div className="tabular text-xs uppercase tracking-widest text-accent">
+          The transaction path
+        </div>
+        <h2 id="workflow-title" className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Keep every step reviewable.
+        </h2>
+        <ol className="mt-8 grid gap-7 sm:grid-cols-2 lg:grid-cols-4">
+          {WORKFLOW.map(([number, title, detail]) => (
+            <li key={number} className="border-t border-rule-strong pt-5">
+              <div className="flex items-center justify-between">
+                <span className="tabular text-xs text-amber-300">{number}</span>
+                <span className="text-zinc-500" aria-hidden>
+                  →
+                </span>
+              </div>
+              <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{detail}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
 
-      <PartnerCta />
+      <section
+        className="grid gap-8 py-16 sm:py-24 lg:grid-cols-[.7fr_1.3fr]"
+        aria-labelledby="decision-title"
+      >
+        <div>
+          <div className="tabular text-xs uppercase tracking-widest text-accent">
+            Choose deliberately
+          </div>
+          <h2 id="decision-title" className="mt-3 text-3xl font-semibold tracking-tight">
+            A move should earn its cost.
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+            Exposure, transaction fees, privacy, and signer support all matter. A scan is a starting
+            point for a decision.
+          </p>
+        </div>
+        <div className="divide-y divide-rule border-y border-rule">
+          {[
+            [
+              'Inspect before moving',
+              'Fresh native SegWit outputs can hide a public key until spending. Taproot output keys are visible immediately. Address history helps distinguish these cases.',
+            ],
+            [
+              'Preserve your privacy',
+              'Combining outputs can link balances and address histories. Choose inputs deliberately and avoid moving every coin simply to consolidate.',
+            ],
+            [
+              'Recognize special assets',
+              'Inscriptions, runes, multisig, timelocks, and custom scripts need specialized tools. An ordinary address scan cannot prove that every asset or spending condition was discovered.',
+            ],
+          ].map(([title, detail]) => (
+            <article key={title} className="py-6">
+              <h3 className="text-[1rem] font-semibold text-zinc-100">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">{detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-16 border border-rule bg-panel px-6 py-8 sm:p-10">
+        <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <div className="tabular text-xs uppercase tracking-widest text-accent">
+              Individuals · Wallets · Exchanges
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Build readiness around existing custody.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300">
+              Start with a public address or wallet inventory. Review the available route, keep
+              approvals in your existing signing process, and retain the transaction plan for your
+              records.
+            </p>
+          </div>
+          <Link
+            href="/bitcoin/research"
+            className="inline-flex min-h-11 items-center justify-center rounded-control border border-brand/50 px-5 py-3 text-sm font-semibold text-brand-bright hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-brand-bright"
+          >
+            Read the route analysis →
+          </Link>
+        </div>
+        <p className="mt-7 border-t border-rule pt-5 text-sm leading-relaxed text-zinc-400">
+          Post-quantum Bitcoin research is advancing, including a QSB mainnet experiment. These
+          experimental constructions are outside the kit. Review their assumptions before treating
+          any route as suitable for custody.
+        </p>
+      </section>
     </div>
   );
 }

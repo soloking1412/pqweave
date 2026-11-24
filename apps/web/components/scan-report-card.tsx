@@ -15,8 +15,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export function ScanReportCard({ report }: { report: ScanReport }) {
   const style = RISK_STYLES[report.level];
-  const protectedByPqweave = report.hardened || report.pqweaveProtected;
-  const showProtect = report.exposed && !protectedByPqweave;
+  const showProtect = report.exposed && !report.isContract;
 
   return (
     <div className="rounded-panel border border-rule bg-panel p-6 sm:p-7">
@@ -63,11 +62,7 @@ export function ScanReportCard({ report }: { report: ScanReport }) {
           {report.delegatedTo ? shortenAddress(report.delegatedTo) : 'None'}
         </Field>
         <Field label="PQWeave">
-          {report.pqweaveProtected
-            ? 'Post-quantum account'
-            : report.hardened
-              ? 'Hardened'
-              : 'Not protected'}
+          {report.hardened ? 'Known 7702 delegation; revocable' : 'Not verified'}
         </Field>
       </div>
 
@@ -91,10 +86,10 @@ export function ScanReportCard({ report }: { report: ScanReport }) {
 
       {showProtect && (
         <Link
-          href={`/migrate?address=${report.address}`}
+          href={`/kit?chain=${report.chain}&address=${report.address}`}
           className="mt-4 inline-flex rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright"
         >
-          Protect this wallet →
+          Build migration plan →
         </Link>
       )}
     </div>

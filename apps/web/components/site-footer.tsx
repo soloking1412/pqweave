@@ -1,35 +1,37 @@
 import Link from 'next/link';
-import { LIVE_CHAIN_COUNT } from '@/lib/chains-directory';
 import { Logo } from './logo';
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-white/5">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-8 text-sm text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2.5">
-          <Logo className="h-5 w-5" />
-          <span>PQWeave</span>
-          <span className="text-zinc-600">
-            — post-quantum security across {LIVE_CHAIN_COUNT} chains
-          </span>
+    <footer className="border-t border-rule bg-base">
+      <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 text-sm text-zinc-400 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <Logo className="h-5 w-5" />
+            <span className="text-zinc-200">PQWeave</span>
+          </div>
+          <p className="mt-3 max-w-md text-xs leading-relaxed">
+            Bitcoin readiness with your existing signer. Standard transactions offer exposure
+            reduction, not post-quantum protection.
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <Link href="/scan" className="transition hover:text-white">
-            Scanner
-          </Link>
-          <Link href="/migrate" className="transition hover:text-white">
-            Migrate
-          </Link>
-          <Link href="/exposure" className="transition hover:text-white">
-            Exposure index
-          </Link>
-          <Link href="/security" className="transition hover:text-white">
-            Security
-          </Link>
-          <a href="mailto:partnerships@pqweave.com" className="transition hover:text-white">
-            Partnerships
-          </a>
-        </div>
+        <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {[
+            ['/protect/bitcoin', 'Bitcoin kit'],
+            ['/ethereum', 'Ethereum'],
+            ['/bitcoin/research', 'Research'],
+            ['/exposure/bitcoin', 'Exposure'],
+            ['/security', 'Security'],
+          ].map(([href, label]) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex min-h-11 items-center hover:text-white focus-visible:ring-2 focus-visible:ring-brand-bright"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </footer>
   );

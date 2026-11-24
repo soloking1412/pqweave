@@ -226,7 +226,7 @@ export const DIRECTORY_CHAINS: DirectoryChain[] = [
     exposure: 'address-is-key',
     scheme: 'Ed25519',
     accent: '#d7dde3',
-    note: 'Address encodes the key directly, so exposure is permanent from creation.',
+    note: 'Native Falcon-1024 accounts are live. Existing accounts can rekey, subject to wallet support.',
   },
   {
     name: 'Polkadot',

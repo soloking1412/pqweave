@@ -161,17 +161,17 @@ export function WalletScanClient() {
   return (
     <div className="rounded-panel border border-rule bg-panel p-6">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-xl font-semibold tracking-tight">Whole-wallet exposure scan</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Wallet account exposure scan</h2>
         <span className="rounded-full border border-rule px-2 py-0.5 text-[11px] text-zinc-400">
           watch-only · public keys
         </span>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-        Scan every account in a wallet at once from its extended public keys. Each chain is walked
-        until the gap limit is reached, so coverage follows the wallet&apos;s real shape. An
-        extended <span className="text-zinc-200">public</span> key can read balances and history but
-        cannot spend, and it never leaves your browser — only the addresses derived from it are
-        looked up.
+        Build an exposure report for the accounts you provide through their extended public keys.
+        Receive and change addresses are checked up to the configured gap and scan limits; other
+        accounts or addresses beyond those limits remain unknown. An extended{' '}
+        <span className="text-zinc-200">public</span> key can read balances and history but cannot
+        spend, and it never leaves your browser — only the addresses derived from it are looked up.
       </p>
 
       <div className="mt-5 space-y-4">
@@ -252,9 +252,9 @@ export function WalletScanClient() {
         <button
           onClick={() => run()}
           disabled={scanning}
-          className="rounded-control bg-brand px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
+          className="rounded-control bg-[#285f96] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#326fa9] active:bg-[#204f7d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:opacity-60"
         >
-          {scanning ? 'Scanning…' : 'Scan wallet'}
+          {scanning ? 'Scanning…' : 'Scan wallet accounts'}
         </button>
         {scanning && (
           <button
@@ -323,7 +323,7 @@ export function WalletScanClient() {
               {account.topExposed.length > 0 && (
                 <div className="mt-3">
                   <div className="text-[11px] uppercase tracking-wide text-zinc-500">
-                    Largest exposed balances — evacuate these first
+                    Largest exposed balances — review before deciding to move
                   </div>
                   <ul className="mt-1.5 space-y-1">
                     {account.topExposed.map((entry) => (

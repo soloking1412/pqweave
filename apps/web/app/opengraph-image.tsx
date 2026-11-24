@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PQWeave — post-quantum security for web3 wallets';
+export const alt = 'PQWeave — post-quantum migration planning for existing wallets';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -46,7 +46,7 @@ export default function Image() {
             letterSpacing: '-3px',
           }}
         >
-          Your public key is
+          Plan the move to
         </div>
         <div
           style={{
@@ -57,7 +57,7 @@ export default function Image() {
             letterSpacing: '-3px',
           }}
         >
-          already exposed.
+          post-quantum.
         </div>
         <div
           style={{
@@ -68,14 +68,13 @@ export default function Image() {
             maxWidth: '960px',
           }}
         >
-          Scan any address across 16 chains. Move an EVM wallet behind a post-quantum signature in
-          one transaction.
+          Assess existing wallets. Choose a chain-supported route. Keep your own keys.
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', color: '#a1a1aa', fontSize: '26px' }}>
-          Scan · Harden · Migrate
+          Assess · Plan · Verify
         </div>
         <div style={{ display: 'flex', color: '#71717a', fontSize: '26px' }}>pqweave.com</div>
       </div>

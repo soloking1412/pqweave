@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://pqweave.com'),
   title: 'PQWeave',
   description:
-    'Scan any address for quantum exposure across 16 chains, including Bitcoin, Ethereum and Solana. Move an EVM wallet behind a post-quantum signature in one transaction, with an honest answer on every other chain.',
+    'Inspect Bitcoin quantum exposure and prepare a reviewed transaction with your existing signer. Watch-only readiness for individuals, wallets, and exchanges.',
   openGraph: {
     title: 'PQWeave',
     description:
-      'Scan your quantum exposure across 16 chains, then move an EVM wallet to a post-quantum account in one transaction. No custody.',
+      'Prepare a reviewed Bitcoin transaction with your existing signer. Watch-only readiness, exposure analysis, and current post-quantum Bitcoin research.',
     url: 'https://pqweave.com',
     siteName: 'PQWeave',
     type: 'website',
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'PQWeave',
     description:
-      'Scan your quantum exposure across 16 chains, then move an EVM wallet to a post-quantum account in one transaction. No custody.',
+      'Prepare a reviewed Bitcoin transaction with your existing signer. Watch-only readiness, exposure analysis, and current post-quantum Bitcoin research.',
   },
 };
 

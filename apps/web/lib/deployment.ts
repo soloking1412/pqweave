@@ -4,7 +4,7 @@ import { getContracts, type PQWeaveContracts } from './contracts';
  * Where the migration contracts currently run. `preview` means they are not
  * deployed anywhere the UI can reach, so the on-chain step is disabled while the
  * rest of the flow (scan, post-quantum keygen) still works. `testnet` and
- * `mainnet` mean a real one-transaction migration can be broadcast.
+ * `mainnet` mean destination deployment and migration can be broadcast.
  */
 export type DeploymentStage = 'preview' | 'testnet' | 'mainnet';
 
@@ -31,6 +31,15 @@ export function chainName(id: number | undefined): string | null {
   return SUPPORTED_CHAINS.find((chain) => chain.id === id)?.name ?? null;
 }
 
+/** A configured testnet deployment must never execute on a mainnet wallet. */
+export function isExecutionNetwork(stage: DeploymentStage, chainId: number): boolean {
+  return (
+    stage === 'testnet' &&
+    chainId === 11155111 &&
+    process.env.NEXT_PUBLIC_DEPLOYMENT_CHAIN_ID === String(chainId)
+  );
+}
+
 export interface DeploymentStatus {
   stage: DeploymentStage;
   contracts: PQWeaveContracts | null;
@@ -43,7 +52,14 @@ export function getDeploymentStatus(): DeploymentStatus {
   if (!contracts) {
     return { stage: 'preview', contracts: null, live: false };
   }
-  const stage: DeploymentStage =
-    process.env.NEXT_PUBLIC_DEPLOYMENT_STAGE === 'mainnet' ? 'mainnet' : 'testnet';
+  // Browser signing-state recovery is not production qualified. An environment
+  // flag is not audit evidence and must not enable mainnet fund movement.
+  if (
+    process.env.NEXT_PUBLIC_DEPLOYMENT_STAGE !== 'testnet' ||
+    process.env.NEXT_PUBLIC_DEPLOYMENT_CHAIN_ID !== '11155111'
+  ) {
+    return { stage: 'preview', contracts: null, live: false };
+  }
+  const stage: DeploymentStage = 'testnet';
   return { stage, contracts, live: true };
 }

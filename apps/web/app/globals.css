@@ -89,8 +89,8 @@
   --color-sky-400: #6aa6dd;
   --color-sky-500: #3f7fbf;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 
   /* Radius carries meaning: instrument panels are near-sharp, controls are
@@ -122,8 +122,10 @@ body {
   color: var(--color-ink);
 }
 
-a {
-  color: inherit;
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 ::selection {

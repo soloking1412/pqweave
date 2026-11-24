@@ -5,21 +5,21 @@ import { PartnerForm } from './partner-form';
 export const metadata: Metadata = {
   title: 'Partners — PQWeave',
   description:
-    'Integrate quantum-safe exposure detection and migration into your wallet, exchange, or custody platform.',
+    'A post-quantum migration planning kit for wallets, exchanges, and custodians. Your signer keeps the keys.',
 };
 
 const VALUE = [
   {
-    title: 'Scanner SDK & API',
-    body: `Drop quantum-exposure detection into your product across ${LIVE_CHAIN_COUNT} chains. One call per address.`,
+    title: 'Fleet inventory',
+    body: `Assess public-key exposure and known balances across ${LIVE_CHAIN_COUNT} scanned chains. Keep unsupported assets and unknown signing policies visible.`,
   },
   {
-    title: 'One-click migration',
-    body: 'Offer your EVM users a single-transaction sweep into a post-quantum account.',
+    title: 'Chain-specific plans',
+    body: 'Route EVM, Algorand, Bitcoin, and other accounts to the protection each chain can enforce. Export plans for your existing signer and approval process.',
   },
   {
-    title: 'Shared infrastructure',
-    body: 'Deterministic contracts at the same address on every chain — no per-partner deployment. Independent audit in progress before mainnet.',
+    title: 'Evidence and controls',
+    body: 'Review destination control, missing assets, simulation, approvals, and post-migration reconciliation before a production wave.',
   },
 ];
 
@@ -29,15 +29,15 @@ export default function PartnersPage() {
       <div className="max-w-2xl">
         <span className="inline-flex items-center gap-2 rounded-full border border-rule bg-white/5 px-3 py-1 text-xs text-zinc-300">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          Onboarding launch partners
+          Read-only partner pilots
         </span>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Protect your users before Q-Day
+          Give every wallet a migration plan.
         </h1>
         <p className="mt-3 text-zinc-400">
-          Wallets, exchanges, and custodians: integrate PQWeave&apos;s detection and migration to
-          give your users a clear path to post-quantum safety. Tell us what you&apos;re building and
-          we&apos;ll set you up.
+          Add one planning workflow to your wallet or custody system. PQWeave maps chain
+          capabilities and prepares evidence; your team retains keys, policy, and signing. Start
+          with a read-only cohort and a testnet integration.
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default function PartnersPage() {
         <ul className="space-y-5">
           {VALUE.map((item) => (
             <li key={item.title} className="rounded-panel border border-rule bg-panel p-5">
-              <h2 className="text-base font-semibold text-white">{item.title}</h2>
+              <h2 className="text-[1rem] font-semibold text-white">{item.title}</h2>
               <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{item.body}</p>
             </li>
           ))}
@@ -55,6 +55,31 @@ export default function PartnersPage() {
           <PartnerForm />
         </div>
       </div>
+      <section className="mt-10 rounded-panel border border-rule bg-panel p-6 sm:p-8">
+        <div className="tabular text-xs uppercase tracking-widest text-accent">
+          Integration surface
+        </div>
+        <h2 className="mt-3 text-xl font-semibold">Plan a wallet fleet without sending keys</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-300">
+          The stateless <code className="text-accent">POST /api/kit</code> endpoint accepts up to 50
+          public account records per request and returns route, checks, limitations, and source
+          links. It plans from the facts you provide; your system must verify balances, signer
+          policy, and destination control. The same route selector is exported as
+          <code className="text-accent"> @pqweave/sdk/kit</code>.
+        </p>
+        <pre className="mt-5 overflow-x-auto rounded-control border border-rule bg-base p-4 text-xs leading-relaxed text-zinc-200">
+          {JSON.stringify(
+            {
+              chain: 'algorand',
+              address: 'PUBLIC_ACCOUNT_ADDRESS',
+              exposure: 'unknown',
+              currentAuthority: 'unknown',
+            },
+            null,
+            2,
+          )}
+        </pre>
+      </section>
     </div>
   );
 }

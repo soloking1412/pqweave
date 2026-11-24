@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { type Address, type Hex, keccak256, parseEther, zeroAddress } from 'viem';
 import { useAccount, useChainId, useConnect, usePublicClient, useWalletClient } from 'wagmi';
@@ -9,17 +9,18 @@ import Link from 'next/link';
 import { MigrateStatusBanner } from '@/components/migrate-status-banner';
 import { PqcKeygen, type PqcKeyState } from '@/components/pqc-keygen';
 import { explorerTxUrl } from '@/lib/contracts';
-import { chainName, getDeploymentStatus } from '@/lib/deployment';
+import { chainName, getDeploymentStatus, isExecutionNetwork } from '@/lib/deployment';
 
 const DEFAULT_THRESHOLD = parseEther('0.05');
 
 export function StartClient() {
-  const status = getDeploymentStatus();
-  const contracts = status.contracts;
+  const status = useMemo(() => getDeploymentStatus(), []);
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const { isConnected } = useAccount();
   const chainId = useChainId();
+  const executionLive = status.live && isExecutionNetwork(status.stage, chainId);
+  const contracts = executionLive ? status.contracts : null;
   const { connect, connectors, isPending: connecting } = useConnect();
 
   const [key, setKey] = useState<PqcKeyState | null>(null);
@@ -68,7 +69,8 @@ export function StartClient() {
     setActivateError(null);
     setActivating(true);
     try {
-      if (!contracts || !walletClient || !key?.root) throw new Error('Not ready.');
+      if (!executionLive || !contracts || !walletClient || !key?.root)
+        throw new Error('Not ready.');
       const hash = await walletClient.sendTransaction({
         to: contracts.factory,
         data: encodeCreateAccount({
@@ -103,15 +105,15 @@ export function StartClient() {
       <section
         className={`rounded-panel border p-6 ${key?.seedSaved ? 'border-brand/40 bg-panel' : 'border-rule bg-panel/60'}`}
       >
-        <h2 className="text-lg font-semibold tracking-tight">2 · Your quantum-safe address</h2>
+        <h2 className="text-lg font-semibold tracking-tight">2 · Testnet destination address</h2>
         {!key?.seedSaved ? (
           <p className="mt-3 text-sm text-zinc-500">
             Save your recovery key above first — the address is derived from it.
           </p>
         ) : !contracts ? (
           <p className="mt-3 text-sm text-zinc-400">
-            Contracts are not deployed in this environment yet, so the address cannot be derived.
-            Your key is real and stays valid — check back once the testnet deployment is live.
+            Connect to a configured testnet to derive a destination address. Do not send real funds
+            to this unaudited account.
           </p>
         ) : predictError ? (
           <p className="mt-3 text-sm text-rose-300">{predictError}</p>
@@ -125,7 +127,7 @@ export function StartClient() {
             <div className="min-w-0 flex-1 space-y-3">
               <div className="rounded-lg border border-white/5 bg-black/20 p-3">
                 <div className="text-xs uppercase tracking-wide text-zinc-500">
-                  Post-quantum account · sole authority
+                  Predicted testnet account · verify owner policy
                 </div>
                 <div className="mt-1 break-all font-mono text-xs text-accent">{predicted}</div>
               </div>
@@ -136,9 +138,8 @@ export function StartClient() {
                 {copied ? 'Copied ✓' : 'Copy address'}
               </button>
               <p className="text-xs leading-relaxed text-zinc-500">
-                This address is reserved for your key by CREATE2 — the factory can only ever deploy
-                it with the exact key you just generated, so it is safe to receive funds before the
-                contract exists. The same address works on every EVM chain PQWeave is deployed to.
+                This is a predicted address from the configured factory and key. Verify the factory
+                code and destination policy independently. Use test funds only.
               </p>
               <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
                 Exchange caveat: some exchanges refuse withdrawals to smart-contract addresses.
@@ -156,7 +157,7 @@ export function StartClient() {
         {txHash ? (
           <div className="mt-3 space-y-2">
             <p className="text-sm text-emerald-300">
-              Account deployed. From here on, only your post-quantum key can move its funds.
+              Deployment submitted. Verify the code and owner policy on chain before relying on it.
             </p>
             {explorer && (
               <a
@@ -172,9 +173,8 @@ export function StartClient() {
         ) : (
           <div className="mt-3 space-y-3">
             <p className="text-sm leading-relaxed text-zinc-400">
-              Funds can sit at the reserved address without the contract existing. Deploying it now
-              (any funded wallet can pay the gas — the deployment is bound to your key, so who
-              deploys does not matter) makes the account usable for outgoing transfers
+              Deploy the account on a configured testnet with a gas wallet. Confirm that the
+              predicted address matches the deployment and test an outgoing transfer
               {chainName(chainId) ? ` on ${chainName(chainId)}` : ''}.
             </p>
             {!isConnected ? (
@@ -188,7 +188,7 @@ export function StartClient() {
             ) : (
               <button
                 onClick={activate}
-                disabled={!predicted || activating || !status.live}
+                disabled={!predicted || activating || !executionLive}
                 className="rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright disabled:opacity-60"
               >
                 {activating ? 'Deploying…' : 'Deploy my account'}

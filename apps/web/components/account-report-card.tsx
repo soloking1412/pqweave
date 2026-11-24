@@ -36,7 +36,15 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Field label="Network">{report.chain}</Field>
-        <Field label="Public key">{report.exposed ? 'Exposed' : 'Not revealed'}</Field>
+        <Field label="Signing authority">
+          {report.chain === 'Algorand'
+            ? report.authorizationAddress
+              ? 'Rekeyed · scheme unverified'
+              : 'Scheme unverified'
+            : report.exposed
+              ? 'Classical key exposed'
+              : 'Key not revealed'}
+        </Field>
         <Field label="Balance">
           {Number(report.balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
           {report.symbol}
@@ -69,6 +77,14 @@ export function AccountReportCard({ report }: { report: AccountScanReport }) {
           className="mt-4 inline-flex rounded-control border border-violet-500/30 bg-violet-500/10 px-5 py-3 text-sm font-medium text-violet-100 transition hover:bg-violet-500/20"
         >
           What can actually be done on Stellar →
+        </Link>
+      )}
+      {report.chain === 'Algorand' && (
+        <Link
+          href={`/kit?chain=algorand&address=${encodeURIComponent(report.address)}`}
+          className="mt-4 inline-flex min-h-11 items-center rounded-control border border-brand/40 px-5 py-3 text-sm font-medium text-brand-bright hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-brand-bright"
+        >
+          Review native Falcon migration →
         </Link>
       )}
     </div>

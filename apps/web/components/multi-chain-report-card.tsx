@@ -34,7 +34,6 @@ function ChainRow({ entry }: { entry: MultiChainScanEntry }) {
   }
 
   const style = RISK_STYLES[entry.report.level];
-  const protectedByPqweave = entry.report.hardened || entry.report.pqweaveProtected;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-white/5 bg-black/20 px-4 py-3">
       <div className="flex items-center gap-3">
@@ -44,9 +43,9 @@ function ChainRow({ entry }: { entry: MultiChainScanEntry }) {
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${style.badge}`}>
           {style.label}
         </span>
-        {protectedByPqweave && (
-          <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
-            PQWeave
+        {entry.report.hardened && (
+          <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-300 ring-1 ring-amber-500/30">
+            7702 · revocable
           </span>
         )}
       </div>
@@ -64,12 +63,7 @@ export function MultiChainReportCard({ report }: { report: MultiChainScanReport 
   const style = RISK_STYLES[report.level];
   const exposedCount = report.exposedChains.length;
   const showProtect = report.results.some(
-    (entry) =>
-      entry.ok &&
-      entry.report.exposed &&
-      !entry.report.isContract &&
-      !entry.report.hardened &&
-      !entry.report.pqweaveProtected,
+    (entry) => entry.ok && entry.report.exposed && !entry.report.isContract,
   );
 
   return (
@@ -103,10 +97,10 @@ export function MultiChainReportCard({ report }: { report: MultiChainScanReport 
 
       {showProtect && (
         <Link
-          href={`/migrate?address=${report.address}`}
+          href={`/kit?chain=ethereum&address=${report.address}`}
           className="mt-4 inline-flex rounded-control bg-brand px-5 py-3 font-medium text-white transition hover:bg-brand-bright"
         >
-          Protect this wallet →
+          Build migration plan →
         </Link>
       )}
     </div>

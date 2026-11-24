@@ -75,8 +75,10 @@ export interface AccountScanReport {
   symbol: string;
   address: string;
   exposed: boolean;
+  authorizationAddress?: string;
+  currentAuthority?: 'rekeyed-unknown' | 'unknown';
   balance: string;
-  /** True when the address itself is the public key (no fresh-address fix). */
+  /** Original address encodes a public key; some networks can change authority. */
   addressIsKey: boolean;
   score: number;
   level: RiskLevel;

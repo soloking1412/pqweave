@@ -1,7 +1,12 @@
 import { formatEther, formatUnits, getAddress, isAddress } from 'viem';
 import { isAlgorandAddress, scanAlgorandAddress } from '@pqweave/sdk/algorand';
 import { isAptosAddress, scanAptosAddress } from '@pqweave/sdk/aptos';
-import { BITCOIN, isUtxoAddress, LITECOIN, scanUtxoAddress } from '@pqweave/sdk/bitcoin';
+import {
+  bitcoinAddressNetwork,
+  isUtxoAddress,
+  LITECOIN,
+  scanUtxoAddress,
+} from '@pqweave/sdk/bitcoin';
 import { isCardanoAddress, scanCardanoAddress } from '@pqweave/sdk/cardano';
 import { isChainKey, MAINNET_CHAIN_KEYS } from '@pqweave/sdk/chains';
 import { isCosmosAddress, scanCosmosAddress } from '@pqweave/sdk/cosmos';
@@ -15,6 +20,7 @@ import { isSuiAddress, scanSuiAddress } from '@pqweave/sdk/sui';
 import { isTonAddress, scanTonAddress } from '@pqweave/sdk/ton';
 import { isTronAddress, scanTronAddress } from '@pqweave/sdk/tron';
 import { isXrpAddress, scanXrpAddress } from '@pqweave/sdk/xrp';
+import { bitcoinIndexerNetwork, bitcoinJson, BITCOIN_FETCH } from '@/lib/bitcoin-indexer';
 import { getKnownPQWeave } from '@/lib/contracts';
 import type {
   AccountScanReport,
@@ -27,11 +33,18 @@ import type {
 export const dynamic = 'force-dynamic';
 
 /** Reject if a scan takes too long, so a slow RPC/indexer can't hang the request. */
-function withTimeout<T>(promise: Promise<T>, ms = 15_000): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('scan timed out')), ms)),
-  ]);
+async function withTimeout<T>(promise: Promise<T>, ms = 15_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('scan timed out')), ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 type AccountFields = Omit<AccountScanReport, 'kind' | 'addressIsKey'>;
@@ -75,6 +88,8 @@ const accountScanners: Record<string, AccountScanner> = {
         score: r.score,
         level: r.level,
         reasons: r.reasons,
+        ...(r.authorizationAddress ? { authorizationAddress: r.authorizationAddress } : {}),
+        currentAuthority: r.currentAuthority,
       };
     },
   },
@@ -353,12 +368,24 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   if (chain === 'bitcoin' || chain === 'litecoin') {
-    const network = chain === 'litecoin' ? LITECOIN : BITCOIN;
+    let network;
+    try {
+      network =
+        chain === 'litecoin'
+          ? LITECOIN
+          : bitcoinIndexerNetwork(
+              bitcoinAddressNetwork(address) === 'testnet' ? 'testnet' : 'bitcoin',
+            ).network;
+    } catch {
+      return bitcoinJson({ error: 'Bitcoin indexer configuration unavailable' }, 503);
+    }
     if (!isUtxoAddress(address, network)) {
       return Response.json({ error: `Enter a valid ${network.name} address.` }, { status: 400 });
     }
     try {
-      const a = await withTimeout(scanUtxoAddress(address, network));
+      const a = await withTimeout(
+        scanUtxoAddress(address, network, { ...BITCOIN_FETCH, signal: request.signal }),
+      );
       const report: UtxoScanReport = {
         kind: 'utxo',
         network: a.network,
@@ -373,7 +400,7 @@ export async function GET(request: Request): Promise<Response> {
         level: a.level,
         reasons: a.reasons,
       };
-      return Response.json(report);
+      return bitcoinJson(report);
     } catch {
       return Response.json(
         { error: `${network.name} scan failed — the indexer may be unavailable. Try again.` },
@@ -382,7 +409,7 @@ export async function GET(request: Request): Promise<Response> {
     }
   }
 
-  const accountScanner = accountScanners[chain];
+  const accountScanner = Object.hasOwn(accountScanners, chain) ? accountScanners[chain] : undefined;
   if (accountScanner) {
     if (!accountScanner.valid(address)) {
       return Response.json(
@@ -421,7 +448,7 @@ export async function GET(request: Request): Promise<Response> {
         knownVerifiers: known.verifiers,
       }),
     );
-    return Response.json(toEvmReport(assessment));
+    return Response.json(toEvmReport(assessment), { headers: { 'Cache-Control': 'no-store' } });
   } catch {
     return Response.json(
       {

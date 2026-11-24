@@ -48,9 +48,9 @@ const FAMILIES = [
     tag: 'Address is the key',
     tone: 'border-zinc-500/30 bg-white/5',
     dot: 'bg-zinc-400',
-    chains: 'Solana, Algorand, Stellar, NEAR, Polkadot',
-    body: 'The public key is the address, so it is exposed the moment the account exists — before any transaction.',
-    fix: 'No application-layer fix — protection requires a protocol-level post-quantum upgrade.',
+    chains: 'Solana, Stellar, NEAR, Polkadot; legacy Algorand accounts',
+    body: 'On these classical account types the address reveals a public key. Algorand is an exception: native Falcon accounts and rekeying are now supported.',
+    fix: 'Migration depends on chain rules. Algorand can rekey; other routes may require a vault or future protocol support.',
   },
 ];
 
