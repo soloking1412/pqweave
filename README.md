@@ -29,7 +29,7 @@ Live at [pqweave.com](https://www.pqweave.com). MIT licensed. **Not audited.**
 
 | Gate                   | Result                | Reproduce                                      |
 | ---------------------- | --------------------- | ---------------------------------------------- |
-| SDK suite              | 492 tests             | `pnpm --filter @pqweave/sdk test`              |
+| SDK suite              | 501 tests             | `pnpm --filter @pqweave/sdk test`              |
 | Contracts              | 94 tests, fuzzed      | `forge test --root packages/contracts`         |
 | Bitcoin Core lifecycle | 113 assertions        | `pnpm --filter @pqweave/sdk test:bitcoin-core` |
 | Ethereum lifecycle     | 122 assertions        | `pnpm ethereum:test`                           |
