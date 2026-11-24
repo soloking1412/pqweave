@@ -1,5 +1,5 @@
 import { classifyUtxoAddress } from './address.js';
-import { getAddressStats } from './esplora.js';
+import { getAddressStats, type EsploraOptions } from './esplora.js';
 import { BITCOIN, type UtxoNetwork } from './networks.js';
 import type {
   EsploraAddressStats,
@@ -31,21 +31,25 @@ export function assessUtxoExposure(
   stats: EsploraAddressStats,
 ): UtxoExposureResult {
   const type = classifyUtxoAddress(address, network);
-  const hasSpent = stats.chain_stats.spent_txo_count > 0;
+  const hasSpent =
+    stats.chain_stats.spent_txo_count > 0 || (stats.mempool_stats?.spent_txo_count ?? 0) > 0;
   // Taproot key-path reveals the public key in the output itself; other types
   // reveal it only once the address has been spent from. BIP-360 (P2MR) commits
   // to a script tree with no internal key, so funding it exposes nothing — that
   // is the whole point of the output type.
   const exposed = type === 'p2tr' || hasSpent;
   const balanceSats =
-    BigInt(stats.chain_stats.funded_txo_sum) - BigInt(stats.chain_stats.spent_txo_sum);
+    BigInt(stats.chain_stats.funded_txo_sum) -
+    BigInt(stats.chain_stats.spent_txo_sum) +
+    BigInt(stats.mempool_stats?.funded_txo_sum ?? 0) -
+    BigInt(stats.mempool_stats?.spent_txo_sum ?? 0);
   return {
     address,
     network: network.id,
     type,
     exposed,
     hasSpent,
-    txCount: stats.chain_stats.tx_count,
+    txCount: stats.chain_stats.tx_count + (stats.mempool_stats?.tx_count ?? 0),
     balanceSats,
   };
 }
@@ -75,7 +79,9 @@ export function assessUtxoRisk(exposure: UtxoExposureResult, symbol: string): Ut
     reasons.push('Public key not yet revealed; the address has not been spent from.');
     score = exposure.balanceSats > 0n ? 12 : 5;
     if (exposure.balanceSats > 0n) {
-      reasons.push('Funds are safe until the first spend reveals the public key.');
+      reasons.push(
+        'A first spend can reveal the public key; review short-range exposure before spending.',
+      );
     }
   } else {
     reasons.push(
@@ -115,7 +121,7 @@ export function assessUtxoRisk(exposure: UtxoExposureResult, symbol: string): Ut
   };
 }
 
-export interface UtxoScanOptions {
+export interface UtxoScanOptions extends EsploraOptions {
   /** Override the network's default Esplora API base URL. */
   apiUrl?: string;
   /** Fetch implementation, for testing or custom transports. */

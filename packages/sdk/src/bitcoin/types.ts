@@ -1,7 +1,7 @@
-import type { RiskLevel } from '../scanner/index.js';
 import type { UtxoNetworkId } from './networks.js';
 
-export type { RiskLevel };
+// Keep the Bitcoin release independent of the EVM scanner dependency graph.
+export type RiskLevel = 'safe' | 'low' | 'medium' | 'high' | 'critical';
 
 /**
  * `p2mr` is BIP-360 Pay-to-Merkle-Root (SegWit v2, `bc1z…`). The BIP is Draft
@@ -13,6 +13,12 @@ export type UtxoAddressType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh' | 'p2tr' | '
 /** Minimal subset of the Esplora `/address/:address` response the scanner uses. */
 export interface EsploraAddressStats {
   chain_stats: {
+    funded_txo_sum: number;
+    spent_txo_sum: number;
+    spent_txo_count: number;
+    tx_count: number;
+  };
+  mempool_stats?: {
     funded_txo_sum: number;
     spent_txo_sum: number;
     spent_txo_count: number;

@@ -99,6 +99,56 @@ describe('sweep PSBTs are signable for every script type', () => {
   }
 });
 
+describe('Bitcoin sweep input boundaries', () => {
+  it('rejects duplicate outpoints before building a PSBT', () => {
+    const input = inputFor('p2wpkh');
+    expect(() =>
+      buildEvacuationPsbts({
+        inputs: [input, input],
+        destination: DEST,
+        feeRates: { economy: 1, standard: 2, priority: 3 },
+      }),
+    ).toThrow(/duplicate UTXO outpoint/);
+  });
+
+  it('rejects wrong-network inputs and destinations', () => {
+    const input = inputFor('p2wpkh');
+    const testnetDest = btc.Address(btc.TEST_NETWORK).encode({
+      type: 'wpkh',
+      hash: new Uint8Array(20).fill(1),
+    });
+    expect(() =>
+      buildEvacuationPsbts({
+        inputs: [input],
+        destination: testnetDest,
+        feeRates: { economy: 1, standard: 2, priority: 3 },
+      }),
+    ).toThrow(/destination/);
+    expect(() =>
+      buildEvacuationPsbts({
+        inputs: [input],
+        destination: testnetDest,
+        feeRates: { economy: 1, standard: 2, priority: 3 },
+        testnet: true,
+      }),
+    ).toThrow(/input address/);
+  });
+
+  it('rejects invalid fee rates and UTXO values', () => {
+    const input = inputFor('p2wpkh');
+    expect(() =>
+      buildEvacuationPsbts({
+        inputs: [input],
+        destination: DEST,
+        feeRates: { economy: -1, standard: 2, priority: 3 },
+      }),
+    ).toThrow(/fee rates/);
+    expect(() => buildOne({ ...input, value: Number.MAX_SAFE_INTEGER + 1 })).toThrow(
+      /invalid outpoint or amount/,
+    );
+  });
+});
+
 describe('PSBT carries the fields each signer needs', () => {
   it('legacy input gets nonWitnessUtxo and bip32Derivation', () => {
     const plan = buildOne(inputFor('p2pkh'));

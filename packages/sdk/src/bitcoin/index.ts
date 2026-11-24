@@ -1,9 +1,19 @@
 export {
+  bitcoinAddressNetwork,
   classifyBitcoinAddress,
   classifyUtxoAddress,
   isBitcoinAddress,
+  isBitcoinAddressOnNetwork,
   isUtxoAddress,
 } from './address.js';
+export {
+  BITCOIN_KIT_POLICY,
+  buildBitcoinReadinessPlan,
+  createBitcoinPlanBundle,
+  restoreBitcoinPlanBundle,
+  revalidateBitcoinPlan,
+} from './kit.js';
+export type { BitcoinPlanBundle } from './kit.js';
 export { BITCOIN, LITECOIN, UTXO_NETWORKS } from './networks.js';
 export type { UtxoNetwork, UtxoNetworkId } from './networks.js';
 export {
@@ -24,6 +34,7 @@ export {
   EsploraError,
   feeTiers,
   fetchWithRetry,
+  readEsploraBody,
   getAddressStats,
   getFeeEstimates,
   getTxHex,
@@ -72,7 +83,6 @@ export {
   bip361Timeline,
   EC_DISABLING_MODELS,
   EVIDENCE_TRIGGER_CONSEQUENCE,
-  PHASE_B_SCOPE_IS_AMBIGUOUS,
   summarizeBip361,
 } from './bip361.js';
 export type {

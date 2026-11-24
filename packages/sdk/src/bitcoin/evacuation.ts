@@ -1,6 +1,6 @@
 import * as btc from '@scure/btc-signer';
 import { base64, hex } from '@scure/base';
-import { classifyUtxoAddress } from './address.js';
+import { classifyUtxoAddress, isBitcoinAddressOnNetwork } from './address.js';
 import { parseMasterFingerprint } from './hd.js';
 import { BITCOIN, type UtxoNetwork } from './networks.js';
 import type { EsploraUtxo } from './esplora.js';
@@ -52,7 +52,6 @@ const INPUT_VSIZE: Record<UtxoAddressType, number> = {
   p2mr: 105, // BIP-360 script-path spend; not spendable until activation
   unknown: 148,
 };
-const OUTPUT_VSIZE_P2WPKH = 31;
 const TX_OVERHEAD_VSIZE = 11;
 /** Below this, an output is dust and the sweep is not worth broadcasting. */
 const DUST_SATS = 546n;
@@ -65,9 +64,13 @@ function scriptFor(address: string, network: BtcNetwork): Uint8Array {
 }
 
 /** Estimate the signed vsize of a sweep spending `inputs` to one P2WPKH output. */
-export function estimateSweepVsize(inputTypes: UtxoAddressType[]): number {
+export function estimateSweepVsize(inputTypes: UtxoAddressType[], outputScriptBytes = 22): number {
   const inputs = inputTypes.reduce((sum, type) => sum + (INPUT_VSIZE[type] ?? 148), 0);
-  return Math.ceil(TX_OVERHEAD_VSIZE + inputs + OUTPUT_VSIZE_P2WPKH);
+  const countBytes = inputTypes.length < 253 ? 1 : inputTypes.length <= 65535 ? 3 : 5;
+  const scriptLengthBytes = outputScriptBytes < 253 ? 1 : 3;
+  return Math.ceil(
+    TX_OVERHEAD_VSIZE + countBytes - 1 + inputs + 8 + scriptLengthBytes + outputScriptBytes,
+  );
 }
 
 export interface EvacuationInput extends EsploraUtxo {
@@ -201,7 +204,7 @@ function verifyPrevTx(utxo: EvacuationInput, script: Uint8Array): void {
     );
   }
 
-  if (prev.id !== utxo.txid) {
+  if (prev.id !== utxo.txid.toLowerCase()) {
     throw new InconsistentUtxoError(
       `Cannot sweep ${utxo.address}: the supplied previous transaction hashes to ${prev.id}, but this UTXO is on ${utxo.txid}. Refusing to build a PSBT from mismatched data.`,
       utxo.address,
@@ -276,7 +279,10 @@ function verifyPubkeyControlsAddress(
     derived = undefined;
   }
 
-  if (derived !== utxo.address) {
+  if (
+    !derived ||
+    hex.encode(scriptFor(derived, btcNet)) !== hex.encode(scriptFor(utxo.address, btcNet))
+  ) {
     throw new InconsistentUtxoError(
       `Cannot sweep ${utxo.address}: the supplied public key derives ${derived ?? 'nothing'} for a ${type} address, not this one. Either the key is wrong, or this is a script (e.g. multisig) address that only looks single-sig.`,
       utxo.address,
@@ -317,7 +323,7 @@ function buildInput(
   }
   if (type === 'p2mr') {
     throw new UnsignableInputError(
-      `Cannot sweep ${utxo.address}: BIP-360 (P2MR) is still a draft and no network enforces its spending rules, so a spend cannot be constructed. Under current consensus this output is anyone-can-spend.`,
+      `Cannot sweep ${utxo.address}: BIP-360 (P2MR) is still a draft and the supported public networks do not enforce its spending rules, so a spend cannot be constructed. Under current consensus this output is anyone-can-spend.`,
       utxo.address,
       'p2mr-not-activated',
     );
@@ -420,6 +426,41 @@ export function prepareSweepInputs(
   testnet = false,
 ): PreparedSweepInputs {
   if (inputs.length === 0) throw new Error('no UTXOs to sweep');
+  const seenOutpoints = new Set<string>();
+  for (const input of inputs) {
+    if (
+      !/^[0-9a-fA-F]{64}$/.test(input.txid) ||
+      !Number.isSafeInteger(input.vout) ||
+      input.vout < 0 ||
+      input.vout > 0xffffffff ||
+      !Number.isSafeInteger(input.value) ||
+      input.value <= 0 ||
+      input.value > 2_100_000_000_000_000
+    ) {
+      throw new Error('UTXO contains an invalid outpoint or amount');
+    }
+    const outpoint = `${input.txid.toLowerCase()}:${input.vout}`;
+    if (seenOutpoints.has(outpoint)) {
+      throw new InconsistentUtxoError(
+        'duplicate UTXO outpoint',
+        input.address,
+        'duplicate outpoint',
+      );
+    }
+    seenOutpoints.add(outpoint);
+  }
+  if (network.id === 'bitcoin') {
+    const expectedNetwork = testnet ? 'testnet' : 'bitcoin';
+    for (const input of inputs) {
+      if (!isBitcoinAddressOnNetwork(input.address, expectedNetwork)) {
+        throw new UnsignableInputError(
+          `input address is not on Bitcoin ${expectedNetwork}`,
+          input.address,
+          'invalid or wrong-network address',
+        );
+      }
+    }
+  }
   const btcNet = testnet ? btc.TEST_NETWORK : btc.NETWORK;
 
   const inputTypes = inputs.map((utxo) => classifyUtxoAddress(utxo.address, network));
@@ -452,18 +493,35 @@ export function prepareSweepInputs(
 export function buildEvacuationPsbts(params: BuildEvacuationParams): EvacuationPlan {
   const { inputs, destination, feeRates } = params;
   const network = params.network ?? BITCOIN;
+  if (network.id !== 'bitcoin') throw new Error('Bitcoin sweep builder only supports Bitcoin');
   // The evacuation kit is Bitcoin-only; testnet is selected explicitly.
   const btcNet = params.testnet ? btc.TEST_NETWORK : btc.NETWORK;
 
-  if (classifyUtxoAddress(destination, network) === 'unknown') {
+  if (
+    classifyUtxoAddress(destination, network) === 'unknown' ||
+    (network.id === 'bitcoin' &&
+      !isBitcoinAddressOnNetwork(destination, params.testnet ? 'testnet' : 'bitcoin'))
+  ) {
     throw new Error('destination is not a recognized address');
   }
 
-  const { fields, totalInputSats, vsize, signability } = prepareSweepInputs(
+  for (const feeRate of Object.values(feeRates)) {
+    if (!Number.isFinite(feeRate) || feeRate <= 0 || feeRate > 10_000) {
+      throw new Error('fee rates must be finite positive sat/vB values no greater than 10,000');
+    }
+  }
+
+  const { fields, totalInputSats, inputTypes, signability } = prepareSweepInputs(
     inputs,
     network,
     params.testnet ?? false,
   );
+  if (totalInputSats > 2_100_000_000_000_000n)
+    throw new Error('total exceeds Bitcoin monetary limit');
+  const destinationScript = scriptFor(destination, btcNet);
+  const vsize = estimateSweepVsize(inputTypes, destinationScript.length);
+  if (vsize * 4 > 400_000)
+    throw new Error('sweep exceeds standard transaction weight; split the plan');
 
   const tiers: EvacuationTier[] = [];
   const skipped: { label: string; reason: string }[] = [];

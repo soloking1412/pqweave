@@ -3,9 +3,11 @@ import {
   assessUtxoExposure,
   assessUtxoRisk,
   BITCOIN,
+  bitcoinAddressNetwork,
   classifyUtxoAddress,
   type EsploraAddressStats,
   LITECOIN,
+  isBitcoinAddressOnNetwork,
   scanUtxoAddress,
 } from '../src/bitcoin/index.js';
 
@@ -45,6 +47,26 @@ describe('classifyUtxoAddress', () => {
     // A Litecoin address is not a valid Bitcoin address.
     expect(classifyUtxoAddress('LdP8Qox1VAhCzLJNqrr74YovaWYyNBUWvL', BITCOIN)).toBe('unknown');
   });
+
+  it('rejects checksum changes and mixed-case witness addresses', () => {
+    expect(classifyUtxoAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb', BITCOIN)).toBe('unknown');
+    expect(classifyUtxoAddress('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5', BITCOIN)).toBe(
+      'unknown',
+    );
+    expect(classifyUtxoAddress('bC1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', BITCOIN)).toBe(
+      'unknown',
+    );
+  });
+
+  it('distinguishes Bitcoin mainnet from testnet using decoded address versions', () => {
+    const testnetP2sh = btc.Address(btc.TEST_NETWORK).encode({
+      type: 'sh',
+      hash: new Uint8Array(20).fill(1),
+    });
+    expect(bitcoinAddressNetwork(testnetP2sh)).toBe('testnet');
+    expect(isBitcoinAddressOnNetwork(testnetP2sh, 'bitcoin')).toBe(false);
+    expect(isBitcoinAddressOnNetwork(testnetP2sh, 'testnet')).toBe(true);
+  });
 });
 
 describe('assessUtxoExposure', () => {
@@ -83,6 +105,21 @@ describe('assessUtxoExposure', () => {
     expect(result.exposed).toBe(true);
     expect(result.type).toBe('p2tr');
   });
+
+  it('counts a mempool spend as public-key exposure before confirmation', () => {
+    const result = assessUtxoExposure('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', BITCOIN, {
+      ...stats({ funded_txo_sum: 100_000 }),
+      mempool_stats: {
+        funded_txo_sum: 0,
+        spent_txo_sum: 100_000,
+        spent_txo_count: 1,
+        tx_count: 1,
+      },
+    });
+    expect(result.exposed).toBe(true);
+    expect(result.balanceSats).toBe(0n);
+    expect(result.txCount).toBe(1);
+  });
 });
 
 describe('assessUtxoRisk', () => {
@@ -104,7 +141,7 @@ describe('assessUtxoRisk', () => {
   it('warns a funded Taproot address away from fresh Taproot addresses', () => {
     const result = assessUtxoRisk(
       assessUtxoExposure(
-        'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5ck7d3k',
+        'bc1pr896td3mmjl5vc57mutumgfmeet8hyzy9w6zr6hg5vhrtppevlpsp3x3nm',
         BITCOIN,
         stats({ funded_txo_sum: 200_000_000 }),
       ),
@@ -132,10 +169,10 @@ describe('assessUtxoRisk', () => {
 
 describe('scanUtxoAddress', () => {
   it('scans Litecoin via an Esplora-compatible API', async () => {
-    const fetchImpl = (async () => ({
-      ok: true,
-      json: async () => stats({ spent_txo_count: 2, funded_txo_sum: 50_000_000, spent_txo_sum: 0 }),
-    })) as unknown as typeof fetch;
+    const fetchImpl = (async () =>
+      Response.json(
+        stats({ spent_txo_count: 2, funded_txo_sum: 50_000_000, spent_txo_sum: 0 }),
+      )) as typeof fetch;
 
     const result = await scanUtxoAddress('LdP8Qox1VAhCzLJNqrr74YovaWYyNBUWvL', LITECOIN, {
       fetchImpl,
@@ -149,3 +186,4 @@ describe('scanUtxoAddress', () => {
     await expect(scanUtxoAddress('nonsense', BITCOIN)).rejects.toThrow();
   });
 });
+import * as btc from '@scure/btc-signer';

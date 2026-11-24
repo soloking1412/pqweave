@@ -49,16 +49,25 @@ describe('derivation path parsing round-trips', () => {
     );
   });
 
+  it('normalizes outer whitespace but rejects whitespace inside a path', () => {
+    expect(parseDerivationPath(' m/0 ')).toEqual([0]);
+    expect(parseDerivationPath("m/84h/0'\n")).toEqual([84 + HARDENED, HARDENED]);
+    for (const path of ['m/ 0', 'm/0 /1', 'm/0/ ', 'm/0h /1']) {
+      expect(() => parseDerivationPath(path)).toThrow();
+    }
+  });
+
   it('rejects malformed segments rather than guessing', () => {
     // Generate segments that are genuinely invalid. Filtering random strings is
     // not enough: "1h" is valid hardened notation and anything containing "/"
     // is a valid multi-segment path, so a loose filter makes this test flaky
-    // rather than wrong.
+    // rather than wrong. Trailing outer whitespace is deliberately normalized
+    // by the parser, so it cannot make an otherwise valid final segment invalid.
     const invalidSegment = fc.oneof(
       fc.constantFrom('', ' ', "'", 'h', 'x', 'abc', '-1', '1.5', '0x1', "1''", "1'h", '١٢٣'),
       fc
         .string({ minLength: 1, maxLength: 6 })
-        .filter((s) => !/^\d+['h]?$/i.test(s) && !s.includes('/')),
+        .filter((s) => !/^\d+['h]?$/i.test(s.trimEnd()) && !s.includes('/')),
     );
     fc.assert(
       fc.property(invalidSegment, (junk) => {

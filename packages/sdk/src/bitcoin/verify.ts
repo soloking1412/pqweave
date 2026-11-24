@@ -68,7 +68,6 @@ const INPUT_VSIZE_BY_SCRIPT: Record<string, number> = {
   tr: 58,
   pk: 114,
 };
-const OUTPUT_VSIZE = 31;
 const TX_OVERHEAD_VSIZE = 11;
 
 function spentScript(input: ReturnType<btc.Transaction['getInput']>): Uint8Array | undefined {
@@ -79,7 +78,13 @@ function spentScript(input: ReturnType<btc.Transaction['getInput']>): Uint8Array
 }
 
 function estimateVsize(tx: btc.Transaction): number {
-  let total = TX_OVERHEAD_VSIZE + tx.outputsLength * OUTPUT_VSIZE;
+  const compactSize = (n: number) => (n < 253 ? 1 : n <= 65535 ? 3 : 5);
+  let total =
+    TX_OVERHEAD_VSIZE + compactSize(tx.inputsLength) - 1 + compactSize(tx.outputsLength) - 1;
+  for (let i = 0; i < tx.outputsLength; i++) {
+    const size = tx.getOutput(i).script?.length ?? 0;
+    total += 8 + compactSize(size) + size;
+  }
   for (let i = 0; i < tx.inputsLength; i++) {
     const script = spentScript(tx.getInput(i));
     let type = 'pkh';
@@ -213,21 +218,77 @@ export function verifySweepMatchesPlan(
 ): PlanMatch {
   const description = describePsbt(psbtBase64, plan.network === 'testnet');
   const mismatches: string[] = [];
+  const candidateTx = btc.Transaction.fromPSBT(base64.decode(psbtBase64));
+  const plannedTx = btc.Transaction.fromPSBT(base64.decode(tier.psbtBase64));
+  if (hex.encode(candidateTx.unsignedTx) !== hex.encode(plannedTx.unsignedTx)) {
+    mismatches.push(
+      'transaction inputs, outputs, version, or locktime differ from the planned PSBT',
+    );
+  }
 
   if (description.outputCount !== 1) {
     mismatches.push(`expected exactly one output, found ${description.outputCount}`);
   }
   const output = description.outputs[0];
   if (output) {
-    if (output.address && output.address !== plan.destination) {
+    const sameAddress =
+      output.address === plan.destination ||
+      ((output.address?.toLowerCase().startsWith('bc1') ||
+        output.address?.toLowerCase().startsWith('tb1')) &&
+        output.address?.toLowerCase() === plan.destination.toLowerCase());
+    if (!sameAddress) {
       mismatches.push(`destination is ${output.address}, expected ${plan.destination}`);
     }
     if (output.amountSats !== tier.outputSats) {
       mismatches.push(`output is ${output.amountSats} sats, expected ${tier.outputSats}`);
     }
   }
+  if (description.feeSats === undefined)
+    mismatches.push('input amounts are missing; fee cannot be verified');
   if (description.feeSats !== undefined && description.feeSats !== tier.feeSats) {
     mismatches.push(`fee is ${description.feeSats} sats, expected ${tier.feeSats}`);
+  }
+  for (let i = 0; i < candidateTx.inputsLength; i++) {
+    const candidate = candidateTx.getInput(i);
+    const planned = i < plannedTx.inputsLength ? plannedTx.getInput(i) : undefined;
+    if (
+      !planned ||
+      inputAmount(candidate) !== inputAmount(planned) ||
+      hex.encode(spentScript(candidate) ?? new Uint8Array()) !==
+        hex.encode(spentScript(planned) ?? new Uint8Array())
+    ) {
+      mismatches.push(`input ${i} funding amount or script differs from plan`);
+    }
+    if (
+      candidate.sighashType !== undefined &&
+      candidate.sighashType !== 0 &&
+      candidate.sighashType !== 1
+    ) {
+      mismatches.push(`input ${i} uses an unsafe signature hash mode`);
+    }
+    const safeEcdsa = (sig: Uint8Array) => sig.length > 0 && sig[sig.length - 1] === 1;
+    const safeTaproot = (sig: Uint8Array) =>
+      sig.length === 64 || (sig.length === 65 && sig[64] === 1);
+    if (
+      candidate.partialSig?.some(([, sig]) => !safeEcdsa(sig)) ||
+      (candidate.tapKeySig && !safeTaproot(candidate.tapKeySig))
+    ) {
+      mismatches.push(`input ${i} signature does not commit to the complete transaction`);
+    }
+    const script = spentScript(candidate);
+    const kind = script ? btc.OutScript.decode(script).type : undefined;
+    if (candidate.finalScriptWitness?.length) {
+      const sig = candidate.finalScriptWitness[0]!;
+      if (!(kind === 'tr' ? safeTaproot(sig) : safeEcdsa(sig))) {
+        mismatches.push(`input ${i} final witness uses an unsafe signature hash mode`);
+      }
+    }
+    if (kind === 'pkh' && candidate.finalScriptSig?.length) {
+      const sig = btc.Script.decode(candidate.finalScriptSig)[0];
+      if (!(sig instanceof Uint8Array) || !safeEcdsa(sig)) {
+        mismatches.push(`input ${i} final script uses an unsafe signature hash mode`);
+      }
+    }
   }
   if (!description.replaceable) mismatches.push('not all inputs opt into RBF');
 

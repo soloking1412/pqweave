@@ -18,7 +18,7 @@ import {
  * BIP-360 (P2MR) output.
  *
  * **This exists so it is tested before it is urgent, not so it can be used
- * today.** BIP-360 is `Status: Draft` and no network enforces its rules. Under
+ * today.** BIP-360 is `Status: Draft` and the supported public networks do not enforce its rules. Under
  * BIP-141 forward compatibility, witness versions 2–16 are *anyone-can-spend*,
  * which means real coins sent to a `bc1z` address right now can be taken by
  * anybody. So a mainnet migration is **refused outright** rather than warned

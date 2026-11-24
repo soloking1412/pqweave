@@ -68,6 +68,19 @@ export async function fetchWithRetry(
   const backoffMs = options.backoffMs ?? 400;
 
   const timeoutMs = options.timeoutMs ?? 10_000;
+  if (
+    !Number.isInteger(retries) ||
+    retries < 0 ||
+    retries > 5 ||
+    !Number.isFinite(backoffMs) ||
+    backoffMs < 0 ||
+    backoffMs > 5000 ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs <= 0 ||
+    timeoutMs > 60_000
+  ) {
+    throw new EsploraError('invalid indexer retry or timeout limits');
+  }
 
   let lastError: Error | undefined;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -81,6 +94,8 @@ export async function fetchWithRetry(
     try {
       const response = await doFetch(url, { ...init, signal: controller.signal });
       if (response.ok) return response;
+      // Release error response streams before retrying or returning an error.
+      void response.body?.cancel().catch(() => undefined);
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable || attempt === retries) {
         throw new EsploraError(`request failed (${response.status})`, response.status);
@@ -127,13 +142,98 @@ function baseUrl(network: UtxoNetwork, options: EsploraOptions): string {
   return options.apiUrl ?? network.apiUrl;
 }
 
+/** Bound both streamed response size and time spent reading a stalled body. */
+export async function readEsploraBody(
+  response: Response,
+  maxBytes = 8_000_000,
+  timeoutMs = 10_000,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (
+    !Number.isSafeInteger(maxBytes) ||
+    maxBytes < 1 ||
+    maxBytes > 8_000_000 ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs <= 0 ||
+    timeoutMs > 60_000
+  ) {
+    throw new EsploraError('invalid indexer body limits');
+  }
+  if (!response.body) throw new EsploraError('empty indexer response');
+  const reader = response.body.getReader();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
+  const read = async () => {
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) throw new EsploraError('indexer response exceeds size limit');
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  };
+  try {
+    return await Promise.race([
+      read(),
+      new Promise<never>((_, reject) => {
+        onAbort = () => reject(new EsploraError('indexer response aborted'));
+        if (signal?.aborted) onAbort();
+        else signal?.addEventListener('abort', onAbort, { once: true });
+      }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new EsploraError('indexer response body timed out')),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+    if (onAbort) signal?.removeEventListener('abort', onAbort);
+    void reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
+}
+
+const nonnegative = (value: unknown): value is number =>
+  Number.isSafeInteger(value) && Number(value) >= 0;
+
+export function validateAddressStats(value: unknown): EsploraAddressStats {
+  if (!value || typeof value !== 'object') throw new EsploraError('invalid address statistics');
+  const stats = value as EsploraAddressStats;
+  for (const part of [stats.chain_stats, ...(stats.mempool_stats ? [stats.mempool_stats] : [])]) {
+    if (
+      !part ||
+      !['funded_txo_sum', 'spent_txo_sum', 'spent_txo_count', 'tx_count'].every((key) =>
+        nonnegative(part[key as keyof typeof part]),
+      )
+    )
+      throw new EsploraError('invalid address statistics');
+  }
+  return stats;
+}
+
 export async function getAddressStats(
   address: string,
   network: UtxoNetwork = BITCOIN,
   options: EsploraOptions = {},
 ): Promise<EsploraAddressStats> {
-  const response = await fetchWithRetry(`${baseUrl(network, options)}/address/${address}`, options);
-  return (await response.json()) as EsploraAddressStats;
+  const response = await fetchWithRetry(
+    `${baseUrl(network, options)}/address/${encodeURIComponent(address)}`,
+    options,
+  );
+  return validateAddressStats(
+    JSON.parse(await readEsploraBody(response, 16_000, options.timeoutMs, options.signal)),
+  );
 }
 
 /** List the confirmed + unconfirmed UTXOs behind an address. */
@@ -143,10 +243,34 @@ export async function listUtxos(
   options: EsploraOptions = {},
 ): Promise<EsploraUtxo[]> {
   const response = await fetchWithRetry(
-    `${baseUrl(network, options)}/address/${address}/utxo`,
+    `${baseUrl(network, options)}/address/${encodeURIComponent(address)}/utxo`,
     options,
   );
-  return (await response.json()) as EsploraUtxo[];
+  const value = JSON.parse(
+    await readEsploraBody(response, 2_000_000, options.timeoutMs, options.signal),
+  ) as EsploraUtxo[];
+  if (!Array.isArray(value) || value.length > 10_000)
+    throw new EsploraError('invalid UTXO response');
+  const seen = new Set<string>();
+  for (const u of value) {
+    if (
+      !u ||
+      typeof u.txid !== 'string' ||
+      !/^[0-9a-fA-F]{64}$/.test(u.txid) ||
+      !nonnegative(u.vout) ||
+      u.vout > 0xffffffff ||
+      !nonnegative(u.value) ||
+      u.value === 0 ||
+      u.value > 2_100_000_000_000_000 ||
+      !u.status ||
+      typeof u.status.confirmed !== 'boolean'
+    )
+      throw new EsploraError('invalid UTXO response');
+    const key = `${u.txid.toLowerCase()}:${u.vout}`;
+    if (seen.has(key)) throw new EsploraError('duplicate indexer UTXO');
+    seen.add(key);
+  }
+  return value;
 }
 
 /**
@@ -159,8 +283,14 @@ export async function getTxHex(
   network: UtxoNetwork = BITCOIN,
   options: EsploraOptions = {},
 ): Promise<string> {
+  if (!/^[0-9a-fA-F]{64}$/.test(txid)) throw new EsploraError('invalid transaction id');
   const response = await fetchWithRetry(`${baseUrl(network, options)}/tx/${txid}/hex`, options);
-  return (await response.text()).trim();
+  const body = (
+    await readEsploraBody(response, 8_000_000, options.timeoutMs, options.signal)
+  ).trim();
+  if (!/^(?:[0-9a-fA-F]{2})+$/.test(body))
+    throw new EsploraError('invalid raw transaction response');
+  return body;
 }
 
 /**
@@ -172,7 +302,12 @@ export async function getFeeEstimates(
   options: EsploraOptions = {},
 ): Promise<FeeEstimates> {
   const response = await fetchWithRetry(`${baseUrl(network, options)}/fee-estimates`, options);
-  return (await response.json()) as FeeEstimates;
+  const estimates = JSON.parse(
+    await readEsploraBody(response, 16_000, options.timeoutMs, options.signal),
+  );
+  if (!estimates || typeof estimates !== 'object' || Array.isArray(estimates))
+    throw new EsploraError('invalid fee estimates');
+  return estimates as FeeEstimates;
 }
 
 export interface FeeTiers {
@@ -188,7 +323,9 @@ export interface FeeTiers {
 export function feeTiers(estimates: FeeEstimates): FeeTiers {
   const at = (target: number, fallback: number) => {
     const value = estimates[String(target)];
-    return typeof value === 'number' && value > 0 ? value : fallback;
+    return typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 10_000
+      ? value
+      : fallback;
   };
   const priority = Math.max(at(1, 20), 2);
   const standard = Math.max(at(6, 10), 1.5);

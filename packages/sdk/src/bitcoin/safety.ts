@@ -1,4 +1,4 @@
-import { classifyUtxoAddress } from './address.js';
+import { classifyUtxoAddress, isBitcoinAddressOnNetwork } from './address.js';
 import { getAddressStats, type EsploraOptions } from './esplora.js';
 import { BITCOIN, type UtxoNetwork } from './networks.js';
 
@@ -33,6 +33,8 @@ export interface CheckDestinationOptions extends EsploraOptions {
   sourceAddresses?: string[];
   /** Skip the on-chain freshness lookup (offline/air-gapped planning). */
   skipChainCheck?: boolean;
+  /** Require a matching Bitcoin address network when used by a mainnet/testnet flow. */
+  bitcoinNetwork?: 'bitcoin' | 'testnet';
 }
 
 /**
@@ -50,7 +52,12 @@ export async function checkDestination(
   const clean = address.trim();
 
   const type = classifyUtxoAddress(clean, network);
-  if (type === 'unknown') {
+  if (
+    type === 'unknown' ||
+    (network.id === 'bitcoin' &&
+      options.bitcoinNetwork &&
+      !isBitcoinAddressOnNetwork(clean, options.bitcoinNetwork))
+  ) {
     return {
       address: clean,
       verdict: 'unsafe',
@@ -60,8 +67,10 @@ export async function checkDestination(
     };
   }
 
-  const sources = (options.sourceAddresses ?? []).map((a) => a.trim());
-  if (sources.includes(clean)) {
+  const normalize = (a: string) =>
+    /^(bc1|tb1|bcrt1)/i.test(a.trim()) ? a.trim().toLowerCase() : a.trim();
+  const sources = (options.sourceAddresses ?? []).map(normalize);
+  if (sources.includes(normalize(clean))) {
     problems.push(
       'The destination is one of the addresses you are sweeping from. Sweeping to itself protects nothing.',
     );
@@ -75,18 +84,23 @@ export async function checkDestination(
 
   if (type === 'p2mr') {
     // Stronger than the Taproot warning: this is not "less private", it is
-    // "anyone can take it". BIP-360 is a draft and no network enforces it, so a
+    // "anyone can take it". BIP-360 is a draft and the supported public networks do not enforce it, so a
     // witness v2 output is unencumbered under BIP-141 forward compatibility.
     problems.push(
-      'This is a BIP-360 (P2MR) address, and BIP-360 is not active on any network. Under current consensus rules a witness v2 output is anyone-can-spend, so coins sent here could be taken by anybody and never recovered.',
+      'This BIP-360 (P2MR) address is not an activated destination on the supported public Bitcoin networks. A witness v2 output is currently anyone-can-spend there. Do not send funds to it.',
     );
   }
 
   let txCount: number | undefined;
+  if (options.skipChainCheck)
+    warnings.push(
+      'Offline plan: destination history has not been checked. Recheck before signing.',
+    );
   if (!options.skipChainCheck) {
     try {
       const stats = await getAddressStats(clean, network, options);
-      txCount = stats.chain_stats.tx_count;
+      if (!stats.mempool_stats) throw new Error('Missing mempool history');
+      txCount = stats.chain_stats.tx_count + stats.mempool_stats.tx_count;
       if (txCount > 0) {
         problems.push(
           `This destination has already been used (${txCount} transaction${txCount === 1 ? '' : 's'}). Sweep to an address that has never received or sent anything.`,

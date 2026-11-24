@@ -1,3 +1,5 @@
+import * as btc from '@scure/btc-signer';
+import { decodeP2mrAddress } from './p2mr.js';
 import { BITCOIN, type UtxoNetwork } from './networks.js';
 import type { UtxoAddressType } from './types.js';
 
@@ -17,6 +19,38 @@ export function classifyUtxoAddress(
 ): UtxoAddressType {
   const a = address.trim();
   const lower = a.toLowerCase();
+
+  if (network.id === 'bitcoin') {
+    const decodedP2mr = decodeP2mrAddress(a);
+    if (decodedP2mr) return 'p2mr';
+    for (const candidate of [
+      btc.NETWORK,
+      btc.TEST_NETWORK,
+      { ...btc.TEST_NETWORK, bech32: 'bcrt' },
+    ]) {
+      try {
+        const decoded = btc.Address(candidate).decode(a);
+        if (!decoded) continue;
+        switch (decoded.type) {
+          case 'pkh':
+            return 'p2pkh';
+          case 'sh':
+            return 'p2sh';
+          case 'wpkh':
+            return 'p2wpkh';
+          case 'wsh':
+            return 'p2wsh';
+          case 'tr':
+            return 'p2tr';
+          default:
+            return 'unknown';
+        }
+      } catch {
+        // Try the next Bitcoin address network.
+      }
+    }
+    return 'unknown';
+  }
 
   if (network.bech32Hrps.length > 0) {
     const hrpAlternation = network.bech32Hrps.join('|');
@@ -56,4 +90,37 @@ export function classifyBitcoinAddress(address: string): UtxoAddressType {
 
 export function isBitcoinAddress(address: string): boolean {
   return isUtxoAddress(address, BITCOIN);
+}
+
+/** The encoded Bitcoin network, validated by its checksum and version bytes. */
+export function bitcoinAddressNetwork(address: string): 'bitcoin' | 'testnet' | 'regtest' | null {
+  const clean = address.trim();
+  const p2mr = decodeP2mrAddress(clean);
+  if (p2mr)
+    return p2mr.network === 'bitcoin'
+      ? 'bitcoin'
+      : p2mr.network === 'regtest'
+        ? 'regtest'
+        : 'testnet';
+  for (const [name, candidate] of [
+    ['bitcoin', btc.NETWORK],
+    ['testnet', btc.TEST_NETWORK],
+    ['regtest', { ...btc.TEST_NETWORK, bech32: 'bcrt' }],
+  ] as const) {
+    try {
+      const decoded = btc.Address(candidate).decode(clean);
+      if (!decoded) continue;
+      return name;
+    } catch {
+      // Wrong checksum or another network.
+    }
+  }
+  return null;
+}
+
+export function isBitcoinAddressOnNetwork(
+  address: string,
+  network: 'bitcoin' | 'testnet',
+): boolean {
+  return bitcoinAddressNetwork(address) === network;
 }

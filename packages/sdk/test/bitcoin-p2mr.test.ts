@@ -79,6 +79,7 @@ describe('address decoding rejects near-misses', () => {
   it('rejects nonsense', () => {
     expect(isP2mrAddress('not-an-address')).toBe(false);
     expect(decodeP2mrAddress('')).toBeNull();
+    expect(decodeP2mrAddress('bC1z' + BIP360_ADDRESS.slice(4))).toBeNull();
   });
 });
 

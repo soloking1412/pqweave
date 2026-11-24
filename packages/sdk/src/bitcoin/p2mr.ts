@@ -231,7 +231,9 @@ export interface DecodedP2mr {
  */
 export function decodeP2mrAddress(address: string): DecodedP2mr | null {
   try {
-    const decoded = bech32m.decode(address.trim().toLowerCase() as `${string}1${string}`, false);
+    const clean = address.trim();
+    if (clean !== clean.toLowerCase() && clean !== clean.toUpperCase()) return null;
+    const decoded = bech32m.decode(clean.toLowerCase() as `${string}1${string}`, false);
     const [version, ...rest] = decoded.words;
     if (version !== P2MR_WITNESS_VERSION) return null;
     const program = bech32m.fromWords(rest);

@@ -24,6 +24,7 @@ function stubFetch(txCounts: Record<string, number>): typeof fetch {
     return new Response(
       JSON.stringify({
         chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0, spent_txo_count: 0, tx_count },
+        mempool_stats: { funded_txo_sum: 0, spent_txo_sum: 0, spent_txo_count: 0, tx_count: 0 },
       }),
       { status: 200 },
     );
@@ -47,6 +48,24 @@ describe('destination safety rails', () => {
     await expect(
       assertSafeDestination(FRESH, undefined, { fetchImpl: stubFetch({ [FRESH]: 4 }) }),
     ).rejects.toBeInstanceOf(UnsafeDestinationError);
+  });
+
+  it('refuses a destination with an unconfirmed transaction', async () => {
+    const fetchImpl = (async () =>
+      new Response(
+        JSON.stringify({
+          chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0, spent_txo_count: 0, tx_count: 0 },
+          mempool_stats: {
+            funded_txo_sum: 10_000,
+            spent_txo_sum: 0,
+            spent_txo_count: 0,
+            tx_count: 1,
+          },
+        }),
+        { status: 200 },
+      )) as unknown as typeof fetch;
+    const check = await checkDestination(FRESH, undefined, { fetchImpl });
+    expect(check.verdict).toBe('unsafe');
   });
 
   it('refuses sweeping to one of the source addresses', async () => {
@@ -149,6 +168,26 @@ describe('PSBT dry run', () => {
     const match = verifySweepMatchesPlan(economy.psbtBase64, p, priority);
     expect(match.ok).toBe(false);
     expect(match.mismatches.join(' ')).toMatch(/output is|fee is/);
+  });
+
+  it('rejects a signed-bundle substitute that spends a different outpoint', () => {
+    const p = plan();
+    const tier = p.tiers[0]!;
+    const original = btc.Transaction.fromPSBT(base64.decode(tier.psbtBase64));
+    const replacement = new btc.Transaction();
+    replacement.addInput({
+      txid: new Uint8Array(32).fill(7),
+      index: original.getInput(0).index!,
+      witnessUtxo: original.getInput(0).witnessUtxo!,
+      sequence: original.getInput(0).sequence,
+    });
+    replacement.addOutput({
+      script: original.getOutput(0).script!,
+      amount: original.getOutput(0).amount!,
+    });
+    const match = verifySweepMatchesPlan(base64.encode(replacement.toPSBT()), p, tier);
+    expect(match.ok).toBe(false);
+    expect(match.mismatches.join(' ')).toMatch(/inputs.*differ/);
   });
 
   it('flags a transaction that is not a clean sweep', () => {
