@@ -1,8 +1,15 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
 const OCTAS_PER_APT = 100_000_000n;
 const CRITICAL_OCTAS = 1_000n * OCTAS_PER_APT; // 1,000 APT
-const DEFAULT_API = 'https://fullnode.mainnet.aptoslabs.com';
+/** Tried in order; see `withEndpointFailover`. */
+const DEFAULT_APIS = [
+  'https://fullnode.mainnet.aptoslabs.com',
+  'https://api.mainnet.aptoslabs.com',
+  'https://aptos-rest.publicnode.com',
+  'https://1rpc.io/aptos',
+] as const;
 const APT_COIN_TYPE = '0x1::aptos_coin::AptosCoin';
 const APTOS_ADDRESS = /^0x[0-9a-fA-F]{1,64}$/;
 
@@ -82,13 +89,13 @@ export function assessAptosRisk(address: string, exposed: boolean, octas: bigint
  * Scan an Aptos account for quantum exposure. Its sequence number is greater
  * than zero once it has signed a transaction, which reveals its public key.
  */
-export async function scanAptosAddress(
+async function scanAptosOnce(
   address: string,
   options: AptosScanOptions = {},
 ): Promise<AptosScanResult> {
   const account = address.trim();
   if (!isAptosAddress(account)) throw new Error('unrecognized Aptos address');
-  const apiUrl = options.apiUrl ?? DEFAULT_API;
+  const apiUrl = options.apiUrl ?? DEFAULT_APIS[0];
   const doFetch = options.fetchImpl ?? fetch;
 
   const accountResponse = await doFetch(`${apiUrl}/v1/accounts/${account}`);
@@ -116,3 +123,5 @@ export async function scanAptosAddress(
 
   return assessAptosRisk(account, exposed, octas);
 }
+
+export const scanAptosAddress = withEndpointFailover(scanAptosOnce, 'apiUrl', DEFAULT_APIS);

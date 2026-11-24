@@ -2,7 +2,19 @@ import type { RiskLevel } from '../scanner/index.js';
 
 const MIST_PER_SUI = 1_000_000_000n;
 const CRITICAL_MIST = 1_000n * MIST_PER_SUI; // 1,000 SUI
-const DEFAULT_RPC = 'https://fullnode.mainnet.sui.io:443';
+/**
+ * Sui retired JSON-RPC on public fullnodes in 2026, so this reads the GraphQL
+ * service. One query returns the SUI balance and whether the address has ever
+ * sent a transaction.
+ */
+const DEFAULT_API = 'https://graphql.mainnet.sui.io/graphql';
+
+const QUERY = `query ($address: SuiAddress!) {
+  address(address: $address) {
+    balance(coinType: "0x2::sui::SUI") { totalBalance }
+    transactions(first: 1, relation: SENT) { nodes { digest } }
+  }
+}`;
 const SUI_ADDRESS = /^0x[0-9a-fA-F]{64}$/;
 
 export interface SuiScanResult {
@@ -18,7 +30,8 @@ export interface SuiScanResult {
 }
 
 export interface SuiScanOptions {
-  rpcUrl?: string;
+  /** GraphQL endpoint. */
+  apiUrl?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -79,25 +92,6 @@ export function assessSuiRisk(address: string, exposed: boolean, mist: bigint): 
   };
 }
 
-async function rpc<T>(
-  url: string,
-  doFetch: typeof fetch,
-  method: string,
-  params: unknown[],
-): Promise<T> {
-  const response = await doFetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  if (!response.ok) throw new Error(`Sui RPC ${method} failed`);
-  const json = (await response.json()) as { result?: T; error?: { message?: string } };
-  if (json.error || json.result === undefined) {
-    throw new Error(json.error?.message ?? `Sui RPC ${method} returned no result`);
-  }
-  return json.result;
-}
-
 /**
  * Scan a Sui account for quantum exposure. A Sui address is a Blake2b hash of the
  * scheme flag and Ed25519 public key, so the key stays hidden until the address
@@ -109,19 +103,28 @@ export async function scanSuiAddress(
 ): Promise<SuiScanResult> {
   const account = address.trim();
   if (!isSuiAddress(account)) throw new Error('unrecognized Sui address');
-  const url = options.rpcUrl ?? DEFAULT_RPC;
   const doFetch = options.fetchImpl ?? fetch;
 
-  const balance = await rpc<{ totalBalance?: string }>(url, doFetch, 'suix_getBalance', [account]);
-  const mist = BigInt(balance.totalBalance ?? '0');
-
-  const txs = await rpc<{ data?: unknown[] }>(url, doFetch, 'suix_queryTransactionBlocks', [
-    { filter: { FromAddress: account } },
-    null,
-    1,
-    false,
-  ]);
-  const exposed = (txs.data ?? []).length > 0;
+  const response = await doFetch(options.apiUrl ?? DEFAULT_API, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ query: QUERY, variables: { address: account } }),
+  });
+  if (!response.ok) throw new Error('failed to fetch Sui account');
+  const json = (await response.json()) as {
+    data?: {
+      address?: {
+        balance?: { totalBalance?: string } | null;
+        transactions?: { nodes?: unknown[] } | null;
+      } | null;
+    } | null;
+    errors?: { message?: string }[];
+  };
+  if (json.errors?.length || !json.data) {
+    throw new Error(json.errors?.[0]?.message ?? 'Sui GraphQL returned no data');
+  }
+  const mist = BigInt(json.data.address?.balance?.totalBalance ?? '0');
+  const exposed = (json.data.address?.transactions?.nodes ?? []).length > 0;
 
   return assessSuiRisk(account, exposed, mist);
 }

@@ -1,8 +1,10 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
 const STROOPS_PER_XLM = 10_000_000n; // 7 decimals
 const CRITICAL_STROOPS = 50_000n * STROOPS_PER_XLM; // 50,000 XLM
-const DEFAULT_API = 'https://horizon.stellar.org';
+/** Tried in order; see `withEndpointFailover`. */
+const DEFAULT_APIS = ['https://horizon.stellar.org', 'https://horizon.stellar.lobstr.co'] as const;
 // A Stellar public key (G…) is 56 base32 characters.
 const STELLAR_ADDRESS = /^G[A-Z2-7]{55}$/;
 
@@ -77,13 +79,13 @@ export function assessStellarRisk(address: string, stroops: bigint): StellarScan
 }
 
 /** Scan a Stellar address for quantum exposure via the Horizon API. */
-export async function scanStellarAddress(
+async function scanStellarOnce(
   address: string,
   options: StellarScanOptions = {},
 ): Promise<StellarScanResult> {
   const account = address.trim();
   if (!isStellarAddress(account)) throw new Error('unrecognized Stellar address');
-  const apiUrl = options.apiUrl ?? DEFAULT_API;
+  const apiUrl = options.apiUrl ?? DEFAULT_APIS[0];
   const doFetch = options.fetchImpl ?? fetch;
 
   const response = await doFetch(`${apiUrl}/accounts/${account}`);
@@ -95,3 +97,5 @@ export async function scanStellarAddress(
   const native = json.balances?.find((b) => b.asset_type === 'native');
   return assessStellarRisk(account, native ? toStroops(native.balance) : 0n);
 }
+
+export const scanStellarAddress = withEndpointFailover(scanStellarOnce, 'apiUrl', DEFAULT_APIS);

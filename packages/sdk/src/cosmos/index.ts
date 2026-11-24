@@ -1,6 +1,13 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
-const DEFAULT_LCD = 'https://cosmos-rest.publicnode.com';
+/** Cosmos Hub REST endpoints, tried in order; see `withEndpointFailover`. */
+const DEFAULT_LCDS = [
+  'https://cosmos-rest.publicnode.com',
+  'https://rest.cosmos.directory/cosmoshub',
+  'https://cosmos-api.polkachu.com',
+  'https://lcd-cosmoshub.keplr.app',
+] as const;
 
 /** Cosmos SDK chain configuration. Defaults to the Cosmos Hub. */
 export interface CosmosChain {
@@ -20,7 +27,7 @@ export const COSMOS_HUB: CosmosChain = {
   denom: 'uatom',
   decimals: 6,
   symbol: 'ATOM',
-  lcdUrl: DEFAULT_LCD,
+  lcdUrl: DEFAULT_LCDS[0],
   criticalBaseUnits: 1_000_000_000n, // 1,000 ATOM
 };
 
@@ -37,6 +44,8 @@ export interface CosmosScanResult {
 
 export interface CosmosScanOptions {
   chain?: CosmosChain;
+  /** REST (LCD) endpoint. Overrides the chain's own. */
+  lcdUrl?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -107,7 +116,7 @@ export function assessCosmosRisk(
  * account's public key only after its first signed transaction, so its presence
  * is a definitive exposure signal.
  */
-export async function scanCosmosAddress(
+async function scanCosmosOnce(
   address: string,
   options: CosmosScanOptions = {},
 ): Promise<CosmosScanResult> {
@@ -117,8 +126,9 @@ export async function scanCosmosAddress(
     throw new Error(`unrecognized ${chain.name} address`);
   }
   const doFetch = options.fetchImpl ?? fetch;
+  const lcdUrl = options.lcdUrl ?? chain.lcdUrl;
 
-  const authResponse = await doFetch(`${chain.lcdUrl}/cosmos/auth/v1beta1/accounts/${account}`);
+  const authResponse = await doFetch(`${lcdUrl}/cosmos/auth/v1beta1/accounts/${account}`);
   let exposed = false;
   if (authResponse.ok) {
     const auth = (await authResponse.json()) as { account?: { pub_key?: unknown } };
@@ -127,11 +137,23 @@ export async function scanCosmosAddress(
     throw new Error('failed to fetch Cosmos account');
   }
 
-  const balanceResponse = await doFetch(`${chain.lcdUrl}/cosmos/bank/v1beta1/balances/${account}`);
+  const balanceResponse = await doFetch(`${lcdUrl}/cosmos/bank/v1beta1/balances/${account}`);
   if (!balanceResponse.ok) throw new Error('failed to fetch Cosmos balance');
   const bank = (await balanceResponse.json()) as { balances?: { denom: string; amount: string }[] };
   const entry = bank.balances?.find((b) => b.denom === chain.denom);
   const baseUnits = BigInt(entry?.amount ?? '0');
 
   return assessCosmosRisk(account, chain, exposed, baseUnits);
+}
+
+const scanCosmosHub = withEndpointFailover(scanCosmosOnce, 'lcdUrl', DEFAULT_LCDS);
+
+export function scanCosmosAddress(
+  address: string,
+  options: CosmosScanOptions = {},
+): Promise<CosmosScanResult> {
+  // The endpoint list is the Cosmos Hub's. Another chain brings its own LCD.
+  return options.chain && options.chain !== COSMOS_HUB
+    ? scanCosmosOnce(address, options)
+    : scanCosmosHub(address, options);
 }

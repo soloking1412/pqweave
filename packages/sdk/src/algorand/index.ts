@@ -1,8 +1,14 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
 const MICRO_PER_ALGO = 1_000_000n;
 const CRITICAL_MICRO = 10_000n * MICRO_PER_ALGO; // 10,000 ALGO
-const DEFAULT_API = 'https://mainnet-api.algonode.cloud';
+/** Tried in order; see `withEndpointFailover`. */
+const DEFAULT_APIS = [
+  'https://mainnet-api.algonode.cloud',
+  'https://mainnet-api.4160.nodely.dev',
+  'https://xna-mainnet-api.algonode.cloud',
+] as const;
 // Native Falcon and Ed25519 accounts share the same 58-character format.
 const ALGO_ADDRESS = /^[A-Z2-7]{58}$/;
 
@@ -85,13 +91,13 @@ export function assessAlgorandRisk(
 }
 
 /** Scan an Algorand address for quantum exposure via the algod REST API. */
-export async function scanAlgorandAddress(
+async function scanAlgorandOnce(
   address: string,
   options: AlgorandScanOptions = {},
 ): Promise<AlgorandScanResult> {
   const account = address.trim();
   if (!isAlgorandAddress(account)) throw new Error('unrecognized Algorand address');
-  const apiUrl = options.apiUrl ?? DEFAULT_API;
+  const apiUrl = options.apiUrl ?? DEFAULT_APIS[0];
   const doFetch = options.fetchImpl ?? fetch;
 
   const response = await doFetch(`${apiUrl}/v2/accounts/${account}`);
@@ -100,3 +106,5 @@ export async function scanAlgorandAddress(
   const json = (await response.json()) as { amount?: number; 'auth-addr'?: string };
   return assessAlgorandRisk(account, BigInt(json.amount ?? 0), json['auth-addr']);
 }
+
+export const scanAlgorandAddress = withEndpointFailover(scanAlgorandOnce, 'apiUrl', DEFAULT_APIS);

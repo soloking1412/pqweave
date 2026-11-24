@@ -1,8 +1,15 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
 const YOCTO_PER_NEAR = 10n ** 24n;
 const CRITICAL_YOCTO = 1_000n * YOCTO_PER_NEAR; // 1,000 NEAR
-const DEFAULT_RPC = 'https://rpc.mainnet.near.org';
+/** Tried in order; see `withEndpointFailover`. */
+const DEFAULT_RPCS = [
+  'https://free.rpc.fastnear.com',
+  'https://rpc.mainnet.fastnear.com',
+  'https://near.drpc.org',
+  'https://rpc.mainnet.near.org',
+] as const;
 const NEAR_ACCOUNT = /^[a-z0-9._-]{2,64}$/;
 
 export interface NearScanResult {
@@ -80,13 +87,13 @@ export function assessNearRisk(address: string, exists: boolean, yocto: bigint):
 }
 
 /** Scan a NEAR account for quantum exposure via the JSON-RPC view_account query. */
-export async function scanNearAddress(
+async function scanNearOnce(
   address: string,
   options: NearScanOptions = {},
 ): Promise<NearScanResult> {
   const account = address.trim();
   if (!isNearAddress(account)) throw new Error('unrecognized NEAR account');
-  const rpcUrl = options.rpcUrl ?? DEFAULT_RPC;
+  const rpcUrl = options.rpcUrl ?? DEFAULT_RPCS[0];
   const doFetch = options.fetchImpl ?? fetch;
 
   const response = await doFetch(rpcUrl, {
@@ -104,3 +111,5 @@ export async function scanNearAddress(
   if (json.error || !json.result) return assessNearRisk(account, false, 0n);
   return assessNearRisk(account, true, BigInt(json.result.amount ?? '0'));
 }
+
+export const scanNearAddress = withEndpointFailover(scanNearOnce, 'rpcUrl', DEFAULT_RPCS);

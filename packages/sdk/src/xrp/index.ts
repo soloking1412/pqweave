@@ -1,6 +1,13 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
-const DEFAULT_RPC = 'https://xrplcluster.com/';
+/** Tried in order; see `withEndpointFailover`. */
+const DEFAULT_RPCS = [
+  'https://xrplcluster.com/',
+  'https://s1.ripple.com:51234/',
+  'https://s2.ripple.com:51234/',
+  'https://xrpl.ws/',
+] as const;
 const DROPS_PER_XRP = 1_000_000n;
 const CRITICAL_DROPS = 10_000n * DROPS_PER_XRP; // 10,000 XRP
 // XRP Ledger base58 alphabet.
@@ -88,13 +95,10 @@ interface XrpTxEntry {
  * key is revealed in every transaction it submits, so the account is exposed
  * once it has signed at least one transaction.
  */
-export async function scanXrpAddress(
-  address: string,
-  options: XrpScanOptions = {},
-): Promise<XrpScanResult> {
+async function scanXrpOnce(address: string, options: XrpScanOptions = {}): Promise<XrpScanResult> {
   const account = address.trim();
   if (!isXrpAddress(account)) throw new Error('unrecognized XRP address');
-  const rpcUrl = options.rpcUrl ?? DEFAULT_RPC;
+  const rpcUrl = options.rpcUrl ?? DEFAULT_RPCS[0];
   const doFetch = options.fetchImpl ?? fetch;
 
   const call = async (method: string, params: Record<string, unknown>) => {
@@ -133,3 +137,5 @@ export async function scanXrpAddress(
 
   return assessXrpRisk(account, exposed, drops);
 }
+
+export const scanXrpAddress = withEndpointFailover(scanXrpOnce, 'rpcUrl', DEFAULT_RPCS);

@@ -33,7 +33,7 @@ import type {
 export const dynamic = 'force-dynamic';
 
 /** Reject if a scan takes too long, so a slow RPC/indexer can't hang the request. */
-async function withTimeout<T>(promise: Promise<T>, ms = 15_000): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, ms = 18_000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
@@ -452,7 +452,8 @@ export async function GET(request: Request): Promise<Response> {
   } catch {
     return Response.json(
       {
-        error: 'Scan failed, the RPC endpoint may be unavailable. Try again or set a custom RPC.',
+        error:
+          'Scan failed. Every public endpoint for this chain is unavailable right now. Try again in a moment.',
       },
       { status: 502 },
     );

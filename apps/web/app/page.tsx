@@ -82,7 +82,7 @@ const ROUTES = [
 ] as const;
 
 const EVIDENCE = [
-  ['492', 'SDK tests', 'Unit, property and hostile-input cases'],
+  ['501', 'SDK tests', 'Unit, property and hostile-input cases'],
   ['94', 'contract tests', 'Foundry, 512 fuzz runs each'],
   ['113', 'Bitcoin Core checks', 'Sign, fee-bump, mine and re-spend on regtest'],
   ['122', 'Ethereum checks', 'Against the real EntryPoint 0.7 bytecode'],

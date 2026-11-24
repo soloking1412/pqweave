@@ -1,8 +1,13 @@
+import { withEndpointFailover } from '../endpoints.js';
 import type { RiskLevel } from '../scanner/index.js';
 
 const LAMPORTS_PER_SOL = 1_000_000_000n;
 const CRITICAL_LAMPORTS = 100n * LAMPORTS_PER_SOL; // 100 SOL
-const DEFAULT_RPC = 'https://api.mainnet-beta.solana.com';
+/** Tried in order; see `withEndpointFailover`. */
+const DEFAULT_RPCS = [
+  'https://api.mainnet-beta.solana.com',
+  'https://solana-rpc.publicnode.com',
+] as const;
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 export interface SolanaScanResult {
@@ -69,13 +74,13 @@ export function assessSolanaRisk(address: string, lamports: bigint): SolanaScanR
 }
 
 /** Scan a Solana address for quantum exposure via the JSON-RPC `getBalance`. */
-export async function scanSolanaAddress(
+async function scanSolanaOnce(
   address: string,
   options: SolanaScanOptions = {},
 ): Promise<SolanaScanResult> {
   const account = address.trim();
   if (!isSolanaAddress(account)) throw new Error('unrecognized Solana address');
-  const rpcUrl = options.rpcUrl ?? DEFAULT_RPC;
+  const rpcUrl = options.rpcUrl ?? DEFAULT_RPCS[0];
   const doFetch = options.fetchImpl ?? fetch;
 
   const response = await doFetch(rpcUrl, {
@@ -89,3 +94,5 @@ export async function scanSolanaAddress(
 
   return assessSolanaRisk(account, BigInt(json.result.value ?? 0));
 }
+
+export const scanSolanaAddress = withEndpointFailover(scanSolanaOnce, 'rpcUrl', DEFAULT_RPCS);
