@@ -13,3 +13,6 @@ packages/contracts/deployments
 packages/stellar-vault/deployments
 packages/stellar-vault/test_snapshots
 target
+
+releases/bitcoin/site
+releases/bitcoin/pnpm-lock.yaml

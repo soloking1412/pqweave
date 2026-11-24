@@ -5,6 +5,13 @@ on:
     branches: [master]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # A security tool whose tests nobody can see running is asking for trust it has
 # not earned. Everything below runs on every push and is reproducible locally
 # with the same commands.
@@ -12,14 +19,15 @@ jobs:
   sdk:
     name: SDK and web
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
         with:
           version: 9.15.9
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -39,21 +47,49 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Audit runtime and development dependencies
+        run: pnpm audit --audit-level low
+
       - name: SDK tests
         run: pnpm --filter @pqweave/sdk test
+
+      - name: Install pinned Bitcoin Core integration runtime
+        run: |
+          curl --fail --location --retry 3 -o "$RUNNER_TEMP/bitcoin.tar.gz" https://bitcoincore.org/bin/bitcoin-core-29.1/bitcoin-29.1-x86_64-linux-gnu.tar.gz
+          echo "2dddeaa8c0626ec446b6f21b64c0f3565a1e7e67ff0b586d25043cbd686c9455  $RUNNER_TEMP/bitcoin.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/bitcoin.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bitcoin-29.1/bin" >> "$GITHUB_PATH"
+
+      - name: Bitcoin Core signing, replacement, confirmation and recovery
+        run: pnpm --filter @pqweave/sdk test:bitcoin-core
 
       - name: Web build
         run: pnpm --filter @pqweave/web build
 
+      - name: Public HTTP boundary
+        run: pnpm web:test
+
+      - name: Build isolated Bitcoin release
+        run: pnpm bitcoin:build
+
+      - name: Audit isolated Bitcoin runtime dependencies
+        run: pnpm --dir releases/bitcoin/site audit --prod --audit-level low
+
+      - name: Test packaged Bitcoin server outside the repository
+        run: pnpm bitcoin:test
+
   contracts:
     name: Contracts
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@de808b1eea699e761c404bda44ba8f21aba30b2c # v1.3.1
+        with:
+          version: v1.4.2
 
       - name: Format
         run: forge fmt --check
@@ -62,27 +98,30 @@ jobs:
       - name: Tests
         # Fork tests skip without RPC_URL_BASE_SEPOLIA, which is deliberate:
         # CI must not depend on a third-party endpoint being up.
-        run: forge test -vv
+        run: forge test --fuzz-runs 512 -vv
         working-directory: packages/contracts
 
   cross-runtime:
     name: TS and Solidity agree
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
         with:
           version: 9.15.9
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@de808b1eea699e761c404bda44ba8f21aba30b2c # v1.3.1
+        with:
+          version: v1.4.2
 
       - run: pnpm install --frozen-lockfile
 
@@ -92,6 +131,13 @@ jobs:
       # the vectors from the SDK and check the contracts still accept them.
       - name: Build SDK
         run: pnpm --filter @pqweave/sdk build
+
+      - name: Compile Ethereum lifecycle contracts
+        run: forge build
+        working-directory: packages/contracts
+
+      - name: Ethereum lifecycle on local Prague node
+        run: pnpm --filter @pqweave/sdk test:ethereum
 
       - name: Regenerate cross-runtime vectors
         run: |

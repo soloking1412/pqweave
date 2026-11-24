@@ -31,3 +31,9 @@ founder.py
 # Local tooling config (not part of the repo)
 .claude/
 CLAUDE.md
+
+# Generated, allowlisted Bitcoin release
+/releases/bitcoin/site/
+
+# Agent tooling context (generated locally)
+AGENTS.md

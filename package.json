@@ -5,7 +5,7 @@
   "description": "Open-source tooling for the post-quantum transition: exposure scanning across 16 chains, EVM migration, and Bitcoin evacuation",
   "packageManager": "pnpm@9.15.9",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "build": "pnpm -r --filter \"./packages/*\" build",
@@ -15,10 +15,32 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
     "dev": "pnpm --filter @pqweave/web dev",
-    "contracts:test": "pnpm --filter @pqweave/contracts test"
+    "contracts:test": "pnpm --filter @pqweave/contracts test",
+    "bitcoin:prepare": "node scripts/prepare-bitcoin-release.mjs",
+    "bitcoin:build": "pnpm bitcoin:prepare && pnpm --dir releases/bitcoin/site install --frozen-lockfile && pnpm --dir releases/bitcoin/site build && node scripts/package-bitcoin-release.mjs",
+    "bitcoin:test": "pnpm --filter @pqweave/sdk test:bitcoin-release",
+    "ethereum:test": "pnpm --filter @pqweave/contracts build && pnpm --filter @pqweave/sdk build && pnpm --filter @pqweave/sdk test:ethereum",
+    "web:test": "node scripts/test-web-api.mjs"
   },
   "devDependencies": {
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "valibot@>=1.0.0 <1.4.2": "1.4.2",
+      "ws@>=8.0.0 <8.21.0": "8.21.0",
+      "hono@>=4.0.0 <4.13.5": "4.13.5",
+      "socket.io-parser@>=4.0.0 <4.2.7": "4.2.7",
+      "baseline-browser-mapping@>=2.0.0 <2.11.0": "2.11.0",
+      "esbuild@>=0.21.0 <0.28.1": "0.28.1",
+      "postcss@>=8.0.0 <8.5.23": "8.5.23",
+      "nanoid@>=3.0.0 <3.3.18": "3.3.18",
+      "axios@>=1.0.0 <1.21.1": "1.21.1",
+      "follow-redirects@>=1.0.0 <1.16.3": "1.16.3",
+      "smol-toml@>=1.0.0 <1.9.1": "1.9.1",
+      "source-map-js@>=1.0.0 <1.2.4": "1.2.4",
+      "sharp@>=0.30.0 <0.35.5": "0.35.5"
+    }
   }
 }

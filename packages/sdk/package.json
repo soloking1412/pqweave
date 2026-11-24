@@ -29,6 +29,10 @@
       "types": "./dist/migration/index.d.ts",
       "import": "./dist/migration/index.js"
     },
+    "./kit": {
+      "types": "./dist/kit/index.d.ts",
+      "import": "./dist/kit/index.js"
+    },
     "./bitcoin": {
       "types": "./dist/bitcoin/index.d.ts",
       "import": "./dist/bitcoin/index.js"
@@ -108,6 +112,10 @@
     "./attestation": {
       "types": "./dist/attestation/index.d.ts",
       "import": "./dist/attestation/index.js"
+    },
+    "./pqc/node": {
+      "types": "./dist/pqc/node.d.ts",
+      "import": "./dist/pqc/node.js"
     }
   },
   "files": [
@@ -120,7 +128,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "gen:vector": "node scripts/gen-hashsig-vector.mjs"
+    "gen:vector": "node scripts/gen-hashsig-vector.mjs",
+    "test:bitcoin-core": "node scripts/test-bitcoin-core.mjs",
+    "test:bitcoin-release": "node scripts/test-bitcoin-release.mjs",
+    "test:ethereum": "node scripts/test-ethereum.mjs"
   },
   "dependencies": {
     "@noble/curves": "^1.8.1",
@@ -129,13 +140,15 @@
     "@scure/base": "^2.2.0",
     "@scure/bip32": "^2.2.0",
     "@scure/btc-signer": "^2.2.0",
-    "viem": "^2.37.0"
+    "viem": "^2.56.8"
   },
   "devDependencies": {
+    "@account-abstraction/contracts": "0.7.0",
     "@types/node": "^22.10.0",
     "fast-check": "^4.9.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vite": "8.3.8",
+    "vitest": "^5.1.1"
   }
 }
