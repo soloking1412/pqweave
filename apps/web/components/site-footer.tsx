@@ -5,7 +5,8 @@ const COLUMNS = [
   [
     'Tools',
     [
-      ['/kit', 'Scan an address'],
+      ['/scan', 'Scan an address'],
+      ['/kit', 'Migration kit'],
       ['/protect/bitcoin', 'Bitcoin kit'],
       ['/ethereum', 'Ethereum readiness'],
       ['/exposure', 'Exposure index'],

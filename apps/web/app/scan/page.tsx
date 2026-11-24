@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 export default async function ScanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ address?: string }>;
+  searchParams: Promise<{ address?: string; chain?: string }>;
 }) {
-  const { address } = await searchParams;
+  const { address, chain } = await searchParams;
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-16 sm:py-20">
@@ -25,7 +25,7 @@ export default async function ScanPage({
         needed. Algorand signer status cannot be inferred from address format alone.
       </p>
       <div className="mt-8">
-        <ScanForm initialAddress={address ?? ''} />
+        <ScanForm initialAddress={address ?? ''} initialChain={chain} />
       </div>
       <p className="mt-8 text-xs leading-relaxed text-ink-faint">
         Risk reflects whether the address has broadcast a transaction (revealing its public key) and

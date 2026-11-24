@@ -3,7 +3,8 @@ import { Logo } from './logo';
 import { ThemeToggle } from './theme-toggle';
 
 const NAVIGATION = [
-  ['/kit', 'Scan'],
+  ['/scan', 'Scan'],
+  ['/kit', 'Migration kit'],
   ['/protect/bitcoin', 'Bitcoin'],
   ['/ethereum', 'Ethereum'],
   ['/exposure', 'Exposure'],

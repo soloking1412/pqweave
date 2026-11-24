@@ -1,6 +1,7 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { isAddress } from 'viem';
 import { isAlgorandAddress } from '@pqweave/sdk/algorand';
 import { isAptosAddress } from '@pqweave/sdk/aptos';
@@ -62,15 +63,38 @@ function placeholderFor(chain: ScanChain): string {
   return '0x… wallet address';
 }
 
-export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
-  const [address, setAddress] = useState(initialAddress);
-  const [chain, setChain] = useState<ScanChain>('evm-all');
+export function ScanForm({
+  initialAddress = '',
+  initialChain,
+}: {
+  initialAddress?: string;
+  initialChain?: string;
+}) {
+  const [address, setAddress] = useState(initialAddress.trim());
+  const [chain, setChain] = useState<ScanChain>(
+    SCAN_OPTIONS.some((option) => option.key === initialChain)
+      ? (initialChain as ScanChain)
+      : 'evm-all',
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AnyScanReport | null>(null);
 
-  async function onSubmit(event: FormEvent) {
+  // A link from the home page carries the chain and address, so the reading
+  // starts without a second click.
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current || !initialAddress.trim()) return;
+    started.current = true;
+    void run();
+  }, []);
+
+  function onSubmit(event: FormEvent) {
     event.preventDefault();
+    void run();
+  }
+
+  async function run() {
     setError(null);
     setReport(null);
 
@@ -148,6 +172,17 @@ export function ScanForm({ initialAddress = '' }: { initialAddress?: string }) {
       {report?.kind === 'evm-multi' && <MultiChainReportCard report={report} />}
       {report?.kind === 'utxo' && <UtxoReportCard report={report} />}
       {report?.kind === 'account' && <AccountReportCard report={report} />}
+      {report && report.kind !== 'evm-multi' && (
+        <p className="text-sm text-ink-2">
+          Want to know what this chain lets you do about it?{' '}
+          <Link
+            href={`/kit?chain=${encodeURIComponent(chain)}&address=${encodeURIComponent(address)}`}
+            className="font-semibold text-brand underline underline-offset-4 hover:text-brand-strong"
+          >
+            Get the migration plan for this address
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

@@ -122,7 +122,7 @@ export default function HomePage() {
             it stands and what that chain lets you do about it.
           </p>
 
-          <form action="/kit" method="get" className="panel mt-8 p-4 sm:p-5">
+          <form action="/scan" method="get" className="panel mt-8 p-4 sm:p-5">
             <div className="grid gap-3 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-end">
               <label className="block">
                 <span className="label">Chain</span>
@@ -131,7 +131,7 @@ export default function HomePage() {
                   defaultValue="bitcoin"
                   className="mt-1.5 h-11 w-full rounded-control border border-rule-strong bg-paper px-2.5 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  {SCAN_OPTIONS.filter((option) => option.key !== 'evm-all').map((option) => (
+                  {SCAN_OPTIONS.map((option) => (
                     <option key={option.key} value={option.key}>
                       {option.label}
                     </option>
