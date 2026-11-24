@@ -135,16 +135,18 @@ export function chainConfig(key: ChainKey): ChainConfig {
 }
 
 function resolveTransport(config: ChainConfig, override?: string): Transport {
-  // An explicit override or configured env RPC is dedicated infrastructure.
-  // Use it alone so failures surface instead of silently degrading.
+  // An endpoint the caller names is used alone, so its failures surface.
+  if (override) return http(override, { timeout: 6_000, retryCount: 1 });
+
+  // A configured endpoint goes first, but the public list still backs it up: a
+  // key that expired or a provider outage should not take scanning down.
   const fromEnv = typeof process !== 'undefined' ? process.env?.[config.rpcEnvVar] : undefined;
-  const dedicated = override ?? fromEnv;
-  if (dedicated) return http(dedicated, { timeout: 6_000, retryCount: 1 });
+  const urls = fromEnv?.trim() ? [fromEnv.trim(), ...config.rpcUrls] : config.rpcUrls;
 
   // Public endpoints fail and rate-limit unpredictably. Give each a short
   // deadline and no retry, so a dead one costs seconds and the next is tried.
   return fallback(
-    config.rpcUrls.map((url) => http(url, { timeout: 4_000, retryCount: 0 })),
+    urls.map((url) => http(url, { timeout: 4_000, retryCount: 0 })),
     { rank: false },
   );
 }

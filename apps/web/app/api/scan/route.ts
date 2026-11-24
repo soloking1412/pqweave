@@ -449,7 +449,9 @@ export async function GET(request: Request): Promise<Response> {
       }),
     );
     return Response.json(toEvmReport(assessment), { headers: { 'Cache-Control': 'no-store' } });
-  } catch {
+  } catch (error) {
+    // The visitor gets a plain message; the cause goes to the server log.
+    console.error(`evm scan failed on ${chain}:`, error instanceof Error ? error.message : error);
     return Response.json(
       {
         error:
