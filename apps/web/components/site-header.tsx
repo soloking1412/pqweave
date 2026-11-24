@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from './logo';
+import { ThemeToggle } from './theme-toggle';
 
 const NAVIGATION = [
   ['/kit', 'Scan'],
@@ -40,6 +41,7 @@ export function SiteHeader() {
           >
             For custodians
           </Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>

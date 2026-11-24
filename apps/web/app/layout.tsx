@@ -20,6 +20,9 @@ const mono = IBM_Plex_Mono({
   variable: '--font-plex-mono',
 });
 
+// Runs before first paint so a stored choice never flashes the other theme.
+const THEME_SCRIPT = `try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
+
 const DESCRIPTION =
   'Check whether a wallet has already published its public key, on 16 chains, and get the migration route that chain actually supports. Watch-only. No wallet connection.';
 
@@ -39,7 +42,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      className={`${sans.variable} ${serif.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <SiteHeader />
         <main className="flex-1">{children}</main>

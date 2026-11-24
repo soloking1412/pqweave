@@ -73,13 +73,84 @@
 
 :root {
   color-scheme: light;
+  --lattice: rgba(20, 32, 46, 0.11);
+  --selection: rgba(29, 75, 125, 0.22);
+}
+
+/**
+ * Dark sheet: the same drawing on blueprint stock. Light ink on deep blue-grey,
+ * never pure black, and the same rule that only risk is warm.
+ *
+ * It applies when the visitor chose it (`data-theme="dark"`) or when they made
+ * no choice and their system asks for dark. The token list is written twice
+ * because CSS cannot share a declaration block between a selector and a media
+ * query; keep the two in step.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-base: #0f1620;
+  --color-panel: #151e2a;
+  --color-panel-raised: #1b2634;
+  --color-well: #0a1018;
+  --color-paper: #101822;
+  --color-ink: #e9e5db;
+  --color-ink-2: #c5c4be;
+  --color-ink-dim: #9ea4aa;
+  --color-ink-faint: #868d94;
+  --color-rule: rgba(233, 229, 219, 0.13);
+  --color-rule-strong: rgba(233, 229, 219, 0.3);
+  --color-brand: #8ab6e4;
+  --color-brand-strong: #a9caee;
+  --color-accent: #82c1d9;
+  --color-ok: #80c29e;
+  --color-caution: #e0b45e;
+  --color-danger: #f08a80;
+  --color-note: #b5a6e8;
+  --color-risk-safe: #8f969d;
+  --color-risk-low: #7fb0cf;
+  --color-risk-medium: #dba93f;
+  --color-risk-high: #ee8a4a;
+  --color-risk-critical: #f0665e;
+  --lattice: rgba(233, 229, 219, 0.08);
+  --selection: rgba(138, 182, 228, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-base: #0f1620;
+    --color-panel: #151e2a;
+    --color-panel-raised: #1b2634;
+    --color-well: #0a1018;
+    --color-paper: #101822;
+    --color-ink: #e9e5db;
+    --color-ink-2: #c5c4be;
+    --color-ink-dim: #9ea4aa;
+    --color-ink-faint: #868d94;
+    --color-rule: rgba(233, 229, 219, 0.13);
+    --color-rule-strong: rgba(233, 229, 219, 0.3);
+    --color-brand: #8ab6e4;
+    --color-brand-strong: #a9caee;
+    --color-accent: #82c1d9;
+    --color-ok: #80c29e;
+    --color-caution: #e0b45e;
+    --color-danger: #f08a80;
+    --color-note: #b5a6e8;
+    --color-risk-safe: #8f969d;
+    --color-risk-low: #7fb0cf;
+    --color-risk-medium: #dba93f;
+    --color-risk-high: #ee8a4a;
+    --color-risk-critical: #f0665e;
+    --lattice: rgba(233, 229, 219, 0.08);
+    --selection: rgba(138, 182, 228, 0.3);
+  }
 }
 
 body {
   /* Graph paper. Lattices are also the other half of post-quantum
      cryptography, and a regular grid reads as measurement. */
   background-color: var(--color-base);
-  background-image: radial-gradient(circle at center, rgba(20, 32, 46, 0.11) 1px, transparent 1px);
+  background-image: radial-gradient(circle at center, var(--lattice) 1px, transparent 1px);
   background-size: 24px 24px;
   color: var(--color-ink);
 }
@@ -99,7 +170,7 @@ body {
 }
 
 ::selection {
-  background: rgba(29, 75, 125, 0.22);
+  background: var(--selection);
 }
 
 /* Every measured value is monospaced with aligned digits, so columns of numbers
